@@ -191,15 +191,21 @@ const Dashboard = () => {
     return () => clearInterval(intervalId);
   }, [orgData?.api_session, orgData?.api_token]);
 
-  // Timer de expiração do QR Code (60 segundos)
+  // Timer de expiração do QR Code (50 segundos)
   useEffect(() => {
     if (sessionStatus?.qrCode) {
-      setQrExpiresIn(60);
+      setQrExpiresIn(50);
       
       const intervalId = setInterval(() => {
         setQrExpiresIn(prev => {
           if (prev === null || prev <= 1) {
             clearInterval(intervalId);
+            // Limpar QR Code quando expirar
+            setSessionStatus(current => ({
+              ...current,
+              qrCode: undefined,
+              message: 'Offline'
+            }));
             return 0;
           }
           return prev - 1;
@@ -255,7 +261,17 @@ const Dashboard = () => {
       
       if (response.ok) {
         const data = await response.json();
-        setSessionStatus(data);
+        
+        // CRITICAL: Não sobrescrever se há QR Code ativo
+        // Só atualiza se a sessão foi conectada (status: true)
+        if (data.status === true) {
+          setSessionStatus(data);
+        }
+        // Se está desconectado E não há QR Code ativo, atualiza
+        else if (!sessionStatus?.qrCode) {
+          setSessionStatus(data);
+        }
+        // Se há QR Code ativo, não faz nada (preserva o QR)
       }
     } catch (error) {
       console.error('Erro ao verificar conexão:', error);
@@ -291,8 +307,8 @@ const Dashboard = () => {
       
       toast.success("Sessão iniciada! Aguarde o QR Code...");
       
-      // 2. Aguardar processamento
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // 2. Aguardar 5 segundos para processamento
+      await new Promise(resolve => setTimeout(resolve, 5000));
       
       // 3. Buscar QR Code
       const qrResponse = await fetch(
@@ -449,8 +465,8 @@ const Dashboard = () => {
         throw new Error(`Erro ao iniciar sessão: ${startResponse.status}`);
       }
       
-      // Aguardar um pouco para a sessão inicializar
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Aguardar 5 segundos para a sessão inicializar
+      await new Promise(resolve => setTimeout(resolve, 5000));
       
       // 2. Agora buscar o QR Code
       console.log('Buscando QR Code:', orgData.api_session);
