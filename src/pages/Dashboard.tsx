@@ -93,7 +93,7 @@ const Dashboard = () => {
       setOrgData(org);
 
       // Fetch session status from external API
-      fetchSessionStatus(org.id);
+      fetchSessionStatus(org.name);
     } catch (error: any) {
       console.error("Error fetching data:", error);
       toast.error("Erro ao carregar dados");
@@ -114,9 +114,9 @@ const Dashboard = () => {
     return () => subscription.unsubscribe();
   }, [navigate]);
 
-  const fetchSessionStatus = async (orgId: string) => {
+  const fetchSessionStatus = async (orgName: string) => {
     try {
-      const response = await fetch(`https://wpp.panda42.com.br/api/${orgId}/status`);
+      const response = await fetch(`https://wpp.panda42.com.br/api/${orgName}/status`);
       if (response.ok) {
         const data = await response.json();
         setSessionStatus(data);
@@ -131,18 +131,33 @@ const Dashboard = () => {
     
     setCreatingSession(true);
     try {
-      const response = await fetch(`https://wpp.panda42.com.br/api/${orgData.id}/start-session`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
+      const { data, error } = await supabase.functions.invoke('generate-whatsapp-token', {
+        body: { organization_name: orgData.name }
       });
 
-      if (!response.ok) throw new Error("Erro ao criar sessão");
+      if (error) throw error;
 
-      toast.success("Sessão criada! Aguarde o QR Code...");
-      
-      // Wait a bit and fetch status
-      setTimeout(() => fetchSessionStatus(orgData.id), 2000);
+      if (data.success && data.token) {
+        // Salvar o token completo no banco de dados
+        const { error: updateError } = await supabase
+          .from('organizations')
+          .update({ api_token: data.token })
+          .eq('id', orgData.id);
+
+        if (updateError) throw updateError;
+
+        // Atualizar estado local
+        setOrgData({ ...orgData, api_token: data.token });
+        
+        toast.success("Sessão criada com sucesso! Token gerado.");
+        
+        // Aguardar e buscar status da sessão
+        setTimeout(() => fetchSessionStatus(orgData.name), 2000);
+      } else {
+        throw new Error(data.error || "Erro ao gerar token");
+      }
     } catch (error: any) {
+      console.error("Erro ao criar sessão:", error);
       toast.error(error.message || "Erro ao criar sessão");
     } finally {
       setCreatingSession(false);
@@ -154,7 +169,7 @@ const Dashboard = () => {
     
     setRefreshingQr(true);
     try {
-      await fetchSessionStatus(orgData.id);
+      await fetchSessionStatus(orgData.name);
       toast.success("QR Code atualizado!");
     } catch (error) {
       toast.error("Erro ao atualizar QR Code");
@@ -262,8 +277,8 @@ const Dashboard = () => {
                         <Key className="w-5 h-5 text-primary-foreground" />
                       </div>
                       <div>
-                        <CardTitle className="text-lg">API Token</CardTitle>
-                        <CardDescription>Token de acesso à API</CardDescription>
+                        <CardTitle className="text-lg">Bearer Token</CardTitle>
+                        <CardDescription>Token de autenticação para chamadas API</CardDescription>
                       </div>
                     </div>
                     <Button
@@ -277,10 +292,13 @@ const Dashboard = () => {
                     </Button>
                   </div>
                 </CardHeader>
-                <CardContent>
-                  <code className="text-sm bg-muted/50 px-3 py-2 rounded-md block overflow-x-auto">
+                <CardContent className="space-y-3">
+                  <code className="text-sm bg-muted/50 px-3 py-2 rounded-md block overflow-x-auto break-all">
                     {orgData.api_token}
                   </code>
+                  <p className="text-xs text-muted-foreground">
+                    Use este token no header: <code className="text-xs bg-muted px-1 py-0.5 rounded">Authorization: Bearer {orgData.api_token}</code>
+                  </p>
                 </CardContent>
               </Card>
             </motion.div>
