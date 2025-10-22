@@ -86,14 +86,20 @@ serve(async (req) => {
     }
 
     const data = await response.json();
-    console.log(`Token generated successfully. Status: ${data.status}`);
+    console.log(`Token generated successfully:`, {
+      status: data.status,
+      session: data.session,
+      token: data.token,
+      full: data.full
+    });
 
-    // 8. Retornar resposta
+    // 8. Retornar resposta com todos os campos
     return new Response(
       JSON.stringify({
         success: true,
-        token: data.full,
-        session: data.session,
+        session: data.session,        // Nome da sessão
+        token: data.token,            // Apenas o hash
+        token_full: data.full,        // Token completo
         organization_name: organizationName
       }),
       { 
