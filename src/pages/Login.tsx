@@ -110,12 +110,15 @@ const Login = () => {
               )}
             </Button>
           </form>
-          <div className="mt-6 text-center text-sm text-muted-foreground">
-            Não tem uma conta?{" "}
-            <Link to="/signup" className="text-primary hover:text-primary/80 font-medium">
-              Cadastre-se
-            </Link>
-          </div>
+              <div className="mt-6 text-center text-sm text-muted-foreground">
+                Não tem uma conta?{" "}
+                <Link to="/signup" className="text-primary hover:text-primary/80 font-medium">
+                  Cadastre-se
+                </Link>
+              </div>
+              <div className="mt-4 text-center text-xs text-muted-foreground/60">
+                Desenvolvido por <span className="font-medium">Panda42</span>
+              </div>
         </CardContent>
       </Card>
     </div>

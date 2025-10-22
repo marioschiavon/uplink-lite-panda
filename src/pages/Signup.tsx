@@ -135,12 +135,15 @@ const Signup = () => {
               )}
             </Button>
           </form>
-          <div className="mt-6 text-center text-sm text-muted-foreground">
-            Já tem conta?{" "}
-            <Link to="/login" className="text-primary hover:text-primary/80 font-medium transition-colors">
-              Entrar
-            </Link>
-          </div>
+              <div className="mt-6 text-center text-sm text-muted-foreground">
+                Já tem conta?{" "}
+                <Link to="/login" className="text-primary hover:text-primary/80 font-medium transition-colors">
+                  Entrar
+                </Link>
+              </div>
+              <div className="mt-4 text-center text-xs text-muted-foreground/60">
+                Desenvolvido por <span className="font-medium">Panda42</span>
+              </div>
         </CardContent>
       </Card>
     </div>

@@ -723,9 +723,9 @@ const Dashboard = () => {
             </div>
             <div>
               <h1 className="text-xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-                Panda42
+                Uplink Lite
               </h1>
-              <p className="text-xs text-muted-foreground">Uplink Lite</p>
+              <p className="text-xs text-muted-foreground">por Panda42</p>
             </div>
           </div>
           <Button 
