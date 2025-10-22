@@ -31,6 +31,52 @@ interface SessionStatus {
   qrCode?: string;
 }
 
+// Componente de Indicador de Status
+const StatusIndicator = ({ status }: { status: string }) => {
+  const getStatusColor = () => {
+    switch (status) {
+      case 'online':
+      case 'connected':
+      case 'CONNECTED':
+        return 'bg-green-500';
+      case 'offline':
+      case 'disconnected':
+      case 'DISCONNECTED':
+        return 'bg-red-500';
+      case 'qrcode':
+        return 'bg-yellow-500';
+      default:
+        return 'bg-gray-500';
+    }
+  };
+  
+  const getStatusText = () => {
+    switch (status.toUpperCase()) {
+      case 'ONLINE':
+      case 'CONNECTED':
+        return 'Online';
+      case 'OFFLINE':
+        return 'Offline';
+      case 'DISCONNECTED':
+        return 'Desconectado';
+      case 'QRCODE':
+        return 'Aguardando QR Code';
+      default:
+        return status;
+    }
+  };
+  
+  return (
+    <div className="flex items-center gap-2">
+      <div className="relative">
+        <div className={`w-3 h-3 rounded-full ${getStatusColor()}`} />
+        <div className={`absolute inset-0 w-3 h-3 rounded-full ${getStatusColor()} animate-ping opacity-75`} />
+      </div>
+      <span className="text-sm font-medium">{getStatusText()}</span>
+    </div>
+  );
+};
+
 const Dashboard = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
@@ -42,6 +88,7 @@ const Dashboard = () => {
   const [refreshingQr, setRefreshingQr] = useState(false);
   const [closingSession, setClosingSession] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
+  const [qrExpiresIn, setQrExpiresIn] = useState<number | null>(null);
 
   const fetchUserData = async () => {
     try {
@@ -131,6 +178,36 @@ const Dashboard = () => {
     return () => subscription.unsubscribe();
   }, [navigate]);
 
+  // Polling automático a cada 10 segundos
+  useEffect(() => {
+    if (!orgData?.api_session || !orgData?.api_token) return;
+    
+    checkConnectionStatus();
+    
+    const intervalId = setInterval(checkConnectionStatus, 10000);
+    
+    return () => clearInterval(intervalId);
+  }, [orgData?.api_session, orgData?.api_token]);
+
+  // Timer de expiração do QR Code (60 segundos)
+  useEffect(() => {
+    if (sessionStatus?.qrCode) {
+      setQrExpiresIn(60);
+      
+      const intervalId = setInterval(() => {
+        setQrExpiresIn(prev => {
+          if (prev === null || prev <= 1) {
+            clearInterval(intervalId);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+      
+      return () => clearInterval(intervalId);
+    }
+  }, [sessionStatus?.qrCode]);
+
   const fetchSessionStatus = async (orgSession: string) => {
     try {
       const response = await fetch(`https://wpp.panda42.com.br/api/${orgSession}/status`);
@@ -140,6 +217,29 @@ const Dashboard = () => {
       }
     } catch (error) {
       console.error("Error fetching session status:", error);
+    }
+  };
+
+  const checkConnectionStatus = async () => {
+    if (!orgData?.api_session || !orgData?.api_token) return;
+    
+    try {
+      const response = await fetch(
+        `https://wpp.panda42.com.br/api/${orgData.api_session}/check-connection-session`,
+        {
+          headers: {
+            'accept': '*/*',
+            'Authorization': `Bearer ${orgData.api_token}`
+          }
+        }
+      );
+      
+      if (response.ok) {
+        const data = await response.json();
+        setSessionStatus(data);
+      }
+    } catch (error) {
+      console.error('Erro ao verificar conexão:', error);
     }
   };
 
@@ -204,11 +304,29 @@ const Dashboard = () => {
     
     setRefreshingQr(true);
     try {
-      console.log('Buscando QR Code:', {
-        session: orgData.api_session,
-        token: orgData.api_token.substring(0, 20) + '...'
-      });
-
+      // 1. Primeiro, iniciar/reiniciar a sessão
+      console.log('Iniciando sessão:', orgData.api_session);
+      const startResponse = await fetch(
+        `https://wpp.panda42.com.br/api/${orgData.api_session}/start-session`,
+        {
+          method: 'POST',
+          headers: {
+            'accept': '*/*',
+            'Authorization': `Bearer ${orgData.api_token}`
+          },
+          body: ''
+        }
+      );
+      
+      if (!startResponse.ok) {
+        throw new Error(`Erro ao iniciar sessão: ${startResponse.status}`);
+      }
+      
+      // Aguardar um pouco para a sessão inicializar
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // 2. Agora buscar o QR Code
+      console.log('Buscando QR Code:', orgData.api_session);
       const response = await fetch(
         `https://wpp.panda42.com.br/api/${orgData.api_session}/qrcode-session`,
         {
@@ -220,28 +338,24 @@ const Dashboard = () => {
       );
       
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Erro na API:', response.status, errorText);
-        throw new Error(`Erro ${response.status}: ${errorText}`);
+        throw new Error(`Erro ao buscar QR Code: ${response.status}`);
       }
       
-      // A API retorna a imagem PNG diretamente
       const blob = await response.blob();
       const reader = new FileReader();
       
       reader.onloadend = () => {
-        const base64data = reader.result as string;
         setSessionStatus({ 
           status: 'qrcode', 
-          qrCode: base64data
+          qrCode: reader.result as string 
         });
-        toast.success("QR Code carregado!");
+        toast.success("QR Code atualizado!");
       };
       
       reader.readAsDataURL(blob);
     } catch (error: any) {
-      console.error('Erro ao buscar QR Code:', error);
-      toast.error(error.message || "Erro ao buscar QR Code");
+      console.error('Erro ao renovar QR Code:', error);
+      toast.error(error.message || "Erro ao renovar QR Code");
     } finally {
       setRefreshingQr(false);
     }
@@ -487,12 +601,14 @@ const Dashboard = () => {
                     <div>
                       <CardTitle className="text-lg">Sessão WhatsApp</CardTitle>
                       <CardDescription>
-                        Status: {sessionStatus?.status || "offline"}
+                        <StatusIndicator status={sessionStatus?.status || "offline"} />
                       </CardDescription>
                     </div>
                   </div>
                   <div className="flex gap-2">
-                    {(sessionStatus?.status === "online" || sessionStatus?.status === "connected") && (
+                    {(sessionStatus?.status === "online" || 
+                      sessionStatus?.status === "connected" || 
+                      sessionStatus?.status === "CONNECTED") && (
                       <>
                         <Button
                           variant="outline"
@@ -528,7 +644,8 @@ const Dashboard = () => {
                     
                     {sessionStatus?.status !== "offline" && 
                      sessionStatus?.status !== "online" && 
-                     sessionStatus?.status !== "connected" && (
+                     sessionStatus?.status !== "connected" &&
+                     sessionStatus?.status !== "CONNECTED" && (
                       <Button
                         variant="outline"
                         size="sm"
@@ -579,11 +696,40 @@ const Dashboard = () => {
                         className="w-64 h-64"
                       />
                     </div>
+                    
+                    {/* Contador de expiração */}
+                    {qrExpiresIn !== null && qrExpiresIn > 0 ? (
+                      <div className="flex items-center gap-2 text-sm">
+                        <div className="w-2 h-2 bg-yellow-500 rounded-full animate-pulse" />
+                        <p className="text-muted-foreground">
+                          QR Code expira em <span className="font-bold text-foreground">{qrExpiresIn}s</span>
+                        </p>
+                      </div>
+                    ) : qrExpiresIn === 0 ? (
+                      <div className="flex flex-col items-center gap-2">
+                        <p className="text-sm text-red-500 font-medium">QR Code expirado!</p>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={handleRefreshQr}
+                          disabled={refreshingQr}
+                          className="gap-2"
+                        >
+                          {refreshingQr ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <RefreshCw className="w-4 h-4" />
+                          )}
+                          Gerar Novo QR Code
+                        </Button>
+                      </div>
+                    ) : null}
+                    
                     <p className="text-sm text-muted-foreground text-center">
                       Escaneie o QR Code com seu WhatsApp para conectar
                     </p>
                   </motion.div>
-                ) : sessionStatus?.status === "online" || sessionStatus?.status === "connected" ? (
+                ) : sessionStatus?.status === "online" || sessionStatus?.status === "connected" || sessionStatus?.status === "CONNECTED" ? (
                   <div className="text-center py-8">
                     <div className="w-16 h-16 mx-auto bg-gradient-to-br from-primary to-secondary rounded-full flex items-center justify-center mb-4">
                       <Server className="w-8 h-8 text-primary-foreground" />
