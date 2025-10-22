@@ -190,7 +190,14 @@ const Dashboard = () => {
     <div className="min-h-screen bg-background">
       <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/10 via-background to-purple-700/10 pointer-events-none" />
       
-      <CreateOrgModal open={showOrgModal} onOrgCreated={fetchUserData} />
+      <CreateOrgModal 
+        open={showOrgModal} 
+        onOrgCreated={() => {
+          setShowOrgModal(false);
+          fetchUserData();
+        }}
+        onClose={() => setShowOrgModal(false)}
+      />
       
       {/* Header */}
       <header className="border-b border-border/50 backdrop-blur-sm bg-card/30 relative z-10">

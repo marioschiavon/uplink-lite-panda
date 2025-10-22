@@ -16,9 +16,10 @@ import { Loader2, Building2 } from "lucide-react";
 interface CreateOrgModalProps {
   open: boolean;
   onOrgCreated: () => void;
+  onClose: () => void;
 }
 
-const CreateOrgModal = ({ open, onOrgCreated }: CreateOrgModalProps) => {
+const CreateOrgModal = ({ open, onOrgCreated, onClose }: CreateOrgModalProps) => {
   const [orgName, setOrgName] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -60,7 +61,9 @@ const CreateOrgModal = ({ open, onOrgCreated }: CreateOrgModalProps) => {
   };
 
   return (
-    <Dialog open={open}>
+    <Dialog open={open} onOpenChange={(isOpen) => {
+      if (!isOpen && !loading) onClose();
+    }}>
       <DialogContent className="sm:max-w-md bg-card/90 backdrop-blur-sm border-border/50 shadow-elegant animate-fade-in">
         <DialogHeader className="space-y-4">
           <div className="mx-auto w-16 h-16 bg-gradient-to-r from-secondary to-primary rounded-2xl flex items-center justify-center shadow-glow animate-scale-in">
