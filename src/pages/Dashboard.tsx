@@ -223,22 +223,20 @@ const Dashboard = () => {
         throw new Error(`Erro ${response.status}: ${errorText}`);
       }
       
-      const data = await response.json();
-      console.log('Resposta QR Code:', data);
+      // A API retorna a imagem PNG diretamente
+      const blob = await response.blob();
+      const reader = new FileReader();
       
-      if (data.qrCode || data.base64) {
-        const qrCodeBase64 = data.qrCode || data.base64;
+      reader.onloadend = () => {
+        const base64data = reader.result as string;
         setSessionStatus({ 
           status: 'qrcode', 
-          qrCode: `data:image/png;base64,${qrCodeBase64}` 
+          qrCode: base64data
         });
         toast.success("QR Code carregado!");
-      } else if (data.status === 'connected' || data.status === 'online') {
-        setSessionStatus({ status: 'online' });
-        toast.success("WhatsApp já está conectado!");
-      } else {
-        throw new Error('QR Code não encontrado na resposta');
-      }
+      };
+      
+      reader.readAsDataURL(blob);
     } catch (error: any) {
       console.error('Erro ao buscar QR Code:', error);
       toast.error(error.message || "Erro ao buscar QR Code");
