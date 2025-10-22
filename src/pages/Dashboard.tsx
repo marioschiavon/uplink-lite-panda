@@ -2,11 +2,11 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import CreateOrgModal from "@/components/CreateOrgModal";
 import { toast } from "sonner";
-import { LogOut, Server, Key, QrCode, Copy, RefreshCw, Loader2, XCircle, Trash2 } from "lucide-react";
+import { LogOut, Server, Key, QrCode, Copy, RefreshCw, Loader2, XCircle, Trash2, Plus } from "lucide-react";
 import { motion } from "framer-motion";
 
 interface UserData {
@@ -86,6 +86,7 @@ const Dashboard = () => {
   const [showOrgModal, setShowOrgModal] = useState(false);
   const [sessionStatus, setSessionStatus] = useState<SessionStatus | null>(null);
   const [creatingSession, setCreatingSession] = useState(false);
+  const [startingSession, setStartingSession] = useState(false);
   const [refreshingQr, setRefreshingQr] = useState(false);
   const [closingSession, setClosingSession] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
@@ -258,6 +259,75 @@ const Dashboard = () => {
       }
     } catch (error) {
       console.error('Erro ao verificar conexão:', error);
+    }
+  };
+
+  const handleStartSession = async () => {
+    if (!orgData?.api_session || !orgData?.api_token) {
+      toast.error("Token não encontrado.");
+      return;
+    }
+    
+    setStartingSession(true);
+    try {
+      console.log('Iniciando sessão:', orgData.api_session);
+      
+      // 1. Chamar start-session
+      const startResponse = await fetch(
+        `https://wpp.panda42.com.br/api/${orgData.api_session}/start-session`,
+        {
+          method: 'POST',
+          headers: {
+            'accept': '*/*',
+            'Authorization': `Bearer ${orgData.api_token}`
+          },
+          body: ''
+        }
+      );
+      
+      if (!startResponse.ok) {
+        throw new Error(`Erro ao iniciar sessão: ${startResponse.status}`);
+      }
+      
+      toast.success("Sessão iniciada! Aguarde o QR Code...");
+      
+      // 2. Aguardar processamento
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // 3. Buscar QR Code
+      const qrResponse = await fetch(
+        `https://wpp.panda42.com.br/api/${orgData.api_session}/qrcode-session`,
+        {
+          headers: {
+            'accept': '*/*',
+            'Authorization': `Bearer ${orgData.api_token}`
+          }
+        }
+      );
+      
+      if (!qrResponse.ok) {
+        throw new Error(`Erro ao buscar QR Code: ${qrResponse.status}`);
+      }
+      
+      const blob = await qrResponse.blob();
+      const reader = new FileReader();
+      
+      reader.onloadend = () => {
+        setSessionStatus({ 
+          status: false,
+          message: 'qrcode',
+          qrCode: reader.result as string 
+        });
+        toast.success("QR Code gerado! Escaneie para conectar.");
+      };
+      
+      reader.readAsDataURL(blob);
+      
+    } catch (error: any) {
+      console.error('Erro ao iniciar sessão:', error);
+      toast.error(error.message || "Erro ao iniciar sessão");
+    } finally {
+      setStartingSession(false);
     }
   };
 
@@ -601,8 +671,10 @@ const Dashboard = () => {
             </CardHeader>
           </Card>
 
-          {/* API Key Card */}
-          {orgData?.api_token && (
+          {/* API Key Card - Só mostra quando conectado */}
+          {orgData?.api_token && 
+           sessionStatus?.status === true && 
+           sessionStatus?.message?.toUpperCase() === 'CONNECTED' && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -650,88 +722,75 @@ const Dashboard = () => {
             transition={{ duration: 0.5, delay: 0.2 }}
           >
             <Card className="bg-card/90 backdrop-blur-sm border-border/50 shadow-elegant">
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-gradient-to-br from-primary to-secondary rounded-lg flex items-center justify-center">
-                      <QrCode className="w-5 h-5 text-primary-foreground" />
-                    </div>
-                    <div>
-                      <CardTitle className="text-lg">Sessão WhatsApp</CardTitle>
-                      <StatusIndicator sessionStatus={sessionStatus} />
-                    </div>
-                  </div>
-                  <div className="flex gap-2">
-                    {sessionStatus?.status === true && 
-                     sessionStatus?.message?.toUpperCase() === 'CONNECTED' && (
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+                <div>
+                  <CardTitle className="text-lg">Sessão WhatsApp</CardTitle>
+                  <StatusIndicator sessionStatus={sessionStatus} />
+                </div>
+                
+                {/* Botão Criar Sessão - quando não tem token */}
+                {!orgData?.api_token && (
+                  <Button
+                    onClick={handleCreateSession}
+                    disabled={creatingSession}
+                    className="gap-2 bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-700"
+                  >
+                    {creatingSession ? (
                       <>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={handleCloseSession}
-                          disabled={closingSession}
-                          className="gap-2 border-orange-500 text-orange-500 hover:bg-orange-50 dark:hover:bg-orange-950"
-                        >
-                          {closingSession ? (
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                          ) : (
-                            <XCircle className="w-4 h-4" />
-                          )}
-                          Fechar Sessão
-                        </Button>
-                        
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={handleLogoutSession}
-                          disabled={loggingOut}
-                          className="gap-2 border-red-500 text-red-500 hover:bg-red-50 dark:hover:bg-red-950"
-                        >
-                          {loggingOut ? (
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                          ) : (
-                            <Trash2 className="w-4 h-4" />
-                          )}
-                          Logout
-                        </Button>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Criando...
+                      </>
+                    ) : (
+                      <>
+                        <Plus className="w-4 h-4" />
+                        Criar Sessão
                       </>
                     )}
-                    
-                    {sessionStatus?.qrCode && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={handleRefreshQr}
-                        disabled={refreshingQr}
-                        className="gap-2"
-                      >
-                        {refreshingQr ? (
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                        ) : (
-                          <RefreshCw className="w-4 h-4" />
-                        )}
-                        Renovar QR
-                      </Button>
+                  </Button>
+                )}
+                
+                {/* Botão Iniciar Sessão - quando tem token mas está desconectado */}
+                {orgData?.api_token && 
+                 (!sessionStatus || sessionStatus.status === false) && 
+                 !sessionStatus?.qrCode && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleStartSession}
+                    disabled={startingSession}
+                    className="gap-2"
+                  >
+                    {startingSession ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Iniciando...
+                      </>
+                    ) : (
+                      <>
+                        <QrCode className="w-4 h-4" />
+                        Iniciar Sessão
+                      </>
                     )}
-                    
-                    {(!sessionStatus || sessionStatus.status === false) && !orgData?.api_token && (
-                      <Button
-                        onClick={handleCreateSession}
-                        disabled={creatingSession}
-                        className="bg-gradient-to-r from-secondary to-primary hover:opacity-90 transition-opacity gap-2"
-                      >
-                        {creatingSession ? (
-                          <>
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                            Criando...
-                          </>
-                        ) : (
-                          "Criar Sessão"
-                        )}
-                      </Button>
+                  </Button>
+                )}
+                
+                {/* Botão Renovar QR - quando está exibindo QR Code */}
+                {sessionStatus?.qrCode && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleRefreshQr}
+                    disabled={refreshingQr}
+                    className="gap-2"
+                  >
+                    {refreshingQr ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <RefreshCw className="w-4 h-4" />
                     )}
-                  </div>
-                </div>
+                    Renovar QR
+                  </Button>
+                )}
               </CardHeader>
               <CardContent>
                 {sessionStatus?.qrCode ? (
@@ -797,10 +856,55 @@ const Dashboard = () => {
                     <p>Nenhuma sessão ativa</p>
                     <p className="text-sm mt-2">Clique em "Criar Sessão" para começar</p>
                   </div>
-                )}
-              </CardContent>
-            </Card>
-          </motion.div>
+              )}
+            </CardContent>
+
+            {/* Rodapé com controles permanentes */}
+            {orgData?.api_token && (
+              <CardFooter className="border-t border-border/50 pt-4">
+                <div className="flex items-center justify-between w-full">
+                  {/* Lado esquerdo - Botões de gestão */}
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleCloseSession}
+                      disabled={closingSession || !sessionStatus?.status}
+                      className="gap-2 border-orange-500 text-orange-500 hover:bg-orange-50 dark:hover:bg-orange-950 disabled:opacity-50"
+                    >
+                      {closingSession ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <XCircle className="w-4 h-4" />
+                      )}
+                      Fechar Sessão
+                    </Button>
+                    
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleLogoutSession}
+                      disabled={loggingOut}
+                      className="gap-2 border-red-500 text-red-500 hover:bg-red-50 dark:hover:bg-red-950"
+                    >
+                      {loggingOut ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Trash2 className="w-4 h-4" />
+                      )}
+                      Logout da Sessão
+                    </Button>
+                  </div>
+                  
+                  {/* Lado direito - Info da sessão */}
+                  <div className="text-xs text-muted-foreground">
+                    Sessão: <span className="font-mono">{orgData.api_session}</span>
+                  </div>
+                </div>
+              </CardFooter>
+            )}
+          </Card>
+        </motion.div>
         </motion.div>
       </main>
     </div>
