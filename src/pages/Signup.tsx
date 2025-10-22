@@ -6,11 +6,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
-import { Loader2 } from "lucide-react";
+import { Loader2, Mail, Lock } from "lucide-react";
 
 const Signup = () => {
   const navigate = useNavigate();
-  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -36,10 +35,7 @@ const Signup = () => {
         email,
         password,
         options: {
-          emailRedirectTo: redirectUrl,
-          data: {
-            name: name,
-          }
+          emailRedirectTo: redirectUrl
         }
       });
 
@@ -58,12 +54,12 @@ const Signup = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-secondary/10 pointer-events-none" />
+      <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/10 via-background to-purple-700/10 pointer-events-none" />
       
-      <Card className="w-full max-w-md relative backdrop-blur-sm bg-card/80 border-border/50 shadow-elegant">
+      <Card className="w-full max-w-md relative backdrop-blur-sm bg-card/90 border-border/50 shadow-elegant animate-fade-in">
         <CardHeader className="space-y-3 text-center">
-          <div className="mx-auto w-16 h-16 bg-gradient-to-br from-primary to-secondary rounded-2xl flex items-center justify-center shadow-glow">
-            <span className="text-2xl font-bold text-primary-foreground">UL</span>
+          <div className="mx-auto w-16 h-16 bg-gradient-to-r from-secondary to-primary rounded-2xl flex items-center justify-center shadow-glow animate-scale-in">
+            <span className="text-3xl font-bold text-primary-foreground">W</span>
           </div>
           <CardTitle className="text-3xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
             Uplink Lite
@@ -75,45 +71,39 @@ const Signup = () => {
         <CardContent>
           <form onSubmit={handleSignup} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="name">Nome</Label>
-              <Input
-                id="name"
-                type="text"
-                placeholder="Seu nome"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                required
-                className="bg-muted/50 border-border/50"
-              />
-            </div>
-            <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="seu@email.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                className="bg-muted/50 border-border/50"
-              />
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="seu@email.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  className="bg-muted/50 border-border/50 pl-10"
+                />
+              </div>
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">Senha</Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                minLength={6}
-                className="bg-muted/50 border-border/50"
-              />
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  minLength={6}
+                  className="bg-muted/50 border-border/50 pl-10"
+                />
+              </div>
             </div>
             <Button 
               type="submit" 
-              className="w-full bg-gradient-to-r from-primary to-secondary hover:opacity-90 transition-opacity" 
+              className="w-full bg-gradient-to-r from-secondary to-primary hover:opacity-90 transition-opacity" 
               disabled={loading}
             >
               {loading ? (
@@ -127,9 +117,9 @@ const Signup = () => {
             </Button>
           </form>
           <div className="mt-6 text-center text-sm text-muted-foreground">
-            Já tem uma conta?{" "}
-            <Link to="/login" className="text-primary hover:text-primary/80 font-medium">
-              Faça login
+            Já tem conta?{" "}
+            <Link to="/login" className="text-primary hover:text-primary/80 font-medium transition-colors">
+              Entrar
             </Link>
           </div>
         </CardContent>
