@@ -27,23 +27,24 @@ interface OrgData {
 }
 
 interface SessionStatus {
-  status: string;
+  status: boolean;
+  message?: string;
   qrCode?: string;
 }
 
 // Componente de Indicador de Status
-const StatusIndicator = ({ status }: { status: string }) => {
+const StatusIndicator = ({ sessionStatus }: { sessionStatus: SessionStatus | null }) => {
+  const message = sessionStatus?.message?.toUpperCase() || 'OFFLINE';
+  const isConnected = sessionStatus?.status === true;
+  
   const getStatusColor = () => {
-    switch (status) {
-      case 'online':
-      case 'connected':
+    if (!sessionStatus || !isConnected) return 'bg-red-500';
+    
+    switch (message) {
       case 'CONNECTED':
+      case 'ONLINE':
         return 'bg-green-500';
-      case 'offline':
-      case 'disconnected':
-      case 'DISCONNECTED':
-        return 'bg-red-500';
-      case 'qrcode':
+      case 'QRCODE':
         return 'bg-yellow-500';
       default:
         return 'bg-gray-500';
@@ -51,18 +52,18 @@ const StatusIndicator = ({ status }: { status: string }) => {
   };
   
   const getStatusText = () => {
-    switch (status.toUpperCase()) {
-      case 'ONLINE':
+    if (!sessionStatus) return 'Offline';
+    if (!isConnected) return 'Desconectado';
+    
+    switch (message) {
       case 'CONNECTED':
+        return 'Conectado';
+      case 'ONLINE':
         return 'Online';
-      case 'OFFLINE':
-        return 'Offline';
-      case 'DISCONNECTED':
-        return 'Desconectado';
       case 'QRCODE':
         return 'Aguardando QR Code';
       default:
-        return status;
+        return sessionStatus.message || 'Desconhecido';
     }
   };
   
@@ -205,18 +206,35 @@ const Dashboard = () => {
       }, 1000);
       
       return () => clearInterval(intervalId);
+    } else {
+      setQrExpiresIn(null);
     }
   }, [sessionStatus?.qrCode]);
 
-  const fetchSessionStatus = async (orgSession: string) => {
+  const fetchSessionStatus = async (orgSession: string, token?: string) => {
+    const authToken = token || orgData?.api_token;
+    if (!authToken) return;
+    
     try {
-      const response = await fetch(`https://wpp.panda42.com.br/api/${orgSession}/status`);
+      const response = await fetch(
+        `https://wpp.panda42.com.br/api/${orgSession}/check-connection-session`,
+        {
+          headers: {
+            'accept': '*/*',
+            'Authorization': `Bearer ${authToken}`
+          }
+        }
+      );
+      
       if (response.ok) {
         const data = await response.json();
         setSessionStatus(data);
+      } else {
+        setSessionStatus({ status: false, message: 'Offline' });
       }
     } catch (error) {
       console.error("Error fetching session status:", error);
+      setSessionStatus({ status: false, message: 'Offline' });
     }
   };
 
@@ -281,10 +299,49 @@ const Dashboard = () => {
           api_token_full: data.token_full
         });
         
-        toast.success("Token gerado! Buscando QR Code...");
+        toast.success("Token gerado! Iniciando sessão...");
         
-        // Buscar QR Code imediatamente
-        await handleRefreshQr();
+        // Iniciar sessão e buscar QR Code
+        const startResponse = await fetch(
+          `https://wpp.panda42.com.br/api/${data.session}/start-session`,
+          {
+            method: 'POST',
+            headers: {
+              'accept': '*/*',
+              'Authorization': `Bearer ${data.token}`
+            },
+            body: ''
+          }
+        );
+        
+        if (startResponse.ok) {
+          // Aguardar 2 segundos e buscar QR Code
+          await new Promise(resolve => setTimeout(resolve, 2000));
+          
+          const qrResponse = await fetch(
+            `https://wpp.panda42.com.br/api/${data.session}/qrcode-session`,
+            {
+              headers: {
+                'accept': '*/*',
+                'Authorization': `Bearer ${data.token}`
+              }
+            }
+          );
+          
+          if (qrResponse.ok) {
+            const blob = await qrResponse.blob();
+            const reader = new FileReader();
+            reader.onloadend = () => {
+              setSessionStatus({ 
+                status: false,
+                message: 'qrcode',
+                qrCode: reader.result as string 
+              });
+              toast.success("QR Code gerado!");
+            };
+            reader.readAsDataURL(blob);
+          }
+        }
       } else {
         throw new Error(data.error || "Erro ao gerar token");
       }
@@ -346,7 +403,8 @@ const Dashboard = () => {
       
       reader.onloadend = () => {
         setSessionStatus({ 
-          status: 'qrcode', 
+          status: false,
+          message: 'qrcode',
           qrCode: reader.result as string 
         });
         toast.success("QR Code atualizado!");
@@ -388,7 +446,7 @@ const Dashboard = () => {
         throw new Error(`Erro ${response.status}: ${errorText}`);
       }
       
-      setSessionStatus({ status: 'offline' });
+      setSessionStatus({ status: false, message: 'offline' });
       toast.success("Sessão fechada com sucesso!");
       await fetchUserData();
     } catch (error: any) {
@@ -448,7 +506,7 @@ const Dashboard = () => {
         api_token_full: null
       });
       
-      setSessionStatus({ status: 'offline' });
+      setSessionStatus({ status: false, message: 'offline' });
       toast.success("Sessão removida com sucesso!");
       
     } catch (error: any) {
@@ -600,15 +658,12 @@ const Dashboard = () => {
                     </div>
                     <div>
                       <CardTitle className="text-lg">Sessão WhatsApp</CardTitle>
-                      <CardDescription>
-                        <StatusIndicator status={sessionStatus?.status || "offline"} />
-                      </CardDescription>
+                      <StatusIndicator sessionStatus={sessionStatus} />
                     </div>
                   </div>
                   <div className="flex gap-2">
-                    {(sessionStatus?.status === "online" || 
-                      sessionStatus?.status === "connected" || 
-                      sessionStatus?.status === "CONNECTED") && (
+                    {sessionStatus?.status === true && 
+                     sessionStatus?.message?.toUpperCase() === 'CONNECTED' && (
                       <>
                         <Button
                           variant="outline"
@@ -642,10 +697,7 @@ const Dashboard = () => {
                       </>
                     )}
                     
-                    {sessionStatus?.status !== "offline" && 
-                     sessionStatus?.status !== "online" && 
-                     sessionStatus?.status !== "connected" &&
-                     sessionStatus?.status !== "CONNECTED" && (
+                    {sessionStatus?.qrCode && (
                       <Button
                         variant="outline"
                         size="sm"
@@ -662,7 +714,7 @@ const Dashboard = () => {
                       </Button>
                     )}
                     
-                    {(!sessionStatus || sessionStatus.status === "offline") && !orgData?.api_token && (
+                    {(!sessionStatus || sessionStatus.status === false) && !orgData?.api_token && (
                       <Button
                         onClick={handleCreateSession}
                         disabled={creatingSession}
@@ -729,7 +781,7 @@ const Dashboard = () => {
                       Escaneie o QR Code com seu WhatsApp para conectar
                     </p>
                   </motion.div>
-                ) : sessionStatus?.status === "online" || sessionStatus?.status === "connected" || sessionStatus?.status === "CONNECTED" ? (
+                ) : sessionStatus?.status === true && sessionStatus?.message?.toUpperCase() === 'CONNECTED' ? (
                   <div className="text-center py-8">
                     <div className="w-16 h-16 mx-auto bg-gradient-to-br from-primary to-secondary rounded-full flex items-center justify-center mb-4">
                       <Server className="w-8 h-8 text-primary-foreground" />
