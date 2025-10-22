@@ -61,31 +61,33 @@ const CreateOrgModal = ({ open, onOrgCreated }: CreateOrgModalProps) => {
 
   return (
     <Dialog open={open}>
-      <DialogContent className="sm:max-w-md bg-card border-border/50">
-        <DialogHeader className="space-y-3">
-          <div className="mx-auto w-12 h-12 bg-gradient-to-br from-primary to-secondary rounded-xl flex items-center justify-center">
-            <Building2 className="w-6 h-6 text-primary-foreground" />
+      <DialogContent className="sm:max-w-md bg-card/90 backdrop-blur-sm border-border/50 shadow-elegant animate-fade-in">
+        <DialogHeader className="space-y-4">
+          <div className="mx-auto w-16 h-16 bg-gradient-to-r from-secondary to-primary rounded-2xl flex items-center justify-center shadow-glow animate-scale-in">
+            <Building2 className="w-8 h-8 text-primary-foreground" />
           </div>
-          <DialogTitle className="text-center text-2xl">Crie sua organização</DialogTitle>
+          <DialogTitle className="text-center text-2xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+            Crie sua organização
+          </DialogTitle>
           <DialogDescription className="text-center text-muted-foreground">
             Para começar a usar o Uplink Lite, primeiro crie sua organização.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleCreateOrg} className="space-y-4 mt-4">
           <div className="space-y-2">
-            <Label htmlFor="orgName">Nome da Empresa</Label>
+            <Label htmlFor="orgName" className="text-foreground">Nome da Empresa</Label>
             <Input
               id="orgName"
               placeholder="Minha Empresa"
               value={orgName}
               onChange={(e) => setOrgName(e.target.value)}
               required
-              className="bg-muted/50 border-border/50"
+              className="bg-muted/50 border-border/50 focus:border-primary transition-colors"
             />
           </div>
           <Button
             type="submit"
-            className="w-full bg-gradient-to-r from-primary to-secondary hover:opacity-90 transition-opacity"
+            className="w-full bg-gradient-to-r from-secondary to-primary hover:opacity-90 transition-all duration-300 hover:scale-[1.02] shadow-glow"
             disabled={loading}
           >
             {loading ? (
