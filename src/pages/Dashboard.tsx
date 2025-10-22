@@ -126,6 +126,107 @@ const Dashboard = () => {
     }
   };
 
+  const startWhatsAppSession = async (sessionName: string, token: string) => {
+    try {
+      const response = await fetch(
+        `https://wpp.panda42.com.br/api/${sessionName}/start-session`,
+        {
+          method: 'POST',
+          headers: {
+            'accept': 'application/json',
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            webhook: "",
+            waitQrCode: false
+          })
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`Erro ao iniciar sessão: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log('Sessão iniciada:', data);
+      
+      // Se o QR code vier nesta resposta (em Base64)
+      if (data.qrCode) {
+        setSessionStatus({ 
+          status: 'qrcode', 
+          qrCode: `data:image/png;base64,${data.qrCode}` 
+        });
+      }
+      
+      return data;
+    } catch (error) {
+      console.error('Erro ao iniciar sessão:', error);
+      throw error;
+    }
+  };
+
+  const startQrCodePolling = (sessionName: string, token: string) => {
+    let pollCount = 0;
+    const maxPolls = 30; // 30 tentativas = ~60 segundos
+    
+    const pollInterval = setInterval(async () => {
+      pollCount++;
+      
+      try {
+        // Buscar status da sessão
+        const statusResponse = await fetch(
+          `https://wpp.panda42.com.br/api/${sessionName}/status`
+        );
+        
+        if (statusResponse.ok) {
+          const statusData = await statusResponse.json();
+          
+          // Se já está conectado, parar o polling
+          if (statusData.status === 'online' || statusData.status === 'connected') {
+            clearInterval(pollInterval);
+            setSessionStatus(statusData);
+            toast.success('WhatsApp conectado com sucesso!');
+            return;
+          }
+        }
+        
+        // Buscar QR code
+        const qrResponse = await fetch(
+          `https://wpp.panda42.com.br/api/${sessionName}/qrcode-session`,
+          {
+            headers: {
+              'accept': '*/*',
+              'Authorization': `Bearer ${token}`
+            }
+          }
+        );
+        
+        if (qrResponse.ok) {
+          const qrData = await qrResponse.json();
+          
+          // Se tiver QR code
+          if (qrData.qrCode || qrData.base64) {
+            const qrCodeBase64 = qrData.qrCode || qrData.base64;
+            setSessionStatus({ 
+              status: 'qrcode', 
+              qrCode: `data:image/png;base64,${qrCodeBase64}` 
+            });
+          }
+        }
+        
+        // Parar após max tentativas
+        if (pollCount >= maxPolls) {
+          clearInterval(pollInterval);
+          toast.error('Tempo limite excedido para gerar QR Code');
+        }
+        
+      } catch (error) {
+        console.error('Erro no polling:', error);
+      }
+    }, 2000); // Polling a cada 2 segundos
+  };
+
   const handleCreateSession = async () => {
     if (!orgData) return;
     
@@ -149,10 +250,13 @@ const Dashboard = () => {
         // Atualizar estado local
         setOrgData({ ...orgData, api_token: data.token });
         
-        toast.success("Sessão criada com sucesso! Token gerado.");
+        toast.success("Token gerado! Iniciando sessão WhatsApp...");
         
-        // Aguardar e buscar status da sessão
-        setTimeout(() => fetchSessionStatus(orgData.name), 2000);
+        // Iniciar a sessão WhatsApp
+        await startWhatsAppSession(orgData.name, data.token);
+        
+        // Iniciar polling do QR code
+        startQrCodePolling(orgData.name, data.token);
       } else {
         throw new Error(data.error || "Erro ao gerar token");
       }
@@ -165,14 +269,36 @@ const Dashboard = () => {
   };
 
   const handleRefreshQr = async () => {
-    if (!orgData) return;
+    if (!orgData?.api_token) return;
     
     setRefreshingQr(true);
     try {
-      await fetchSessionStatus(orgData.name);
-      toast.success("QR Code atualizado!");
-    } catch (error) {
-      toast.error("Erro ao atualizar QR Code");
+      const response = await fetch(
+        `https://wpp.panda42.com.br/api/${orgData.name}/qrcode-session`,
+        {
+          headers: {
+            'accept': '*/*',
+            'Authorization': `Bearer ${orgData.api_token}`
+          }
+        }
+      );
+      
+      if (response.ok) {
+        const data = await response.json();
+        if (data.qrCode || data.base64) {
+          const qrCodeBase64 = data.qrCode || data.base64;
+          setSessionStatus({ 
+            status: 'qrcode', 
+            qrCode: `data:image/png;base64,${qrCodeBase64}` 
+          });
+          toast.success("QR Code atualizado!");
+        }
+      } else {
+        throw new Error('Erro ao buscar QR Code');
+      }
+    } catch (error: any) {
+      console.error('Erro ao atualizar QR Code:', error);
+      toast.error(error.message || "Erro ao atualizar QR Code");
     } finally {
       setRefreshingQr(false);
     }
