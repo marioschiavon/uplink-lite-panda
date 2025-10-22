@@ -631,9 +631,9 @@ const Dashboard = () => {
     }
     
     // Validação básica do número
-    const phoneRegex = /^55\d{10,11}$/;
+    const phoneRegex = /^\d{10,11}$/;
     if (!phoneRegex.test(testPhone)) {
-      toast.error("Número inválido. Use o formato: 5511999999999");
+      toast.error("Número inválido. Use o formato: DDD + número (ex: 11987654321)");
       return;
     }
     
@@ -655,7 +655,7 @@ const Dashboard = () => {
             'Authorization': `Bearer ${orgData.api_token}`
           },
           body: JSON.stringify({
-            phone: testPhone,
+            phone: `55${testPhone}`,
             isGroup: false,
             isNewsletter: false,
             isLid: false,
@@ -1022,16 +1022,23 @@ const Dashboard = () => {
                   <div className="space-y-3">
                     <div>
                       <Label htmlFor="test-phone">Número de Telefone</Label>
-                      <Input
-                        id="test-phone"
-                        type="text"
-                        placeholder="5511999999999"
-                        value={testPhone}
-                        onChange={(e) => setTestPhone(e.target.value)}
-                        className="font-mono"
-                      />
+                      <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1 px-3 py-2 bg-muted rounded-md border border-input">
+                          <span className="text-lg">🇧🇷</span>
+                          <span className="text-sm font-mono font-medium">+55</span>
+                        </div>
+                        <Input
+                          id="test-phone"
+                          type="text"
+                          placeholder="11987654321"
+                          value={testPhone}
+                          onChange={(e) => setTestPhone(e.target.value.replace(/\D/g, ''))}
+                          className="font-mono flex-1"
+                          maxLength={11}
+                        />
+                      </div>
                       <p className="text-xs text-muted-foreground mt-1">
-                        Formato: 55 + DDD + número (somente números)
+                        Formato: DDD + número (somente números)
                       </p>
                     </div>
                     
