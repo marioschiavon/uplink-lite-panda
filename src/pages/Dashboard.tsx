@@ -262,16 +262,19 @@ const Dashboard = () => {
       if (response.ok) {
         const data = await response.json();
         
-        // CRITICAL: Não sobrescrever se há QR Code ativo
-        // Só atualiza se a sessão foi conectada (status: true)
-        if (data.status === true) {
-          setSessionStatus(data);
-        }
-        // Se está desconectado E não há QR Code ativo, atualiza
-        else if (!sessionStatus?.qrCode) {
-          setSessionStatus(data);
-        }
-        // Se há QR Code ativo, não faz nada (preserva o QR)
+        // CRITICAL: Usar callback do setState para acessar valor mais recente
+        setSessionStatus(currentStatus => {
+          // Se conectado, atualiza
+          if (data.status === true) {
+            return data;
+          }
+          // Se desconectado E não há QR Code ativo no estado ATUAL, atualiza
+          if (!currentStatus?.qrCode) {
+            return data;
+          }
+          // Se há QR Code ativo no estado ATUAL, preserva
+          return currentStatus;
+        });
       }
     } catch (error) {
       console.error('Erro ao verificar conexão:', error);
