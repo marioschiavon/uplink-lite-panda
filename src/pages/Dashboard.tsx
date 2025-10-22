@@ -728,14 +728,26 @@ const Dashboard = () => {
               <p className="text-xs text-muted-foreground">por Panda42</p>
             </div>
           </div>
-          <Button 
-            variant="outline" 
-            onClick={handleLogout}
-            className="gap-2"
-          >
-            <LogOut className="w-4 h-4" />
-            Sair
-          </Button>
+          <div className="flex items-center gap-2">
+            {userData?.email === "wowkelevra@gmail.com" && (
+              <Button 
+                variant="outline" 
+                onClick={() => navigate("/monitoring")}
+                className="gap-2"
+              >
+                <Server className="w-4 h-4" />
+                Monitoramento
+              </Button>
+            )}
+            <Button 
+              variant="outline" 
+              onClick={handleLogout}
+              className="gap-2"
+            >
+              <LogOut className="w-4 h-4" />
+              Sair
+            </Button>
+          </div>
         </div>
       </header>
 
