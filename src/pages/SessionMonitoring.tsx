@@ -52,11 +52,11 @@ const SessionMonitoring = () => {
       setUserEmail(email);
 
       // Verificar se é o email do superadmin
-      if (email !== "wowkelevra@gmail.com") {
-        toast.error("Acesso negado - apenas superadmin");
-        navigate("/dashboard");
-        return;
-      }
+    if (email !== "contato@upevolution.com.br") {
+      toast.error("Acesso negado - apenas superadmin");
+      navigate("/dashboard");
+      return;
+    }
 
       fetchSessions();
     };
@@ -154,7 +154,7 @@ const SessionMonitoring = () => {
 
   // Auto-refresh a cada 10 segundos
   useEffect(() => {
-    if (userEmail === "wowkelevra@gmail.com") {
+    if (userEmail === "contato@upevolution.com.br") {
       const interval = setInterval(() => {
         fetchSessions();
       }, 10000);

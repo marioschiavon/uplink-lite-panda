@@ -729,7 +729,7 @@ const Dashboard = () => {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            {userData?.email === "wowkelevra@gmail.com" && (
+            {userData?.email === "contato@upevolution.com.br" && (
               <Button 
                 variant="outline" 
                 onClick={() => navigate("/monitoring")}
