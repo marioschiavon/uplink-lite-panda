@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import CreateOrgModal from "@/components/CreateOrgModal";
 import { toast } from "sonner";
-import { LogOut, Server, Key, QrCode, Copy, RefreshCw, Loader2 } from "lucide-react";
+import { LogOut, Server, Key, QrCode, Copy, RefreshCw, Loader2, XCircle, Trash2 } from "lucide-react";
 import { motion } from "framer-motion";
 
 interface UserData {
@@ -40,6 +40,8 @@ const Dashboard = () => {
   const [sessionStatus, setSessionStatus] = useState<SessionStatus | null>(null);
   const [creatingSession, setCreatingSession] = useState(false);
   const [refreshingQr, setRefreshingQr] = useState(false);
+  const [closingSession, setClosingSession] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
 
   const fetchUserData = async () => {
     try {
@@ -245,6 +247,104 @@ const Dashboard = () => {
     }
   };
 
+  const handleCloseSession = async () => {
+    if (!orgData?.api_session || !orgData?.api_token) {
+      toast.error("Sessão não encontrada");
+      return;
+    }
+    
+    setClosingSession(true);
+    try {
+      console.log('Fechando sessão:', orgData.api_session);
+      
+      const response = await fetch(
+        `https://wpp.panda42.com.br/api/${orgData.api_session}/close-session`,
+        {
+          method: 'POST',
+          headers: {
+            'accept': '*/*',
+            'Authorization': `Bearer ${orgData.api_token}`
+          },
+          body: ''
+        }
+      );
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Erro ${response.status}: ${errorText}`);
+      }
+      
+      setSessionStatus({ status: 'offline' });
+      toast.success("Sessão fechada com sucesso!");
+      await fetchUserData();
+    } catch (error: any) {
+      console.error('Erro ao fechar sessão:', error);
+      toast.error(error.message || "Erro ao fechar sessão");
+    } finally {
+      setClosingSession(false);
+    }
+  };
+
+  const handleLogoutSession = async () => {
+    if (!orgData?.api_session || !orgData?.api_token) {
+      toast.error("Sessão não encontrada");
+      return;
+    }
+    
+    if (!confirm("Tem certeza? Isso irá apagar completamente a sessão e você precisará criar uma nova.")) {
+      return;
+    }
+    
+    setLoggingOut(true);
+    try {
+      console.log('Fazendo logout da sessão:', orgData.api_session);
+      
+      const response = await fetch(
+        `https://wpp.panda42.com.br/api/${orgData.api_session}/logout-session`,
+        {
+          method: 'POST',
+          headers: {
+            'accept': '*/*',
+            'Authorization': `Bearer ${orgData.api_token}`
+          },
+          body: ''
+        }
+      );
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Erro ${response.status}: ${errorText}`);
+      }
+      
+      const { error: updateError } = await supabase
+        .from('organizations')
+        .update({ 
+          api_session: null,
+          api_token: null,
+          api_token_full: null
+        })
+        .eq('id', orgData.id);
+      
+      if (updateError) throw updateError;
+      
+      setOrgData({ 
+        ...orgData, 
+        api_session: null,
+        api_token: null,
+        api_token_full: null
+      });
+      
+      setSessionStatus({ status: 'offline' });
+      toast.success("Sessão removida com sucesso!");
+      
+    } catch (error: any) {
+      console.error('Erro ao fazer logout:', error);
+      toast.error(error.message || "Erro ao fazer logout da sessão");
+    } finally {
+      setLoggingOut(false);
+    }
+  };
+
   const handleCopyApiToken = () => {
     if (orgData?.api_token) {
       navigator.clipboard.writeText(orgData.api_token);
@@ -392,7 +492,43 @@ const Dashboard = () => {
                     </div>
                   </div>
                   <div className="flex gap-2">
-                    {sessionStatus?.status !== "offline" && (
+                    {(sessionStatus?.status === "online" || sessionStatus?.status === "connected") && (
+                      <>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={handleCloseSession}
+                          disabled={closingSession}
+                          className="gap-2 border-orange-500 text-orange-500 hover:bg-orange-50 dark:hover:bg-orange-950"
+                        >
+                          {closingSession ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <XCircle className="w-4 h-4" />
+                          )}
+                          Fechar Sessão
+                        </Button>
+                        
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={handleLogoutSession}
+                          disabled={loggingOut}
+                          className="gap-2 border-red-500 text-red-500 hover:bg-red-50 dark:hover:bg-red-950"
+                        >
+                          {loggingOut ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <Trash2 className="w-4 h-4" />
+                          )}
+                          Logout
+                        </Button>
+                      </>
+                    )}
+                    
+                    {sessionStatus?.status !== "offline" && 
+                     sessionStatus?.status !== "online" && 
+                     sessionStatus?.status !== "connected" && (
                       <Button
                         variant="outline"
                         size="sm"
@@ -408,7 +544,8 @@ const Dashboard = () => {
                         Renovar QR
                       </Button>
                     )}
-                    {!sessionStatus || sessionStatus.status === "offline" ? (
+                    
+                    {(!sessionStatus || sessionStatus.status === "offline") && !orgData?.api_token && (
                       <Button
                         onClick={handleCreateSession}
                         disabled={creatingSession}
@@ -423,7 +560,7 @@ const Dashboard = () => {
                           "Criar Sessão"
                         )}
                       </Button>
-                    ) : null}
+                    )}
                   </div>
                 </div>
               </CardHeader>
