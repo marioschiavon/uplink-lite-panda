@@ -4,10 +4,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import CreateOrgModal from "@/components/CreateOrgModal";
 import { toast } from "sonner";
-import { LogOut, Server, Key, QrCode, Copy, RefreshCw, Loader2, XCircle, Trash2, Plus } from "lucide-react";
+import { LogOut, Server, Key, QrCode, Copy, RefreshCw, Loader2, XCircle, Trash2, Plus, MessageSquare, Send } from "lucide-react";
 import { motion } from "framer-motion";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 
 interface UserData {
   id: string;
@@ -91,6 +94,9 @@ const Dashboard = () => {
   const [closingSession, setClosingSession] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
   const [qrExpiresIn, setQrExpiresIn] = useState<number | null>(null);
+  const [testPhone, setTestPhone] = useState("");
+  const [testMessage, setTestMessage] = useState("Olá do Uplink");
+  const [sendingTest, setSendingTest] = useState(false);
 
   const fetchUserData = async () => {
     try {
@@ -613,6 +619,72 @@ const Dashboard = () => {
     }
   };
 
+  const handleSendTestMessage = async () => {
+    if (!orgData?.api_session || !orgData?.api_token) {
+      toast.error("Token não encontrado.");
+      return;
+    }
+    
+    if (!testPhone || !testMessage) {
+      toast.error("Preencha o número e a mensagem.");
+      return;
+    }
+    
+    // Validação básica do número
+    const phoneRegex = /^55\d{10,11}$/;
+    if (!phoneRegex.test(testPhone)) {
+      toast.error("Número inválido. Use o formato: 5511999999999");
+      return;
+    }
+    
+    setSendingTest(true);
+    try {
+      console.log('Enviando mensagem de teste:', {
+        session: orgData.api_session,
+        phone: testPhone,
+        message: testMessage
+      });
+      
+      const response = await fetch(
+        `https://wpp.panda42.com.br/api/${orgData.api_session}/send-message`,
+        {
+          method: 'POST',
+          headers: {
+            'accept': '*/*',
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${orgData.api_token}`
+          },
+          body: JSON.stringify({
+            phone: testPhone,
+            isGroup: false,
+            isNewsletter: false,
+            isLid: false,
+            message: testMessage
+          })
+        }
+      );
+      
+      if (!response.ok) {
+        const errorData = await response.text();
+        throw new Error(`Erro ${response.status}: ${errorData}`);
+      }
+      
+      const result = await response.json();
+      console.log('Resposta do envio:', result);
+      
+      toast.success("Mensagem enviada com sucesso!");
+      
+      // Limpar apenas o número, manter a mensagem padrão
+      setTestPhone("");
+      
+    } catch (error: any) {
+      console.error('Erro ao enviar mensagem:', error);
+      toast.error(error.message || "Erro ao enviar mensagem");
+    } finally {
+      setSendingTest(false);
+    }
+  };
+
   const handleLogout = async () => {
     await supabase.auth.signOut();
     navigate("/login");
@@ -924,6 +996,79 @@ const Dashboard = () => {
             )}
           </Card>
         </motion.div>
+
+          {/* Test Message Card - Só mostra quando conectado */}
+          {orgData?.api_token && 
+           sessionStatus?.status === true && 
+           sessionStatus?.message?.toUpperCase() === 'CONNECTED' && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.3 }}
+            >
+              <Card className="bg-card/90 backdrop-blur-sm border-border/50 shadow-elegant">
+                <CardHeader>
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg flex items-center justify-center">
+                      <MessageSquare className="w-5 h-5 text-white" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-lg">Teste de Envio</CardTitle>
+                      <CardDescription>Envie uma mensagem de teste via API</CardDescription>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-3">
+                    <div>
+                      <Label htmlFor="test-phone">Número de Telefone</Label>
+                      <Input
+                        id="test-phone"
+                        type="text"
+                        placeholder="5511999999999"
+                        value={testPhone}
+                        onChange={(e) => setTestPhone(e.target.value)}
+                        className="font-mono"
+                      />
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Formato: 55 + DDD + número (somente números)
+                      </p>
+                    </div>
+                    
+                    <div>
+                      <Label htmlFor="test-message">Mensagem</Label>
+                      <Textarea
+                        id="test-message"
+                        placeholder="Digite sua mensagem..."
+                        value={testMessage}
+                        onChange={(e) => setTestMessage(e.target.value)}
+                        className="resize-none"
+                        rows={3}
+                      />
+                    </div>
+                    
+                    <Button
+                      onClick={handleSendTestMessage}
+                      disabled={sendingTest || !testPhone || !testMessage}
+                      className="w-full gap-2 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700"
+                    >
+                      {sendingTest ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          Enviando...
+                        </>
+                      ) : (
+                        <>
+                          <Send className="w-4 h-4" />
+                          Enviar Mensagem de Teste
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          )}
         </motion.div>
       </main>
     </div>
