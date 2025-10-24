@@ -152,12 +152,12 @@ const SessionMonitoring = () => {
     toast.success("Sessões atualizadas");
   };
 
-  // Auto-refresh a cada 60 segundos
+  // Auto-refresh a cada 30 minutos
   useEffect(() => {
     if (userEmail === "contato@upevolution.com.br") {
       const interval = setInterval(() => {
         fetchSessions();
-      }, 60000);
+      }, 1800000);
 
       return () => clearInterval(interval);
     }
