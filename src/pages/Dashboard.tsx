@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -97,6 +97,7 @@ const Dashboard = () => {
   const [testPhone, setTestPhone] = useState("");
   const [testMessage, setTestMessage] = useState("Olá do Uplink");
   const [sendingTest, setSendingTest] = useState(false);
+  const [generatingQrCode, setGeneratingQrCode] = useState(false);
 
   const fetchUserData = async () => {
     try {
@@ -174,56 +175,6 @@ const Dashboard = () => {
     }
   };
 
-  useEffect(() => {
-    fetchUserData();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === "SIGNED_OUT") {
-        navigate("/login");
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, [navigate]);
-
-  // Polling automático a cada 10 segundos
-  useEffect(() => {
-    if (!orgData?.api_session || !orgData?.api_token) return;
-    
-    checkConnectionStatus();
-    
-    const intervalId = setInterval(checkConnectionStatus, 10000);
-    
-    return () => clearInterval(intervalId);
-  }, [orgData?.api_session, orgData?.api_token]);
-
-  // Timer de expiração do QR Code (50 segundos)
-  useEffect(() => {
-    if (sessionStatus?.qrCode) {
-      setQrExpiresIn(50);
-      
-      const intervalId = setInterval(() => {
-        setQrExpiresIn(prev => {
-          if (prev === null || prev <= 1) {
-            clearInterval(intervalId);
-            // Limpar QR Code quando expirar
-            setSessionStatus(current => ({
-              ...current,
-              qrCode: undefined,
-              message: 'Offline'
-            }));
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-      
-      return () => clearInterval(intervalId);
-    } else {
-      setQrExpiresIn(null);
-    }
-  }, [sessionStatus?.qrCode]);
-
   const fetchSessionStatus = async (orgSession: string, token?: string) => {
     const authToken = token || orgData?.api_token;
     if (!authToken) return;
@@ -251,7 +202,7 @@ const Dashboard = () => {
     }
   };
 
-  const checkConnectionStatus = async () => {
+  const checkConnectionStatus = useCallback(async () => {
     if (!orgData?.api_session || !orgData?.api_token) return;
     
     try {
@@ -285,15 +236,16 @@ const Dashboard = () => {
     } catch (error) {
       console.error('Erro ao verificar conexão:', error);
     }
-  };
+  }, [orgData?.api_session, orgData?.api_token]);
 
-  const handleStartSession = async () => {
+  const handleStartSession = useCallback(async () => {
     if (!orgData?.api_session || !orgData?.api_token) {
       toast.error("Token não encontrado.");
       return;
     }
     
     setStartingSession(true);
+    setGeneratingQrCode(true);
     try {
       console.log('Iniciando sessão:', orgData.api_session);
       
@@ -314,10 +266,10 @@ const Dashboard = () => {
         throw new Error(`Erro ao iniciar sessão: ${startResponse.status}`);
       }
       
-      toast.success("Sessão iniciada! Aguarde o QR Code...");
+      toast.info("Gerando QR Code, aguarde 10 segundos...");
       
-      // 2. Aguardar 5 segundos para processamento
-      await new Promise(resolve => setTimeout(resolve, 5000));
+      // 2. Aguardar 10 segundos para processamento
+      await new Promise(resolve => setTimeout(resolve, 10000));
       
       // 3. Buscar QR Code
       const qrResponse = await fetch(
@@ -343,6 +295,7 @@ const Dashboard = () => {
           message: 'qrcode',
           qrCode: reader.result as string 
         });
+        setGeneratingQrCode(false);
         toast.success("QR Code gerado! Escaneie para conectar.");
       };
       
@@ -351,15 +304,64 @@ const Dashboard = () => {
     } catch (error: any) {
       console.error('Erro ao iniciar sessão:', error);
       toast.error(error.message || "Erro ao iniciar sessão");
+      setGeneratingQrCode(false);
     } finally {
       setStartingSession(false);
     }
-  };
+  }, [orgData?.api_session, orgData?.api_token]);
+
+  useEffect(() => {
+    fetchUserData();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "SIGNED_OUT") {
+        navigate("/login");
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [navigate]);
+
+  // Polling automático a cada 10 segundos
+  useEffect(() => {
+    if (!orgData?.api_session || !orgData?.api_token) return;
+    
+    checkConnectionStatus();
+    
+    const intervalId = setInterval(checkConnectionStatus, 10000);
+    
+    return () => clearInterval(intervalId);
+  }, [orgData?.api_session, orgData?.api_token, checkConnectionStatus]);
+
+  // Timer de expiração do QR Code (50 segundos)
+  useEffect(() => {
+    if (sessionStatus?.qrCode) {
+      setQrExpiresIn(50);
+      
+      const intervalId = setInterval(() => {
+        setQrExpiresIn(prev => {
+          if (prev === null || prev <= 1) {
+            clearInterval(intervalId);
+            // Auto-reiniciar quando QR Code expirar
+            toast.info("QR Code expirado! Gerando novo QR Code...");
+            handleStartSession();
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+      
+      return () => clearInterval(intervalId);
+    } else {
+      setQrExpiresIn(null);
+    }
+  }, [sessionStatus?.qrCode, handleStartSession]);
 
   const handleCreateSession = async () => {
     if (!orgData) return;
     
     setCreatingSession(true);
+    setGeneratingQrCode(true);
     try {
       const { data, error } = await supabase.functions.invoke('generate-whatsapp-token', {
         body: { organization_name: orgData.name }
@@ -410,8 +412,10 @@ const Dashboard = () => {
         );
         
         if (startResponse.ok) {
-          // Aguardar 2 segundos e buscar QR Code
-          await new Promise(resolve => setTimeout(resolve, 2000));
+          toast.info("Gerando QR Code, aguarde 10 segundos...");
+          
+          // Aguardar 10 segundos e buscar QR Code
+          await new Promise(resolve => setTimeout(resolve, 10000));
           
           const qrResponse = await fetch(
             `https://wpp.panda42.com.br/api/${data.session}/qrcode-session`,
@@ -432,10 +436,15 @@ const Dashboard = () => {
                 message: 'qrcode',
                 qrCode: reader.result as string 
               });
+              setGeneratingQrCode(false);
               toast.success("QR Code gerado!");
             };
             reader.readAsDataURL(blob);
+          } else {
+            setGeneratingQrCode(false);
           }
+        } else {
+          setGeneratingQrCode(false);
         }
       } else {
         throw new Error(data.error || "Erro ao gerar token");
@@ -443,6 +452,7 @@ const Dashboard = () => {
     } catch (error: any) {
       console.error("Erro ao criar sessão:", error);
       toast.error(error.message || "Erro ao criar sessão");
+      setGeneratingQrCode(false);
     } finally {
       setCreatingSession(false);
     }
@@ -455,6 +465,7 @@ const Dashboard = () => {
     }
     
     setRefreshingQr(true);
+    setGeneratingQrCode(true);
     try {
       // 1. Primeiro, iniciar/reiniciar a sessão
       console.log('Iniciando sessão:', orgData.api_session);
@@ -474,8 +485,10 @@ const Dashboard = () => {
         throw new Error(`Erro ao iniciar sessão: ${startResponse.status}`);
       }
       
-      // Aguardar 5 segundos para a sessão inicializar
-      await new Promise(resolve => setTimeout(resolve, 5000));
+      toast.info("Gerando novo QR Code, aguarde 10 segundos...");
+      
+      // Aguardar 10 segundos para a sessão inicializar
+      await new Promise(resolve => setTimeout(resolve, 10000));
       
       // 2. Agora buscar o QR Code
       console.log('Buscando QR Code:', orgData.api_session);
@@ -502,6 +515,7 @@ const Dashboard = () => {
           message: 'qrcode',
           qrCode: reader.result as string 
         });
+        setGeneratingQrCode(false);
         toast.success("QR Code atualizado!");
       };
       
@@ -509,6 +523,7 @@ const Dashboard = () => {
     } catch (error: any) {
       console.error('Erro ao renovar QR Code:', error);
       toast.error(error.message || "Erro ao renovar QR Code");
+      setGeneratingQrCode(false);
     } finally {
       setRefreshingQr(false);
     }
@@ -896,7 +911,17 @@ const Dashboard = () => {
                 )}
               </CardHeader>
               <CardContent>
-                {sessionStatus?.qrCode ? (
+                {generatingQrCode && (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="flex items-center justify-center gap-3 py-8 text-blue-600"
+                  >
+                    <RefreshCw className="w-5 h-5 animate-spin" />
+                    <span className="font-medium">Gerando QR Code, aguarde...</span>
+                  </motion.div>
+                )}
+                {!generatingQrCode && sessionStatus?.qrCode ? (
                   <motion.div
                     initial={{ opacity: 0, scale: 0.9 }}
                     animate={{ opacity: 1, scale: 1 }}
@@ -943,7 +968,7 @@ const Dashboard = () => {
                       Escaneie o QR Code com seu WhatsApp para conectar
                     </p>
                   </motion.div>
-                ) : sessionStatus?.status === true && sessionStatus?.message?.toUpperCase() === 'CONNECTED' ? (
+                ) : !generatingQrCode && sessionStatus?.status === true && sessionStatus?.message?.toUpperCase() === 'CONNECTED' ? (
                   <div className="text-center py-8">
                     <div className="w-16 h-16 mx-auto bg-gradient-to-br from-primary to-secondary rounded-full flex items-center justify-center mb-4">
                       <Server className="w-8 h-8 text-primary-foreground" />
@@ -953,13 +978,13 @@ const Dashboard = () => {
                       Seu WhatsApp está online e pronto para uso
                     </p>
                   </div>
-                ) : (
+                ) : !generatingQrCode ? (
                   <div className="text-center py-8 text-muted-foreground">
                     <QrCode className="w-12 h-12 mx-auto mb-4 opacity-50" />
                     <p>Nenhuma sessão ativa</p>
                     <p className="text-sm mt-2">Clique em "Criar Sessão" para começar</p>
                   </div>
-              )}
+              ) : null}
             </CardContent>
 
             {/* Rodapé com controles permanentes */}
