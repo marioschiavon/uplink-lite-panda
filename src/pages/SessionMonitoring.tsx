@@ -51,12 +51,19 @@ const SessionMonitoring = () => {
       const email = user.email || "";
       setUserEmail(email);
 
-      // Verificar se é o email do superadmin
-    if (email !== "contato@upevolution.com.br") {
-      toast.error("Acesso negado - apenas superadmin");
-      navigate("/dashboard");
-      return;
-    }
+      // Check if user has superadmin role in database
+      const { data: roleData, error: roleError } = await supabase
+        .from('user_roles' as any)
+        .select('role')
+        .eq('user_id', user.id)
+        .eq('role', 'superadmin')
+        .single();
+
+      if (roleError || !roleData) {
+        toast.error("Acesso negado - apenas superadmin");
+        navigate("/dashboard");
+        return;
+      }
 
       fetchSessions();
     };
