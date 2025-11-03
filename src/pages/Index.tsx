@@ -58,7 +58,7 @@ const Index = () => {
 
               <div className="flex flex-col sm:flex-row gap-4 pt-4">
                 <Button 
-                  onClick={() => navigate("/login")} 
+                  onClick={() => navigate("/checkout")} 
                   size="lg" 
                   className="text-lg h-14 px-8 shadow-elegant hover:shadow-glow transition-all"
                 >
@@ -220,7 +220,7 @@ const Index = () => {
             <CardHeader className="text-center pb-8">
               <CardTitle className="text-3xl">Sessão API WhatsApp</CardTitle>
               <div className="mt-4">
-                <span className="text-5xl font-bold text-primary">R$ 50</span>
+                <span className="text-5xl font-bold text-primary">R$ 69,90</span>
                 <span className="text-muted-foreground text-xl">/mês</span>
               </div>
             </CardHeader>
@@ -249,7 +249,7 @@ const Index = () => {
               </div>
 
               <Button 
-                onClick={() => navigate("/login")} 
+                onClick={() => navigate("/checkout")} 
                 className="w-full h-14 text-lg mt-6 shadow-elegant hover:shadow-glow transition-all"
               >
                 Contratar agora
@@ -440,7 +440,7 @@ const Index = () => {
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button 
-              onClick={() => navigate("/login")}
+              onClick={() => navigate("/checkout")}
               size="lg"
               variant="secondary"
               className="text-lg h-14 px-8 shadow-xl hover:shadow-2xl transition-all"

@@ -2,3 +2,9 @@ project_id = "kfsvpbujmetlendgwnrs"
 
 [functions.generate-whatsapp-token]
 verify_jwt = true
+
+[functions.create-subscription]
+verify_jwt = true
+
+[functions.mercadopago-webhook]
+verify_jwt = false
