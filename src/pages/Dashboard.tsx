@@ -744,7 +744,7 @@ const Dashboard = () => {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            {userData?.email === "contato@upevolution.com.br" && (
+            {userData?.role === 'superadmin' && (
               <Button 
                 variant="outline" 
                 onClick={() => navigate("/monitoring")}
