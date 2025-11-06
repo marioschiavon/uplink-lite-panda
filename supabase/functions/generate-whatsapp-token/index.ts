@@ -19,6 +19,25 @@ serve(async (req) => {
       throw new Error('Missing authorization header');
     }
 
+    // 1.5. Receber e validar session_name do body
+    const { session_name } = await req.json();
+    
+    if (!session_name || typeof session_name !== 'string') {
+      throw new Error('session_name is required');
+    }
+
+    // Validar formato do session_name
+    const validPattern = /^[a-zA-Z0-9_-]+$/;
+    if (!validPattern.test(session_name)) {
+      throw new Error('Invalid session name format. Use only letters, numbers, hyphens and underscores');
+    }
+
+    if (session_name.length < 3 || session_name.length > 50) {
+      throw new Error('Session name must be between 3 and 50 characters');
+    }
+
+    console.log(`Received session_name: ${session_name}`);
+
     // 2. Criar cliente Supabase
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
@@ -61,10 +80,8 @@ serve(async (req) => {
       throw new Error('Organization not found');
     }
 
-    // Usar ID da organização como identificador de sessão (sem espaços)
-    const sessionIdentifier = orgData.id;
     const organizationName = orgData.name;
-    console.log(`Generating token for organization: ${organizationName} (session: ${sessionIdentifier})`);
+    console.log(`Generating token for organization: ${organizationName} (session: ${session_name})`);
 
     // 6. Buscar secret key
     const secretKey = Deno.env.get('WPP_SECRET_KEY');
@@ -72,9 +89,9 @@ serve(async (req) => {
       throw new Error('WPP_SECRET_KEY not configured');
     }
 
-    // 7. Fazer chamada para API externa usando ID da organização
-    const apiUrl = `https://wpp.panda42.com.br/api/${sessionIdentifier}/${secretKey}/generate-token`;
-    console.log(`Calling external API with session ID: ${sessionIdentifier}`);
+    // 7. Fazer chamada para API externa usando session_name escolhido pelo usuário
+    const apiUrl = `https://wpp.panda42.com.br/api/${session_name}/${secretKey}/generate-token`;
+    console.log(`Calling external API with session name: ${session_name}`);
 
     const response = await fetch(apiUrl, {
       method: 'POST',
@@ -97,6 +114,7 @@ serve(async (req) => {
         session: data.session,        // Nome da sessão
         token: data.token,            // Apenas o hash
         token_full: data.full,        // Token completo
+        session_name: session_name,   // Nome escolhido pelo usuário
         organization_name: organizationName
       }),
       { 

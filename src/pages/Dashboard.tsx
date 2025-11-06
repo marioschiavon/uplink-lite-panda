@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import CreateOrgModal from "@/components/CreateOrgModal";
+import CreateSessionModal from "@/components/CreateSessionModal";
 import { toast } from "sonner";
 import { LogOut, Server, Key, QrCode, Copy, RefreshCw, Loader2, XCircle, Trash2, Plus, MessageSquare, Send } from "lucide-react";
 import { motion } from "framer-motion";
@@ -87,6 +88,7 @@ const Dashboard = () => {
   const [userData, setUserData] = useState<UserData | null>(null);
   const [orgData, setOrgData] = useState<OrgData | null>(null);
   const [showOrgModal, setShowOrgModal] = useState(false);
+  const [showCreateSessionModal, setShowCreateSessionModal] = useState(false);
   const [sessionStatus, setSessionStatus] = useState<SessionStatus | null>(null);
   const [creatingSession, setCreatingSession] = useState(false);
   const [startingSession, setStartingSession] = useState(false);
@@ -372,20 +374,22 @@ const Dashboard = () => {
     }
   }, [sessionStatus?.qrCode, handleStartSession]);
 
-  const handleCreateSession = async () => {
+  const handleCreateSession = async (sessionName: string) => {
     if (!orgData) return;
     
     // Verificar se já existe uma sessão ativa
     if (orgData.api_session || orgData.api_token) {
       toast.error("Você já possui uma sessão ativa. Para criar uma nova, primeiro exclua a sessão existente.");
+      setShowCreateSessionModal(false);
       return;
     }
     
     setCreatingSession(true);
     setGeneratingQrCode(true);
+    setShowCreateSessionModal(false);
     try {
       const { data, error } = await supabase.functions.invoke('generate-whatsapp-token', {
-        body: { organization_name: orgData.name }
+        body: { session_name: sessionName }
       });
 
       if (error) throw error;
@@ -749,6 +753,12 @@ const Dashboard = () => {
         }}
         onClose={() => setShowOrgModal(false)}
       />
+
+      <CreateSessionModal
+        open={showCreateSessionModal}
+        onSessionCreated={(sessionName) => handleCreateSession(sessionName)}
+        onClose={() => setShowCreateSessionModal(false)}
+      />
       
       {/* Header */}
       <header className="border-b border-border/50 backdrop-blur-sm bg-card/30 relative z-10">
@@ -870,7 +880,7 @@ const Dashboard = () => {
                 {/* Botão Criar Sessão - quando não tem token */}
                 {!orgData?.api_token && (
                   <Button
-                    onClick={handleCreateSession}
+                    onClick={() => setShowCreateSessionModal(true)}
                     disabled={creatingSession}
                     className="gap-2 bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-700"
                   >
