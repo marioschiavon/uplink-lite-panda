@@ -107,14 +107,49 @@ serve(async (req) => {
     const data = await response.json();
     console.log(`Token generated successfully for organization`);
 
-    // 9. Retornar resposta com todos os campos
+    // 8. Criar registro na tabela sessions usando service_role
+    const supabaseAdmin = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
+
+    const { data: sessionData, error: insertError } = await supabaseAdmin
+      .from('sessions')
+      .insert({
+        organization_id: userData.organization_id,
+        name: session_name,
+        api_session: session_name,
+        api_token: data.token,
+        api_token_full: data.full,
+        status: 'pending'
+      })
+      .select()
+      .single();
+
+    if (insertError) {
+      console.error('Error inserting session:', insertError);
+      throw new Error('Failed to create session in database');
+    }
+
+    // 9. Atualizar organizations (compatibilidade temporária)
+    await supabaseAdmin
+      .from('organizations')
+      .update({ 
+        api_session: session_name,
+        api_token: data.token,
+        api_token_full: data.full
+      })
+      .eq('id', userData.organization_id);
+
+    // 10. Retornar resposta com session_id
     return new Response(
       JSON.stringify({
         success: true,
-        session: data.session,        // Nome da sessão
-        token: data.token,            // Apenas o hash
-        token_full: data.full,        // Token completo
-        session_name: session_name,   // Nome escolhido pelo usuário
+        session: data.session,
+        token: data.token,
+        token_full: data.full,
+        session_id: sessionData.id,  // ID do registro em sessions
+        session_name: session_name,
         organization_name: organizationName
       }),
       { 

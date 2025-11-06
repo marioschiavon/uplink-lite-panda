@@ -25,9 +25,17 @@ interface OrgData {
   id: string;
   name: string;
   plan: string | null;
-  api_session: string | null;
-  api_token: string | null;
-  api_token_full: string | null;
+}
+
+interface SessionData {
+  id: string;
+  name: string;
+  api_session: string;
+  api_token: string;
+  api_token_full: string;
+  status: string | null;
+  qr: string | null;
+  organization_id: string;
 }
 
 interface SessionStatus {
@@ -87,6 +95,7 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [userData, setUserData] = useState<UserData | null>(null);
   const [orgData, setOrgData] = useState<OrgData | null>(null);
+  const [currentSession, setCurrentSession] = useState<SessionData | null>(null);
   const [showOrgModal, setShowOrgModal] = useState(false);
   const [showCreateSessionModal, setShowCreateSessionModal] = useState(false);
   const [sessionStatus, setSessionStatus] = useState<SessionStatus | null>(null);
@@ -161,21 +170,40 @@ const Dashboard = () => {
 
       if (orgError) throw orgError;
       
-      // Cast para OrgData com valores padrão para novas colunas
       const orgDataTyped: OrgData = {
         id: org.id,
         name: org.name,
-        plan: org.plan,
-        api_session: (org as any).api_session || null,
-        api_token: org.api_token,
-        api_token_full: (org as any).api_token_full || null
+        plan: org.plan
       };
       
       setOrgData(orgDataTyped);
 
-      // Fetch session status from external API
-      if (orgDataTyped.api_session && orgDataTyped.api_token) {
-        fetchSessionStatus(orgDataTyped.api_session, orgDataTyped.api_token);
+      // Buscar sessões da organização
+      const { data: sessions, error: sessionsError } = await supabase
+        .from('sessions')
+        .select('*')
+        .eq('organization_id', userRecord.organization_id)
+        .order('created_at', { ascending: false });
+
+      if (sessionsError) {
+        console.error('Error fetching sessions:', sessionsError);
+      } else if (sessions && sessions.length > 0) {
+        const activeSession = sessions[0];
+        const typedSession: SessionData = {
+          id: activeSession.id,
+          name: activeSession.name,
+          api_session: (activeSession as any).api_session,
+          api_token: (activeSession as any).api_token,
+          api_token_full: (activeSession as any).api_token_full,
+          status: (activeSession as any).status,
+          qr: (activeSession as any).qr,
+          organization_id: activeSession.organization_id
+        };
+        setCurrentSession(typedSession);
+        
+        if (typedSession.api_session && typedSession.api_token) {
+          fetchSessionStatus(typedSession.api_session, typedSession.api_token);
+        }
       }
     } catch (error: any) {
       console.error("❌ Error fetching data:", error);
@@ -193,7 +221,7 @@ const Dashboard = () => {
   };
 
   const fetchSessionStatus = async (orgSession: string, token?: string) => {
-    const authToken = token || orgData?.api_token;
+    const authToken = token || currentSession?.api_token;
     if (!authToken) return;
     
     try {
@@ -220,15 +248,15 @@ const Dashboard = () => {
   };
 
   const checkConnectionStatus = useCallback(async () => {
-    if (!orgData?.api_session || !orgData?.api_token) return;
+    if (!currentSession?.api_session || !currentSession?.api_token) return;
     
     try {
       const response = await fetch(
-        `https://wpp.panda42.com.br/api/${orgData.api_session}/check-connection-session`,
+        `https://wpp.panda42.com.br/api/${currentSession.api_session}/check-connection-session`,
         {
           headers: {
             'accept': '*/*',
-            'Authorization': `Bearer ${orgData.api_token}`
+            'Authorization': `Bearer ${currentSession.api_token}`
           }
         }
       );
@@ -253,27 +281,27 @@ const Dashboard = () => {
     } catch (error) {
       console.error('Erro ao verificar conexão:', error);
     }
-  }, [orgData?.api_session, orgData?.api_token]);
+  }, [currentSession?.api_session, currentSession?.api_token]);
 
   const handleStartSession = useCallback(async () => {
-    if (!orgData?.api_session || !orgData?.api_token) {
-      toast.error("Token não encontrado.");
+    if (!currentSession?.api_session || !currentSession?.api_token) {
+      toast.error("Sessão não encontrada.");
       return;
     }
     
     setStartingSession(true);
     setGeneratingQrCode(true);
     try {
-      console.log('Iniciando sessão:', orgData.api_session);
+      console.log('Iniciando sessão:', currentSession.api_session);
       
       // 1. Chamar start-session
       const startResponse = await fetch(
-        `https://wpp.panda42.com.br/api/${orgData.api_session}/start-session`,
+        `https://wpp.panda42.com.br/api/${currentSession.api_session}/start-session`,
         {
           method: 'POST',
           headers: {
             'accept': '*/*',
-            'Authorization': `Bearer ${orgData.api_token}`
+            'Authorization': `Bearer ${currentSession.api_token}`
           },
           body: ''
         }
@@ -290,11 +318,11 @@ const Dashboard = () => {
       
       // 3. Buscar QR Code
       const qrResponse = await fetch(
-        `https://wpp.panda42.com.br/api/${orgData.api_session}/qrcode-session`,
+        `https://wpp.panda42.com.br/api/${currentSession.api_session}/qrcode-session`,
         {
           headers: {
             'accept': '*/*',
-            'Authorization': `Bearer ${orgData.api_token}`
+            'Authorization': `Bearer ${currentSession.api_token}`
           }
         }
       );
@@ -325,7 +353,7 @@ const Dashboard = () => {
     } finally {
       setStartingSession(false);
     }
-  }, [orgData?.api_session, orgData?.api_token]);
+  }, [currentSession?.api_session, currentSession?.api_token]);
 
   useEffect(() => {
     fetchUserData();
@@ -341,14 +369,14 @@ const Dashboard = () => {
 
   // Polling automático a cada 10 segundos
   useEffect(() => {
-    if (!orgData?.api_session || !orgData?.api_token) return;
+    if (!currentSession?.api_session || !currentSession?.api_token) return;
     
     checkConnectionStatus();
     
     const intervalId = setInterval(checkConnectionStatus, 10000);
     
     return () => clearInterval(intervalId);
-  }, [orgData?.api_session, orgData?.api_token, checkConnectionStatus]);
+  }, [currentSession?.api_session, currentSession?.api_token, checkConnectionStatus]);
 
   // Timer de expiração do QR Code (50 segundos)
   useEffect(() => {
@@ -378,7 +406,7 @@ const Dashboard = () => {
     if (!orgData) return;
     
     // Verificar se já existe uma sessão ativa
-    if (orgData.api_session || orgData.api_token) {
+    if (currentSession) {
       toast.error("Você já possui uma sessão ativa. Para criar uma nova, primeiro exclua a sessão existente.");
       setShowCreateSessionModal(false);
       return;
@@ -394,43 +422,39 @@ const Dashboard = () => {
 
       if (error) throw error;
 
-      if (data.success && data.session && data.token) {
-        console.log('Token gerado:', {
-          session: data.session,
-          token: data.token,
-          full: data.token_full
-        });
-
-        // Salvar os 3 campos no banco de dados
-        const { error: updateError } = await supabase
-          .from('organizations')
-          .update({ 
-            api_session: data.session,
-            api_token: data.token,
-            api_token_full: data.token_full
-          })
-          .eq('id', orgData.id);
-
-        if (updateError) throw updateError;
-
-        // Atualizar estado local
-        setOrgData({ 
-          ...orgData, 
-          api_session: data.session,
-          api_token: data.token,
-          api_token_full: data.token_full
-        });
+      if (data.success && data.session_id) {
+        // Buscar o registro da sessão criada
+        const { data: newSession, error: fetchError } = await supabase
+          .from('sessions')
+          .select('*')
+          .eq('id', data.session_id)
+          .single();
         
-        toast.success("Token gerado! Iniciando sessão...");
+        if (fetchError) throw fetchError;
+        
+        const typedSession: SessionData = {
+          id: newSession.id,
+          name: newSession.name,
+          api_session: (newSession as any).api_session,
+          api_token: (newSession as any).api_token,
+          api_token_full: (newSession as any).api_token_full,
+          status: (newSession as any).status,
+          qr: (newSession as any).qr,
+          organization_id: newSession.organization_id
+        };
+        
+        setCurrentSession(typedSession);
+        
+        toast.success("Sessão criada! Iniciando...");
         
         // Iniciar sessão e buscar QR Code
         const startResponse = await fetch(
-          `https://wpp.panda42.com.br/api/${data.session}/start-session`,
+          `https://wpp.panda42.com.br/api/${typedSession.api_session}/start-session`,
           {
             method: 'POST',
             headers: {
               'accept': '*/*',
-              'Authorization': `Bearer ${data.token}`
+              'Authorization': `Bearer ${typedSession.api_token}`
             },
             body: ''
           }
@@ -443,11 +467,11 @@ const Dashboard = () => {
           await new Promise(resolve => setTimeout(resolve, 10000));
           
           const qrResponse = await fetch(
-            `https://wpp.panda42.com.br/api/${data.session}/qrcode-session`,
+            `https://wpp.panda42.com.br/api/${typedSession.api_session}/qrcode-session`,
             {
               headers: {
                 'accept': '*/*',
-                'Authorization': `Bearer ${data.token}`
+                'Authorization': `Bearer ${typedSession.api_token}`
               }
             }
           );
@@ -484,8 +508,8 @@ const Dashboard = () => {
   };
 
   const handleRefreshQr = async () => {
-    if (!orgData?.api_session || !orgData?.api_token) {
-      toast.error("Token não encontrado. Crie uma sessão primeiro.");
+    if (!currentSession?.api_session || !currentSession?.api_token) {
+      toast.error("Sessão não encontrada. Crie uma sessão primeiro.");
       return;
     }
     
@@ -493,14 +517,14 @@ const Dashboard = () => {
     setGeneratingQrCode(true);
     try {
       // 1. Primeiro, iniciar/reiniciar a sessão
-      console.log('Iniciando sessão:', orgData.api_session);
+      console.log('Iniciando sessão:', currentSession.api_session);
       const startResponse = await fetch(
-        `https://wpp.panda42.com.br/api/${orgData.api_session}/start-session`,
+        `https://wpp.panda42.com.br/api/${currentSession.api_session}/start-session`,
         {
           method: 'POST',
           headers: {
             'accept': '*/*',
-            'Authorization': `Bearer ${orgData.api_token}`
+            'Authorization': `Bearer ${currentSession.api_token}`
           },
           body: ''
         }
@@ -516,13 +540,13 @@ const Dashboard = () => {
       await new Promise(resolve => setTimeout(resolve, 10000));
       
       // 2. Agora buscar o QR Code
-      console.log('Buscando QR Code:', orgData.api_session);
+      console.log('Buscando QR Code:', currentSession.api_session);
       const response = await fetch(
-        `https://wpp.panda42.com.br/api/${orgData.api_session}/qrcode-session`,
+        `https://wpp.panda42.com.br/api/${currentSession.api_session}/qrcode-session`,
         {
           headers: {
             'accept': '*/*',
-            'Authorization': `Bearer ${orgData.api_token}`
+            'Authorization': `Bearer ${currentSession.api_token}`
           }
         }
       );
@@ -555,22 +579,22 @@ const Dashboard = () => {
   };
 
   const handleCloseSession = async () => {
-    if (!orgData?.api_session || !orgData?.api_token) {
+    if (!currentSession?.api_session || !currentSession?.api_token) {
       toast.error("Sessão não encontrada");
       return;
     }
     
     setClosingSession(true);
     try {
-      console.log('Fechando sessão:', orgData.api_session);
+      console.log('Fechando sessão:', currentSession.api_session);
       
       const response = await fetch(
-        `https://wpp.panda42.com.br/api/${orgData.api_session}/close-session`,
+        `https://wpp.panda42.com.br/api/${currentSession.api_session}/close-session`,
         {
           method: 'POST',
           headers: {
             'accept': '*/*',
-            'Authorization': `Bearer ${orgData.api_token}`
+            'Authorization': `Bearer ${currentSession.api_token}`
           },
           body: ''
         }
@@ -593,7 +617,7 @@ const Dashboard = () => {
   };
 
   const handleLogoutSession = async () => {
-    if (!orgData?.api_session || !orgData?.api_token) {
+    if (!currentSession?.api_session || !currentSession?.api_token) {
       toast.error("Sessão não encontrada");
       return;
     }
@@ -604,15 +628,15 @@ const Dashboard = () => {
     
     setLoggingOut(true);
     try {
-      console.log('Fazendo logout da sessão:', orgData.api_session);
+      console.log('Fazendo logout da sessão:', currentSession.api_session);
       
       const response = await fetch(
-        `https://wpp.panda42.com.br/api/${orgData.api_session}/logout-session`,
+        `https://wpp.panda42.com.br/api/${currentSession.api_session}/logout-session`,
         {
           method: 'POST',
           headers: {
             'accept': '*/*',
-            'Authorization': `Bearer ${orgData.api_token}`
+            'Authorization': `Bearer ${currentSession.api_token}`
           },
           body: ''
         }
@@ -634,13 +658,15 @@ const Dashboard = () => {
       
       if (updateError) throw updateError;
       
-      setOrgData({ 
-        ...orgData, 
-        api_session: null,
-        api_token: null,
-        api_token_full: null
-      });
+      // Deletar registro da sessão
+      if (currentSession) {
+        await supabase
+          .from('sessions')
+          .delete()
+          .eq('id', currentSession.id);
+      }
       
+      setCurrentSession(null);
       setSessionStatus({ status: false, message: 'offline' });
       toast.success("Sessão removida com sucesso!");
       
@@ -653,15 +679,15 @@ const Dashboard = () => {
   };
 
   const handleCopyApiToken = () => {
-    if (orgData?.api_token) {
-      navigator.clipboard.writeText(orgData.api_token);
+    if (currentSession?.api_token) {
+      navigator.clipboard.writeText(currentSession.api_token);
       toast.success("API Token copiado!");
     }
   };
 
   const handleSendTestMessage = async () => {
-    if (!orgData?.api_session || !orgData?.api_token) {
-      toast.error("Token não encontrado.");
+    if (!currentSession?.api_session || !currentSession?.api_token) {
+      toast.error("Sessão não encontrada.");
       return;
     }
     
@@ -680,19 +706,19 @@ const Dashboard = () => {
     setSendingTest(true);
     try {
       console.log('Enviando mensagem de teste:', {
-        session: orgData.api_session,
+        session: currentSession.api_session,
         phone: testPhone,
         message: testMessage
       });
       
       const response = await fetch(
-        `https://wpp.panda42.com.br/api/${orgData.api_session}/send-message`,
+        `https://wpp.panda42.com.br/api/${currentSession.api_session}/send-message`,
         {
           method: 'POST',
           headers: {
             'accept': '*/*',
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${orgData.api_token}`
+            'Authorization': `Bearer ${currentSession.api_token}`
           },
           body: JSON.stringify({
             phone: `55${testPhone}`,
@@ -821,7 +847,7 @@ const Dashboard = () => {
           </Card>
 
           {/* API Key Card - Só mostra quando conectado */}
-          {orgData?.api_token && 
+          {currentSession?.api_token && 
            sessionStatus?.status === true && 
            sessionStatus?.message?.toUpperCase() === 'CONNECTED' && (
             <motion.div
@@ -854,10 +880,10 @@ const Dashboard = () => {
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <code className="text-sm bg-muted/50 px-3 py-2 rounded-md block overflow-x-auto break-all">
-                    {orgData.api_token}
+                    {currentSession.api_token}
                   </code>
                   <p className="text-xs text-muted-foreground">
-                    Use este token no header: <code className="text-xs bg-muted px-1 py-0.5 rounded">Authorization: Bearer {orgData.api_token}</code>
+                    Use este token no header: <code className="text-xs bg-muted px-1 py-0.5 rounded">Authorization: Bearer {currentSession.api_token}</code>
                   </p>
                 </CardContent>
               </Card>
@@ -878,7 +904,7 @@ const Dashboard = () => {
                 </div>
                 
                 {/* Botão Criar Sessão - quando não tem token */}
-                {!orgData?.api_token && (
+                {!currentSession && (
                   <Button
                     onClick={() => setShowCreateSessionModal(true)}
                     disabled={creatingSession}
@@ -899,7 +925,7 @@ const Dashboard = () => {
                 )}
                 
                 {/* Botão Iniciar Sessão - quando tem token mas está desconectado */}
-                {orgData?.api_token && 
+                {currentSession?.api_token && 
                  (!sessionStatus || sessionStatus.status === false) && 
                  !sessionStatus?.qrCode && (
                   <Button
@@ -1019,7 +1045,7 @@ const Dashboard = () => {
             </CardContent>
 
             {/* Rodapé com controles permanentes */}
-            {orgData?.api_token && (
+            {currentSession && (
               <CardFooter className="border-t border-border/50 pt-4">
                 <div className="flex items-center justify-between w-full">
                   {/* Lado esquerdo - Botões de gestão */}
@@ -1057,7 +1083,7 @@ const Dashboard = () => {
                   
                   {/* Lado direito - Info da sessão */}
                   <div className="text-xs text-muted-foreground">
-                    Sessão: <span className="font-mono">{orgData.api_session}</span>
+                    Sessão: <span className="font-mono">{currentSession.api_session}</span>
                   </div>
                 </div>
               </CardFooter>
@@ -1066,7 +1092,7 @@ const Dashboard = () => {
         </motion.div>
 
           {/* Test Message Card - Só mostra quando conectado */}
-          {orgData?.api_token && 
+          {currentSession && 
            sessionStatus?.status === true && 
            sessionStatus?.message?.toUpperCase() === 'CONNECTED' && (
             <motion.div

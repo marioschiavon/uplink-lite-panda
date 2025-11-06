@@ -74,28 +74,38 @@ const SessionMonitoring = () => {
     try {
       setLoading(true);
 
-      // Buscar todas as organizações
-      const { data: orgs, error } = await supabase
-        .from('organizations')
-        .select('*')
+      // Buscar sessões com JOIN em organizations
+      const { data: sessionsData, error } = await supabase
+        .from('sessions')
+        .select(`
+          *,
+          organizations (
+            name,
+            plan,
+            api_message_usage,
+            api_message_limit,
+            session_limit,
+            agent_limit
+          )
+        `)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
 
-      if (orgs) {
-        const sessionsWithStatus: SessionData[] = (orgs as any[]).map(org => ({
-          id: org.id,
-          name: org.name,
-          api_session: org.api_session || null,
-          api_token: org.api_token || null,
-          api_token_full: org.api_token_full || null,
-          plan: org.plan || null,
-          created_at: org.created_at,
-          updated_at: org.updated_at,
-          api_message_usage: org.api_message_usage || 0,
-          api_message_limit: org.api_message_limit || 0,
-          session_limit: org.session_limit || 0,
-          agent_limit: org.agent_limit || 0,
+      if (sessionsData) {
+        const sessionsWithStatus: SessionData[] = (sessionsData as any[]).map(session => ({
+          id: session.id,
+          name: session.name,
+          api_session: session.api_session || null,
+          api_token: session.api_token || null,
+          api_token_full: session.api_token_full || null,
+          plan: session.organizations?.plan || null,
+          created_at: session.created_at,
+          updated_at: session.updated_at,
+          api_message_usage: session.organizations?.api_message_usage || 0,
+          api_message_limit: session.organizations?.api_message_limit || 0,
+          session_limit: session.organizations?.session_limit || 0,
+          agent_limit: session.organizations?.agent_limit || 0,
           status: 'loading' as const,
           statusMessage: 'Verificando...'
         }));
@@ -103,18 +113,18 @@ const SessionMonitoring = () => {
         setSessions(sessionsWithStatus);
 
         // Verificar status de cada sessão em paralelo
-        const statusPromises = (orgs as any[]).map(async (org) => {
-          if (!org.api_session || !org.api_token) {
-            return { id: org.id, status: 'no-session' as const, statusMessage: 'Sem sessão ativa' };
+        const statusPromises = (sessionsData as any[]).map(async (session) => {
+          if (!session.api_session || !session.api_token) {
+            return { id: session.id, status: 'no-session' as const, statusMessage: 'Sem sessão ativa' };
           }
 
           try {
             const response = await fetch(
-              `https://wpp.panda42.com.br/api/${org.api_session}/check-connection-session`,
+              `https://wpp.panda42.com.br/api/${session.api_session}/check-connection-session`,
               {
                 headers: {
                   'accept': '*/*',
-                  'Authorization': `Bearer ${org.api_token}`
+                  'Authorization': `Bearer ${session.api_token}`
                 }
               }
             );
@@ -122,16 +132,16 @@ const SessionMonitoring = () => {
             const data = await response.json();
             
             if (data.message === 'QRCODE') {
-              return { id: org.id, status: 'qrcode' as const, statusMessage: 'Aguardando QR Code' };
+              return { id: session.id, status: 'qrcode' as const, statusMessage: 'Aguardando QR Code' };
             }
 
             return {
-              id: org.id,
+              id: session.id,
               status: data.status ? 'online' as const : 'offline' as const,
               statusMessage: data.message || 'Desconhecido'
             };
           } catch (error) {
-            return { id: org.id, status: 'offline' as const, statusMessage: 'Erro ao verificar' };
+            return { id: session.id, status: 'offline' as const, statusMessage: 'Erro ao verificar' };
           }
         });
 
