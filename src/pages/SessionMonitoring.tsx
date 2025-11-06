@@ -51,15 +51,14 @@ const SessionMonitoring = () => {
       const email = user.email || "";
       setUserEmail(email);
 
-      // Check if user has superadmin role in database
-      const { data: roleData, error: roleError } = await supabase
-        .from('user_roles' as any)
-        .select('role')
+      // Check if user is in superadmin_users table
+      const { data: superadminData, error: superadminError } = await supabase
+        .from('superadmin_users' as any)
+        .select('user_id')
         .eq('user_id', user.id)
-        .eq('role', 'superadmin')
-        .single();
+        .maybeSingle();
 
-      if (roleError || !roleData) {
+      if (superadminError || !superadminData) {
         toast.error("Acesso negado - apenas superadmin");
         navigate("/dashboard");
         return;
