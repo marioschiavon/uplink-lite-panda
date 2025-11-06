@@ -49,49 +49,32 @@ serve(async (req) => {
 
     console.log(`User organization: ${userData.organization_id}`);
 
-    // 5. Buscar nome da organização
+    // 5. Buscar dados da organização
     const { data: orgData, error: orgError } = await supabase
       .from('organizations')
-      .select('name')
+      .select('id, name')
       .eq('id', userData.organization_id)
       .single();
 
-    if (orgError || !orgData?.name) {
+    if (orgError || !orgData) {
       console.error('Organization data error:', orgError);
       throw new Error('Organization not found');
     }
 
+    // Usar ID da organização como identificador de sessão (sem espaços)
+    const sessionIdentifier = orgData.id;
     const organizationName = orgData.name;
-    console.log(`Generating token for organization: ${organizationName}`);
+    console.log(`Generating token for organization: ${organizationName} (session: ${sessionIdentifier})`);
 
-    // 6. Validate and sanitize organization name
-    if (!organizationName || typeof organizationName !== 'string') {
-      throw new Error('Invalid organization name');
-    }
-    
-    // Validate length
-    if (organizationName.length > 100) {
-      throw new Error('Organization name too long');
-    }
-    
-    // Validate characters (alphanumeric, spaces, hyphens, underscores only)
-    const validNamePattern = /^[a-zA-Z0-9\s\-_]+$/;
-    if (!validNamePattern.test(organizationName)) {
-      throw new Error('Organization name contains invalid characters');
-    }
-    
-    // URL encode the organization name
-    const encodedOrgName = encodeURIComponent(organizationName);
-
-    // 7. Buscar secret key
+    // 6. Buscar secret key
     const secretKey = Deno.env.get('WPP_SECRET_KEY');
     if (!secretKey) {
       throw new Error('WPP_SECRET_KEY not configured');
     }
 
-    // 8. Fazer chamada para API externa com nome codificado
-    const apiUrl = `https://wpp.panda42.com.br/api/${encodedOrgName}/${secretKey}/generate-token`;
-    console.log(`Calling external API for organization: ${encodedOrgName}`);
+    // 7. Fazer chamada para API externa usando ID da organização
+    const apiUrl = `https://wpp.panda42.com.br/api/${sessionIdentifier}/${secretKey}/generate-token`;
+    console.log(`Calling external API with session ID: ${sessionIdentifier}`);
 
     const response = await fetch(apiUrl, {
       method: 'POST',
