@@ -361,6 +361,12 @@ const Dashboard = () => {
   const handleCreateSession = async () => {
     if (!orgData) return;
     
+    // Verificar se já existe uma sessão ativa
+    if (orgData.api_session || orgData.api_token) {
+      toast.error("Você já possui uma sessão ativa. Para criar uma nova, primeiro exclua a sessão existente.");
+      return;
+    }
+    
     setCreatingSession(true);
     setGeneratingQrCode(true);
     try {
