@@ -165,8 +165,8 @@ const Dashboard = () => {
       setOrgData(orgDataTyped);
 
       // Fetch session status from external API
-      if (orgDataTyped.api_session) {
-        fetchSessionStatus(orgDataTyped.api_session);
+      if (orgDataTyped.api_session && orgDataTyped.api_token) {
+        fetchSessionStatus(orgDataTyped.api_session, orgDataTyped.api_token);
       }
     } catch (error: any) {
       console.error("Error fetching data:", error);
