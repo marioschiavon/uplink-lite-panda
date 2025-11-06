@@ -124,6 +124,7 @@ const Dashboard = () => {
             id: user.id,
             email: user.email,
             name: user.user_metadata?.name || null,
+            role: 'admin',
           })
           .select()
           .single();
@@ -147,7 +148,7 @@ const Dashboard = () => {
         .from("organizations")
         .select("*")
         .eq("id", userRecord.organization_id)
-        .single();
+        .maybeSingle();
 
       if (orgError) throw orgError;
       
