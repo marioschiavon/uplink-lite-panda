@@ -136,6 +136,13 @@ const Dashboard = () => {
       }
 
       setUserData(userRecord);
+      console.log('✅ User data loaded:', {
+        id: userRecord.id,
+        email: userRecord.email,
+        role: userRecord.role,
+        organization_id: userRecord.organization_id,
+        isSuperadmin: userRecord.role === 'superadmin'
+      });
 
       // Check if user has organization
       if (!userRecord.organization_id) {
@@ -169,8 +176,15 @@ const Dashboard = () => {
         fetchSessionStatus(orgDataTyped.api_session, orgDataTyped.api_token);
       }
     } catch (error: any) {
-      console.error("Error fetching data:", error);
-      toast.error("Erro ao carregar dados");
+      console.error("❌ Error fetching data:", error);
+      console.error("📋 Error details:", {
+        message: error.message,
+        code: error.code,
+        details: error.details,
+        hint: error.hint,
+        stack: error.stack
+      });
+      toast.error(`Erro ao carregar dados: ${error.message || 'Erro desconhecido'}`);
     } finally {
       setLoading(false);
     }
