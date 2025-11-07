@@ -306,6 +306,7 @@ const Dashboard = () => {
       console.error('Erro ao iniciar sessão:', error);
       toast.error(error.message || "Erro ao iniciar sessão");
       setGeneratingQrCode(false);
+      setShowSessionModal(false);
     } finally {
       setStartingSession(false);
     }
@@ -338,6 +339,55 @@ const Dashboard = () => {
     return () => clearInterval(intervalId);
   }, [sessions, checkConnectionStatus]);
 
+  // Polling inteligente de QR Code (apenas quando modal está aberto e sessão não conectada)
+  useEffect(() => {
+    if (!selectedSession || !showSessionModal) return;
+    
+    const sessionStatus = sessionsStatus[selectedSession.id];
+    
+    // Só fazer polling se sessão não está conectada e está aguardando QR Code
+    if (sessionStatus?.status === false && (generatingQrCode || sessionStatus.qrCode)) {
+      const intervalId = setInterval(async () => {
+        if (!selectedSession.api_session || !selectedSession.api_token) return;
+        
+        try {
+          const qrResponse = await fetch(
+            `https://wpp.panda42.com.br/api/${selectedSession.api_session}/qrcode-session`,
+            {
+              headers: {
+                'accept': '*/*',
+                'Authorization': `Bearer ${selectedSession.api_token}`
+              }
+            }
+          );
+          
+          if (qrResponse.ok) {
+            const blob = await qrResponse.blob();
+            const reader = new FileReader();
+            
+            reader.onloadend = () => {
+              setSessionsStatus(prev => ({
+                ...prev,
+                [selectedSession.id]: {
+                  status: false,
+                  message: 'qrcode',
+                  qrCode: reader.result as string
+                }
+              }));
+              setGeneratingQrCode(false);
+            };
+            
+            reader.readAsDataURL(blob);
+          }
+        } catch (error) {
+          console.error('Erro no polling de QR Code:', error);
+        }
+      }, 5000);
+      
+      return () => clearInterval(intervalId);
+    }
+  }, [selectedSession, showSessionModal, sessionsStatus, generatingQrCode]);
+
   // Timer de expiração do QR Code (50 segundos) para sessão selecionada
   useEffect(() => {
     if (selectedSession && sessionsStatus[selectedSession.id]?.qrCode) {
@@ -347,8 +397,9 @@ const Dashboard = () => {
         setQrExpiresIn(prev => {
           if (prev === null || prev <= 1) {
             clearInterval(intervalId);
-            toast.info("QR Code expirado! Gerando novo QR Code...");
-            handleStartSession(selectedSession);
+            toast.warning("QR Code expirado! Clique em 'Renovar QR' para gerar um novo.", {
+              duration: 5000
+            });
             return 0;
           }
           return prev - 1;
@@ -359,7 +410,7 @@ const Dashboard = () => {
     } else {
       setQrExpiresIn(null);
     }
-  }, [selectedSession, sessionsStatus, handleStartSession]);
+  }, [selectedSession, sessionsStatus]);
 
   const handleCreateSession = async (sessionName: string) => {
     if (!orgData) return;
@@ -404,13 +455,8 @@ const Dashboard = () => {
         };
         
         setSessions(prev => [...prev, typedSession]);
-        setSelectedSession(typedSession);
-        setShowSessionModal(true);
         
-        toast.success("Sessão criada! Iniciando...");
-        
-        // Iniciar sessão
-        await handleStartSession(typedSession);
+        toast.success("Sessão criada com sucesso! Clique em 'Iniciar Sessão' para conectar.");
       } else {
         throw new Error(data.error || "Erro ao gerar token");
       }
@@ -420,6 +466,7 @@ const Dashboard = () => {
       setGeneratingQrCode(false);
     } finally {
       setCreatingSession(false);
+      setGeneratingQrCode(false);
     }
   };
 
@@ -433,27 +480,9 @@ const Dashboard = () => {
     setGeneratingQrCode(true);
     
     try {
-      const startResponse = await fetch(
-        `https://wpp.panda42.com.br/api/${session.api_session}/start-session`,
-        {
-          method: 'POST',
-          headers: {
-            'accept': '*/*',
-            'Authorization': `Bearer ${session.api_token}`
-          },
-          body: ''
-        }
-      );
+      toast.info("Buscando QR Code atualizado...");
       
-      if (!startResponse.ok) {
-        throw new Error(`Erro ao iniciar sessão: ${startResponse.status}`);
-      }
-      
-      toast.info("Gerando novo QR Code, aguarde 10 segundos...");
-      
-      await new Promise(resolve => setTimeout(resolve, 10000));
-      
-      const response = await fetch(
+      const qrResponse = await fetch(
         `https://wpp.panda42.com.br/api/${session.api_session}/qrcode-session`,
         {
           headers: {
@@ -463,11 +492,11 @@ const Dashboard = () => {
         }
       );
       
-      if (!response.ok) {
-        throw new Error(`Erro ao buscar QR Code: ${response.status}`);
+      if (!qrResponse.ok) {
+        throw new Error(`Erro ao buscar QR Code: ${qrResponse.status}`);
       }
       
-      const blob = await response.blob();
+      const blob = await qrResponse.blob();
       const reader = new FileReader();
       
       reader.onloadend = () => {
@@ -479,14 +508,16 @@ const Dashboard = () => {
             qrCode: reader.result as string
           }
         }));
+        setQrExpiresIn(50);
         setGeneratingQrCode(false);
         toast.success("QR Code atualizado!");
       };
       
       reader.readAsDataURL(blob);
+      
     } catch (error: any) {
-      console.error('Erro ao renovar QR Code:', error);
-      toast.error(error.message || "Erro ao renovar QR Code");
+      console.error('Erro ao atualizar QR Code:', error);
+      toast.error(error.message || "Erro ao atualizar QR Code");
       setGeneratingQrCode(false);
     } finally {
       setRefreshingQr(false);
