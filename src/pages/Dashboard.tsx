@@ -2,16 +2,18 @@ import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import CreateOrgModal from "@/components/CreateOrgModal";
-import CreateSessionModal from "@/components/CreateSessionModal";
-import { toast } from "sonner";
-import { LogOut, Server, Key, QrCode, Copy, RefreshCw, Loader2, XCircle, Trash2, Plus, MessageSquare, Send } from "lucide-react";
-import { motion } from "framer-motion";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import CreateOrgModal from "@/components/CreateOrgModal";
+import CreateSessionModal from "@/components/CreateSessionModal";
+import SessionManagementCard from "@/components/SessionManagementCard";
+import SessionQrModal from "@/components/SessionQrModal";
+import { toast } from "sonner";
+import { LogOut, Server, Key, Plus, MessageSquare, Send, Copy } from "lucide-react";
+import { motion } from "framer-motion";
 
 interface UserData {
   id: string;
@@ -25,17 +27,20 @@ interface OrgData {
   id: string;
   name: string;
   plan: string | null;
+  session_limit: number | null;
 }
 
 interface SessionData {
   id: string;
   name: string;
-  api_session: string;
-  api_token: string;
-  api_token_full: string;
+  api_session: string | null;
+  api_token: string | null;
+  api_token_full: string | null;
   status: string | null;
   qr: string | null;
   organization_id: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 interface SessionStatus {
@@ -44,61 +49,17 @@ interface SessionStatus {
   qrCode?: string;
 }
 
-// Componente de Indicador de Status
-const StatusIndicator = ({ sessionStatus }: { sessionStatus: SessionStatus | null }) => {
-  const message = sessionStatus?.message?.toUpperCase() || 'OFFLINE';
-  const isConnected = sessionStatus?.status === true;
-  
-  const getStatusColor = () => {
-    if (!sessionStatus || !isConnected) return 'bg-red-500';
-    
-    switch (message) {
-      case 'CONNECTED':
-      case 'ONLINE':
-        return 'bg-green-500';
-      case 'QRCODE':
-        return 'bg-yellow-500';
-      default:
-        return 'bg-gray-500';
-    }
-  };
-  
-  const getStatusText = () => {
-    if (!sessionStatus) return 'Offline';
-    if (!isConnected) return 'Desconectado';
-    
-    switch (message) {
-      case 'CONNECTED':
-        return 'Conectado';
-      case 'ONLINE':
-        return 'Online';
-      case 'QRCODE':
-        return 'Aguardando QR Code';
-      default:
-        return sessionStatus.message || 'Desconhecido';
-    }
-  };
-  
-  return (
-    <div className="flex items-center gap-2">
-      <div className="relative">
-        <div className={`w-3 h-3 rounded-full ${getStatusColor()}`} />
-        <div className={`absolute inset-0 w-3 h-3 rounded-full ${getStatusColor()} animate-ping opacity-75`} />
-      </div>
-      <span className="text-sm font-medium">{getStatusText()}</span>
-    </div>
-  );
-};
-
 const Dashboard = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [userData, setUserData] = useState<UserData | null>(null);
   const [orgData, setOrgData] = useState<OrgData | null>(null);
-  const [currentSession, setCurrentSession] = useState<SessionData | null>(null);
+  const [sessions, setSessions] = useState<SessionData[]>([]);
+  const [selectedSession, setSelectedSession] = useState<SessionData | null>(null);
   const [showOrgModal, setShowOrgModal] = useState(false);
   const [showCreateSessionModal, setShowCreateSessionModal] = useState(false);
-  const [sessionStatus, setSessionStatus] = useState<SessionStatus | null>(null);
+  const [showSessionModal, setShowSessionModal] = useState(false);
+  const [sessionsStatus, setSessionsStatus] = useState<Record<string, SessionStatus>>({});
   const [creatingSession, setCreatingSession] = useState(false);
   const [startingSession, setStartingSession] = useState(false);
   const [refreshingQr, setRefreshingQr] = useState(false);
@@ -109,6 +70,7 @@ const Dashboard = () => {
   const [testMessage, setTestMessage] = useState("Olá do Uplink");
   const [sendingTest, setSendingTest] = useState(false);
   const [generatingQrCode, setGeneratingQrCode] = useState(false);
+  const [selectedTestSession, setSelectedTestSession] = useState<SessionData | null>(null);
 
   const fetchUserData = async () => {
     try {
@@ -118,7 +80,6 @@ const Dashboard = () => {
         return;
       }
 
-      // Fetch user data
       const { data: userRecord, error: userError } = await supabase
         .from("users")
         .select("*")
@@ -128,7 +89,6 @@ const Dashboard = () => {
       if (userError) throw userError;
 
       if (!userRecord) {
-        // Create user record if doesn't exist
         const { data: newUser, error: createError } = await supabase
           .from("users")
           .insert({
@@ -147,21 +107,12 @@ const Dashboard = () => {
       }
 
       setUserData(userRecord);
-      console.log('✅ User data loaded:', {
-        id: userRecord.id,
-        email: userRecord.email,
-        role: userRecord.role,
-        organization_id: userRecord.organization_id,
-        isSuperadmin: userRecord.role === 'superadmin'
-      });
 
-      // Check if user has organization
       if (!userRecord.organization_id) {
         setShowOrgModal(true);
         return;
       }
 
-      // Fetch organization data
       const { data: org, error: orgError } = await supabase
         .from("organizations")
         .select("*")
@@ -173,13 +124,14 @@ const Dashboard = () => {
       const orgDataTyped: OrgData = {
         id: org.id,
         name: org.name,
-        plan: org.plan
+        plan: org.plan,
+        session_limit: org.session_limit
       };
       
       setOrgData(orgDataTyped);
 
-      // Buscar sessões da organização
-      const { data: sessions, error: sessionsError } = await supabase
+      // Buscar todas as sessões da organização
+      const { data: sessionsData, error: sessionsError } = await supabase
         .from('sessions')
         .select('*')
         .eq('organization_id', userRecord.organization_id)
@@ -187,76 +139,80 @@ const Dashboard = () => {
 
       if (sessionsError) {
         console.error('Error fetching sessions:', sessionsError);
-      } else if (sessions && sessions.length > 0) {
-        const activeSession = sessions[0];
-        const typedSession: SessionData = {
-          id: activeSession.id,
-          name: activeSession.name,
-          api_session: (activeSession as any).api_session,
-          api_token: (activeSession as any).api_token,
-          api_token_full: (activeSession as any).api_token_full,
-          status: (activeSession as any).status,
-          qr: (activeSession as any).qr,
-          organization_id: activeSession.organization_id
-        };
-        setCurrentSession(typedSession);
+      } else if (sessionsData && sessionsData.length > 0) {
+        const typedSessions: SessionData[] = sessionsData.map((s: any) => ({
+          id: s.id,
+          name: s.name,
+          api_session: s.api_session,
+          api_token: s.api_token,
+          api_token_full: s.api_token_full,
+          status: s.status,
+          qr: s.qr,
+          organization_id: s.organization_id,
+          created_at: s.created_at,
+          updated_at: s.updated_at
+        }));
         
-        if (typedSession.api_session && typedSession.api_token) {
-          fetchSessionStatus(typedSession.api_session, typedSession.api_token);
-        }
+        setSessions(typedSessions);
+        
+        // Buscar status de cada sessão
+        await Promise.all(
+          typedSessions.map(async (session) => {
+            if (session.api_session && session.api_token) {
+              await fetchSessionStatus(session.id, session.api_session, session.api_token);
+            }
+          })
+        );
       }
     } catch (error: any) {
       console.error("❌ Error fetching data:", error);
-      console.error("📋 Error details:", {
-        message: error.message,
-        code: error.code,
-        details: error.details,
-        hint: error.hint,
-        stack: error.stack
-      });
       toast.error(`Erro ao carregar dados: ${error.message || 'Erro desconhecido'}`);
     } finally {
       setLoading(false);
     }
   };
 
-  const fetchSessionStatus = async (orgSession: string, token?: string) => {
-    const authToken = token || currentSession?.api_token;
-    if (!authToken) return;
-    
+  const fetchSessionStatus = async (sessionId: string, apiSession: string, apiToken: string) => {
     try {
       const response = await fetch(
-        `https://wpp.panda42.com.br/api/${orgSession}/check-connection-session`,
+        `https://wpp.panda42.com.br/api/${apiSession}/check-connection-session`,
         {
           headers: {
             'accept': '*/*',
-            'Authorization': `Bearer ${authToken}`
+            'Authorization': `Bearer ${apiToken}`
           }
         }
       );
       
       if (response.ok) {
         const data = await response.json();
-        setSessionStatus(data);
+        setSessionsStatus(prev => ({
+          ...prev,
+          [sessionId]: data
+        }));
       } else {
-        setSessionStatus({ status: false, message: 'Offline' });
+        setSessionsStatus(prev => ({
+          ...prev,
+          [sessionId]: { status: false, message: 'Offline' }
+        }));
       }
     } catch (error) {
-      console.error("Error fetching session status:", error);
-      setSessionStatus({ status: false, message: 'Offline' });
+      console.error(`Error fetching session status for ${sessionId}:`, error);
+      setSessionsStatus(prev => ({
+        ...prev,
+        [sessionId]: { status: false, message: 'Offline' }
+      }));
     }
   };
 
-  const checkConnectionStatus = useCallback(async () => {
-    if (!currentSession?.api_session || !currentSession?.api_token) return;
-    
+  const checkConnectionStatus = useCallback(async (sessionId: string, apiSession: string, apiToken: string) => {
     try {
       const response = await fetch(
-        `https://wpp.panda42.com.br/api/${currentSession.api_session}/check-connection-session`,
+        `https://wpp.panda42.com.br/api/${apiSession}/check-connection-session`,
         {
           headers: {
             'accept': '*/*',
-            'Authorization': `Bearer ${currentSession.api_token}`
+            'Authorization': `Bearer ${apiToken}`
           }
         }
       );
@@ -264,44 +220,43 @@ const Dashboard = () => {
       if (response.ok) {
         const data = await response.json();
         
-        // CRITICAL: Usar callback do setState para acessar valor mais recente
-        setSessionStatus(currentStatus => {
-          // Se conectado, atualiza
+        setSessionsStatus(currentStatus => {
+          const current = currentStatus[sessionId];
           if (data.status === true) {
-            return data;
+            return { ...currentStatus, [sessionId]: data };
           }
-          // Se desconectado E não há QR Code ativo no estado ATUAL, atualiza
-          if (!currentStatus?.qrCode) {
-            return data;
+          if (!current?.qrCode) {
+            return { ...currentStatus, [sessionId]: data };
           }
-          // Se há QR Code ativo no estado ATUAL, preserva
           return currentStatus;
         });
       }
     } catch (error) {
       console.error('Erro ao verificar conexão:', error);
     }
-  }, [currentSession?.api_session, currentSession?.api_token]);
+  }, []);
 
-  const handleStartSession = useCallback(async () => {
-    if (!currentSession?.api_session || !currentSession?.api_token) {
+  const handleStartSession = useCallback(async (session: SessionData) => {
+    if (!session.api_session || !session.api_token) {
       toast.error("Sessão não encontrada.");
       return;
     }
     
     setStartingSession(true);
     setGeneratingQrCode(true);
+    setSelectedSession(session);
+    setShowSessionModal(true);
+    
     try {
-      console.log('Iniciando sessão:', currentSession.api_session);
+      console.log('Iniciando sessão:', session.api_session);
       
-      // 1. Chamar start-session
       const startResponse = await fetch(
-        `https://wpp.panda42.com.br/api/${currentSession.api_session}/start-session`,
+        `https://wpp.panda42.com.br/api/${session.api_session}/start-session`,
         {
           method: 'POST',
           headers: {
             'accept': '*/*',
-            'Authorization': `Bearer ${currentSession.api_token}`
+            'Authorization': `Bearer ${session.api_token}`
           },
           body: ''
         }
@@ -313,16 +268,14 @@ const Dashboard = () => {
       
       toast.info("Gerando QR Code, aguarde 10 segundos...");
       
-      // 2. Aguardar 10 segundos para processamento
       await new Promise(resolve => setTimeout(resolve, 10000));
       
-      // 3. Buscar QR Code
       const qrResponse = await fetch(
-        `https://wpp.panda42.com.br/api/${currentSession.api_session}/qrcode-session`,
+        `https://wpp.panda42.com.br/api/${session.api_session}/qrcode-session`,
         {
           headers: {
             'accept': '*/*',
-            'Authorization': `Bearer ${currentSession.api_token}`
+            'Authorization': `Bearer ${session.api_token}`
           }
         }
       );
@@ -335,11 +288,14 @@ const Dashboard = () => {
       const reader = new FileReader();
       
       reader.onloadend = () => {
-        setSessionStatus({ 
-          status: false,
-          message: 'qrcode',
-          qrCode: reader.result as string 
-        });
+        setSessionsStatus(prev => ({
+          ...prev,
+          [session.id]: {
+            status: false,
+            message: 'qrcode',
+            qrCode: reader.result as string
+          }
+        }));
         setGeneratingQrCode(false);
         toast.success("QR Code gerado! Escaneie para conectar.");
       };
@@ -353,7 +309,7 @@ const Dashboard = () => {
     } finally {
       setStartingSession(false);
     }
-  }, [currentSession?.api_session, currentSession?.api_token]);
+  }, []);
 
   useEffect(() => {
     fetchUserData();
@@ -367,29 +323,32 @@ const Dashboard = () => {
     return () => subscription.unsubscribe();
   }, [navigate]);
 
-  // Polling automático a cada 10 segundos
+  // Polling automático a cada 10 segundos para todas as sessões
   useEffect(() => {
-    if (!currentSession?.api_session || !currentSession?.api_token) return;
+    if (sessions.length === 0) return;
     
-    checkConnectionStatus();
-    
-    const intervalId = setInterval(checkConnectionStatus, 10000);
+    const intervalId = setInterval(() => {
+      sessions.forEach(session => {
+        if (session.api_session && session.api_token) {
+          checkConnectionStatus(session.id, session.api_session, session.api_token);
+        }
+      });
+    }, 10000);
     
     return () => clearInterval(intervalId);
-  }, [currentSession?.api_session, currentSession?.api_token, checkConnectionStatus]);
+  }, [sessions, checkConnectionStatus]);
 
-  // Timer de expiração do QR Code (50 segundos)
+  // Timer de expiração do QR Code (50 segundos) para sessão selecionada
   useEffect(() => {
-    if (sessionStatus?.qrCode) {
+    if (selectedSession && sessionsStatus[selectedSession.id]?.qrCode) {
       setQrExpiresIn(50);
       
       const intervalId = setInterval(() => {
         setQrExpiresIn(prev => {
           if (prev === null || prev <= 1) {
             clearInterval(intervalId);
-            // Auto-reiniciar quando QR Code expirar
             toast.info("QR Code expirado! Gerando novo QR Code...");
-            handleStartSession();
+            handleStartSession(selectedSession);
             return 0;
           }
           return prev - 1;
@@ -400,14 +359,15 @@ const Dashboard = () => {
     } else {
       setQrExpiresIn(null);
     }
-  }, [sessionStatus?.qrCode, handleStartSession]);
+  }, [selectedSession, sessionsStatus, handleStartSession]);
 
   const handleCreateSession = async (sessionName: string) => {
     if (!orgData) return;
     
-    // Verificar se já existe uma sessão ativa
-    if (currentSession) {
-      toast.error("Você já possui uma sessão ativa. Para criar uma nova, primeiro exclua a sessão existente.");
+    // Verificar limite de sessões
+    const activeSessionsCount = sessions.length;
+    if (orgData.session_limit && activeSessionsCount >= orgData.session_limit) {
+      toast.error(`Limite de ${orgData.session_limit} sessões atingido. Exclua uma sessão existente.`);
       setShowCreateSessionModal(false);
       return;
     }
@@ -415,6 +375,7 @@ const Dashboard = () => {
     setCreatingSession(true);
     setGeneratingQrCode(true);
     setShowCreateSessionModal(false);
+    
     try {
       const { data, error } = await supabase.functions.invoke('generate-whatsapp-token', {
         body: { session_name: sessionName }
@@ -423,7 +384,6 @@ const Dashboard = () => {
       if (error) throw error;
 
       if (data.success && data.session_id) {
-        // Buscar o registro da sessão criada
         const { data: newSession, error: fetchError } = await supabase
           .from('sessions')
           .select('*')
@@ -443,58 +403,14 @@ const Dashboard = () => {
           organization_id: newSession.organization_id
         };
         
-        setCurrentSession(typedSession);
+        setSessions(prev => [...prev, typedSession]);
+        setSelectedSession(typedSession);
+        setShowSessionModal(true);
         
         toast.success("Sessão criada! Iniciando...");
         
-        // Iniciar sessão e buscar QR Code
-        const startResponse = await fetch(
-          `https://wpp.panda42.com.br/api/${typedSession.api_session}/start-session`,
-          {
-            method: 'POST',
-            headers: {
-              'accept': '*/*',
-              'Authorization': `Bearer ${typedSession.api_token}`
-            },
-            body: ''
-          }
-        );
-        
-        if (startResponse.ok) {
-          toast.info("Gerando QR Code, aguarde 10 segundos...");
-          
-          // Aguardar 10 segundos e buscar QR Code
-          await new Promise(resolve => setTimeout(resolve, 10000));
-          
-          const qrResponse = await fetch(
-            `https://wpp.panda42.com.br/api/${typedSession.api_session}/qrcode-session`,
-            {
-              headers: {
-                'accept': '*/*',
-                'Authorization': `Bearer ${typedSession.api_token}`
-              }
-            }
-          );
-          
-          if (qrResponse.ok) {
-            const blob = await qrResponse.blob();
-            const reader = new FileReader();
-            reader.onloadend = () => {
-              setSessionStatus({ 
-                status: false,
-                message: 'qrcode',
-                qrCode: reader.result as string 
-              });
-              setGeneratingQrCode(false);
-              toast.success("QR Code gerado!");
-            };
-            reader.readAsDataURL(blob);
-          } else {
-            setGeneratingQrCode(false);
-          }
-        } else {
-          setGeneratingQrCode(false);
-        }
+        // Iniciar sessão
+        await handleStartSession(typedSession);
       } else {
         throw new Error(data.error || "Erro ao gerar token");
       }
@@ -507,24 +423,23 @@ const Dashboard = () => {
     }
   };
 
-  const handleRefreshQr = async () => {
-    if (!currentSession?.api_session || !currentSession?.api_token) {
-      toast.error("Sessão não encontrada. Crie uma sessão primeiro.");
+  const handleRefreshQr = async (session: SessionData) => {
+    if (!session.api_session || !session.api_token) {
+      toast.error("Sessão não encontrada.");
       return;
     }
     
     setRefreshingQr(true);
     setGeneratingQrCode(true);
+    
     try {
-      // 1. Primeiro, iniciar/reiniciar a sessão
-      console.log('Iniciando sessão:', currentSession.api_session);
       const startResponse = await fetch(
-        `https://wpp.panda42.com.br/api/${currentSession.api_session}/start-session`,
+        `https://wpp.panda42.com.br/api/${session.api_session}/start-session`,
         {
           method: 'POST',
           headers: {
             'accept': '*/*',
-            'Authorization': `Bearer ${currentSession.api_token}`
+            'Authorization': `Bearer ${session.api_token}`
           },
           body: ''
         }
@@ -536,17 +451,14 @@ const Dashboard = () => {
       
       toast.info("Gerando novo QR Code, aguarde 10 segundos...");
       
-      // Aguardar 10 segundos para a sessão inicializar
       await new Promise(resolve => setTimeout(resolve, 10000));
       
-      // 2. Agora buscar o QR Code
-      console.log('Buscando QR Code:', currentSession.api_session);
       const response = await fetch(
-        `https://wpp.panda42.com.br/api/${currentSession.api_session}/qrcode-session`,
+        `https://wpp.panda42.com.br/api/${session.api_session}/qrcode-session`,
         {
           headers: {
             'accept': '*/*',
-            'Authorization': `Bearer ${currentSession.api_token}`
+            'Authorization': `Bearer ${session.api_token}`
           }
         }
       );
@@ -559,11 +471,14 @@ const Dashboard = () => {
       const reader = new FileReader();
       
       reader.onloadend = () => {
-        setSessionStatus({ 
-          status: false,
-          message: 'qrcode',
-          qrCode: reader.result as string 
-        });
+        setSessionsStatus(prev => ({
+          ...prev,
+          [session.id]: {
+            status: false,
+            message: 'qrcode',
+            qrCode: reader.result as string
+          }
+        }));
         setGeneratingQrCode(false);
         toast.success("QR Code atualizado!");
       };
@@ -578,23 +493,22 @@ const Dashboard = () => {
     }
   };
 
-  const handleCloseSession = async () => {
-    if (!currentSession?.api_session || !currentSession?.api_token) {
+  const handleCloseSession = async (session: SessionData) => {
+    if (!session.api_session || !session.api_token) {
       toast.error("Sessão não encontrada");
       return;
     }
     
     setClosingSession(true);
+    
     try {
-      console.log('Fechando sessão:', currentSession.api_session);
-      
       const response = await fetch(
-        `https://wpp.panda42.com.br/api/${currentSession.api_session}/close-session`,
+        `https://wpp.panda42.com.br/api/${session.api_session}/close-session`,
         {
           method: 'POST',
           headers: {
             'accept': '*/*',
-            'Authorization': `Bearer ${currentSession.api_token}`
+            'Authorization': `Bearer ${session.api_token}`
           },
           body: ''
         }
@@ -605,7 +519,11 @@ const Dashboard = () => {
         throw new Error(`Erro ${response.status}: ${errorText}`);
       }
       
-      setSessionStatus({ status: false, message: 'offline' });
+      setSessionsStatus(prev => ({
+        ...prev,
+        [session.id]: { status: false, message: 'offline' }
+      }));
+      
       toast.success("Sessão fechada com sucesso!");
       await fetchUserData();
     } catch (error: any) {
@@ -616,78 +534,63 @@ const Dashboard = () => {
     }
   };
 
-  const handleLogoutSession = async () => {
-    if (!currentSession?.api_session || !currentSession?.api_token) {
-      toast.error("Sessão não encontrada");
-      return;
-    }
-    
-    if (!confirm("Tem certeza? Isso irá apagar completamente a sessão e você precisará criar uma nova.")) {
+  const handleDeleteSession = async (session: SessionData) => {
+    if (!confirm(`Tem certeza que deseja excluir a sessão "${session.name}"? Esta ação não pode ser desfeita.`)) {
       return;
     }
     
     setLoggingOut(true);
+    
     try {
-      console.log('Fazendo logout da sessão:', currentSession.api_session);
-      
-      const response = await fetch(
-        `https://wpp.panda42.com.br/api/${currentSession.api_session}/logout-session`,
-        {
-          method: 'POST',
-          headers: {
-            'accept': '*/*',
-            'Authorization': `Bearer ${currentSession.api_token}`
-          },
-          body: ''
+      // Fazer logout na API externa primeiro
+      if (session.api_session && session.api_token) {
+        try {
+          await fetch(
+            `https://wpp.panda42.com.br/api/${session.api_session}/logout-session`,
+            {
+              method: 'POST',
+              headers: {
+                'accept': '*/*',
+                'Authorization': `Bearer ${session.api_token}`
+              },
+              body: ''
+            }
+          );
+        } catch (apiError) {
+          console.warn('Erro ao fazer logout na API externa:', apiError);
         }
-      );
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Erro ${response.status}: ${errorText}`);
       }
       
-      const { error: updateError } = await supabase
-        .from('organizations')
-        .update({ 
-          api_session: null,
-          api_token: null,
-          api_token_full: null
-        })
-        .eq('id', orgData.id);
+      // Deletar do banco de dados
+      const { error } = await supabase
+        .from('sessions')
+        .delete()
+        .eq('id', session.id);
       
-      if (updateError) throw updateError;
+      if (error) throw error;
       
-      // Deletar registro da sessão
-      if (currentSession) {
-        await supabase
-          .from('sessions')
-          .delete()
-          .eq('id', currentSession.id);
+      // Remover da lista
+      setSessions(prev => prev.filter(s => s.id !== session.id));
+      
+      // Limpar sessão selecionada se for a mesma
+      if (selectedSession?.id === session.id) {
+        setSelectedSession(null);
+        setShowSessionModal(false);
       }
       
-      setCurrentSession(null);
-      setSessionStatus({ status: false, message: 'offline' });
-      toast.success("Sessão removida com sucesso!");
+      toast.success("Sessão excluída com sucesso!");
       
     } catch (error: any) {
-      console.error('Erro ao fazer logout:', error);
-      toast.error(error.message || "Erro ao fazer logout da sessão");
+      console.error('Erro ao excluir sessão:', error);
+      toast.error(error.message || "Erro ao excluir sessão");
     } finally {
       setLoggingOut(false);
     }
   };
 
-  const handleCopyApiToken = () => {
-    if (currentSession?.api_token) {
-      navigator.clipboard.writeText(currentSession.api_token);
-      toast.success("API Token copiado!");
-    }
-  };
-
   const handleSendTestMessage = async () => {
-    if (!currentSession?.api_session || !currentSession?.api_token) {
-      toast.error("Sessão não encontrada.");
+    if (!selectedTestSession?.api_session || !selectedTestSession?.api_token) {
+      toast.error("Selecione uma sessão ativa.");
       return;
     }
     
@@ -696,7 +599,6 @@ const Dashboard = () => {
       return;
     }
     
-    // Validação básica do número
     const phoneRegex = /^\d{10,11}$/;
     if (!phoneRegex.test(testPhone)) {
       toast.error("Número inválido. Use o formato: DDD + número (ex: 11987654321)");
@@ -704,21 +606,16 @@ const Dashboard = () => {
     }
     
     setSendingTest(true);
+    
     try {
-      console.log('Enviando mensagem de teste:', {
-        session: currentSession.api_session,
-        phone: testPhone,
-        message: testMessage
-      });
-      
       const response = await fetch(
-        `https://wpp.panda42.com.br/api/${currentSession.api_session}/send-message`,
+        `https://wpp.panda42.com.br/api/${selectedTestSession.api_session}/send-message`,
         {
           method: 'POST',
           headers: {
             'accept': '*/*',
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${currentSession.api_token}`
+            'Authorization': `Bearer ${selectedTestSession.api_token}`
           },
           body: JSON.stringify({
             phone: `55${testPhone}`,
@@ -735,12 +632,7 @@ const Dashboard = () => {
         throw new Error(`Erro ${response.status}: ${errorData}`);
       }
       
-      const result = await response.json();
-      console.log('Resposta do envio:', result);
-      
       toast.success("Mensagem enviada com sucesso!");
-      
-      // Limpar apenas o número, manter a mensagem padrão
       setTestPhone("");
       
     } catch (error: any) {
@@ -767,9 +659,11 @@ const Dashboard = () => {
     );
   }
 
+  const activeSessions = sessions.filter(s => sessionsStatus[s.id]?.status === true);
+
   return (
     <div className="min-h-screen bg-background">
-      <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/10 via-background to-purple-700/10 pointer-events-none" />
+      <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-background to-secondary/10 pointer-events-none" />
       
       <CreateOrgModal 
         open={showOrgModal} 
@@ -785,12 +679,30 @@ const Dashboard = () => {
         onSessionCreated={(sessionName) => handleCreateSession(sessionName)}
         onClose={() => setShowCreateSessionModal(false)}
       />
+
+      <SessionQrModal
+        session={selectedSession}
+        status={selectedSession ? sessionsStatus[selectedSession.id] : null}
+        open={showSessionModal}
+        onClose={() => {
+          setShowSessionModal(false);
+          setQrExpiresIn(null);
+        }}
+        onRefreshQr={() => selectedSession && handleRefreshQr(selectedSession)}
+        onCloseSession={() => selectedSession && handleCloseSession(selectedSession)}
+        onLogoutSession={() => selectedSession && handleDeleteSession(selectedSession)}
+        refreshingQr={refreshingQr}
+        closingSession={closingSession}
+        loggingOut={loggingOut}
+        generatingQrCode={generatingQrCode}
+        qrExpiresIn={qrExpiresIn}
+      />
       
       {/* Header */}
       <header className="border-b border-border/50 backdrop-blur-sm bg-card/30 relative z-10">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-primary to-secondary rounded-xl flex items-center justify-center shadow-glow">
+            <div className="w-10 h-10 bg-gradient-to-br from-primary to-secondary rounded-xl flex items-center justify-center shadow-[0_0_40px_hsl(var(--primary)/0.3)]">
               <span className="text-lg font-bold text-primary-foreground">W</span>
             </div>
             <div>
@@ -832,7 +744,7 @@ const Dashboard = () => {
           className="space-y-6"
         >
           {/* Organization Info Card */}
-          <Card className="bg-card/90 backdrop-blur-sm border-border/50 shadow-elegant">
+          <Card className="bg-card/90 backdrop-blur-sm border-border/50 shadow-[0_10px_30px_-10px_hsl(var(--primary)/0.2)]">
             <CardHeader>
               <div className="flex items-center gap-3">
                 <div className="w-12 h-12 bg-gradient-to-br from-primary to-secondary rounded-xl flex items-center justify-center">
@@ -840,22 +752,22 @@ const Dashboard = () => {
                 </div>
                 <div>
                   <CardTitle className="text-2xl">{orgData?.name || "Minha Empresa"}</CardTitle>
-                  <CardDescription>Plano: {orgData?.plan || "basic"}</CardDescription>
+                  <CardDescription>
+                    Plano: {orgData?.plan || "basic"} | Sessões: {sessions.length}/{orgData?.session_limit || 1}
+                  </CardDescription>
                 </div>
               </div>
             </CardHeader>
           </Card>
 
-          {/* API Key Card - Só mostra quando conectado */}
-          {currentSession?.api_token && 
-           sessionStatus?.status === true && 
-           sessionStatus?.message?.toUpperCase() === 'CONNECTED' && (
+          {/* API Token Card - Mostra se houver alguma sessão online */}
+          {activeSessions.length > 0 && activeSessions[0].api_token && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.1 }}
             >
-              <Card className="bg-card/90 backdrop-blur-sm border-border/50 shadow-elegant">
+              <Card className="bg-card/90 backdrop-blur-sm border-border/50 shadow-[0_10px_30px_-10px_hsl(var(--primary)/0.2)]">
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
@@ -863,14 +775,17 @@ const Dashboard = () => {
                         <Key className="w-5 h-5 text-primary-foreground" />
                       </div>
                       <div>
-                        <CardTitle className="text-lg">Bearer Token</CardTitle>
+                        <CardTitle className="text-lg">Bearer Token - {activeSessions[0].name}</CardTitle>
                         <CardDescription>Token de autenticação para chamadas API</CardDescription>
                       </div>
                     </div>
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={handleCopyApiToken}
+                      onClick={() => {
+                        navigator.clipboard.writeText(activeSessions[0].api_token || '');
+                        toast.success("Token copiado!");
+                      }}
                       className="gap-2"
                     >
                       <Copy className="w-4 h-4" />
@@ -880,227 +795,79 @@ const Dashboard = () => {
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <code className="text-sm bg-muted/50 px-3 py-2 rounded-md block overflow-x-auto break-all">
-                    {currentSession.api_token}
+                    {activeSessions[0].api_token}
                   </code>
                   <p className="text-xs text-muted-foreground">
-                    Use este token no header: <code className="text-xs bg-muted px-1 py-0.5 rounded">Authorization: Bearer {currentSession.api_token}</code>
+                    Use este token no header: <code className="text-xs bg-muted px-1 py-0.5 rounded">Authorization: Bearer {activeSessions[0].api_token}</code>
                   </p>
                 </CardContent>
               </Card>
             </motion.div>
           )}
 
-          {/* Session Status Card */}
+          {/* Sessions Management Card */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.2 }}
           >
-            <Card className="bg-card/90 backdrop-blur-sm border-border/50 shadow-elegant">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+            <Card className="bg-card/90 backdrop-blur-sm border-border/50 shadow-[0_10px_30px_-10px_hsl(var(--primary)/0.2)]">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0">
                 <div>
-                  <CardTitle className="text-lg">Sessão WhatsApp</CardTitle>
-                  <StatusIndicator sessionStatus={sessionStatus} />
+                  <CardTitle className="text-lg">Minhas Sessões WhatsApp</CardTitle>
+                  <CardDescription>
+                    {sessions.length}/{orgData?.session_limit || 1} sessões criadas
+                  </CardDescription>
                 </div>
                 
-                {/* Botão Criar Sessão - quando não tem token */}
-                {!currentSession && (
-                  <Button
-                    onClick={() => setShowCreateSessionModal(true)}
-                    disabled={creatingSession}
-                    className="gap-2 bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-700"
-                  >
-                    {creatingSession ? (
-                      <>
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        Criando...
-                      </>
-                    ) : (
-                      <>
-                        <Plus className="w-4 h-4" />
-                        Criar Sessão
-                      </>
-                    )}
-                  </Button>
-                )}
-                
-                {/* Botão Iniciar Sessão - quando tem token mas está desconectado */}
-                {currentSession?.api_token && 
-                 (!sessionStatus || sessionStatus.status === false) && 
-                 !sessionStatus?.qrCode && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleStartSession}
-                    disabled={startingSession}
-                    className="gap-2"
-                  >
-                    {startingSession ? (
-                      <>
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        Iniciando...
-                      </>
-                    ) : (
-                      <>
-                        <QrCode className="w-4 h-4" />
-                        Iniciar Sessão
-                      </>
-                    )}
-                  </Button>
-                )}
-                
-                {/* Botão Renovar QR - quando está exibindo QR Code */}
-                {sessionStatus?.qrCode && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleRefreshQr}
-                    disabled={refreshingQr}
-                    className="gap-2"
-                  >
-                    {refreshingQr ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <RefreshCw className="w-4 h-4" />
-                    )}
-                    Renovar QR
-                  </Button>
-                )}
+                <Button
+                  onClick={() => setShowCreateSessionModal(true)}
+                  disabled={
+                    creatingSession || 
+                    (orgData?.session_limit !== null && sessions.length >= orgData.session_limit)
+                  }
+                  className="gap-2"
+                >
+                  <Plus className="w-4 h-4" />
+                  Nova Sessão
+                </Button>
               </CardHeader>
               <CardContent>
-                {generatingQrCode && (
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="flex items-center justify-center gap-3 py-8 text-blue-600"
-                  >
-                    <RefreshCw className="w-5 h-5 animate-spin" />
-                    <span className="font-medium">Gerando QR Code, aguarde...</span>
-                  </motion.div>
-                )}
-                {!generatingQrCode && sessionStatus?.qrCode ? (
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ duration: 0.3 }}
-                    className="flex flex-col items-center gap-4"
-                  >
-                    <div className="bg-white p-4 rounded-xl shadow-lg">
-                      <img 
-                        src={sessionStatus.qrCode} 
-                        alt="QR Code WhatsApp" 
-                        className="w-64 h-64"
+                {sessions.length === 0 ? (
+                  <div className="text-center py-12 text-muted-foreground">
+                    <MessageSquare className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                    <p className="font-medium">Nenhuma sessão criada</p>
+                    <p className="text-sm mt-2">Clique em "Nova Sessão" para começar</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {sessions.map((session) => (
+                      <SessionManagementCard
+                        key={session.id}
+                        session={session}
+                        status={sessionsStatus[session.id] || null}
+                        onViewQr={() => {
+                          setSelectedSession(session);
+                          setShowSessionModal(true);
+                        }}
+                        onStartSession={() => handleStartSession(session)}
+                        onDelete={() => handleDeleteSession(session)}
                       />
-                    </div>
-                    
-                    {/* Contador de expiração */}
-                    {qrExpiresIn !== null && qrExpiresIn > 0 ? (
-                      <div className="flex items-center gap-2 text-sm">
-                        <div className="w-2 h-2 bg-yellow-500 rounded-full animate-pulse" />
-                        <p className="text-muted-foreground">
-                          QR Code expira em <span className="font-bold text-foreground">{qrExpiresIn}s</span>
-                        </p>
-                      </div>
-                    ) : qrExpiresIn === 0 ? (
-                      <div className="flex flex-col items-center gap-2">
-                        <p className="text-sm text-red-500 font-medium">QR Code expirado!</p>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={handleRefreshQr}
-                          disabled={refreshingQr}
-                          className="gap-2"
-                        >
-                          {refreshingQr ? (
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                          ) : (
-                            <RefreshCw className="w-4 h-4" />
-                          )}
-                          Gerar Novo QR Code
-                        </Button>
-                      </div>
-                    ) : null}
-                    
-                    <p className="text-sm text-muted-foreground text-center">
-                      Escaneie o QR Code com seu WhatsApp para conectar
-                    </p>
-                  </motion.div>
-                ) : !generatingQrCode && sessionStatus?.status === true && sessionStatus?.message?.toUpperCase() === 'CONNECTED' ? (
-                  <div className="text-center py-8">
-                    <div className="w-16 h-16 mx-auto bg-gradient-to-br from-primary to-secondary rounded-full flex items-center justify-center mb-4">
-                      <Server className="w-8 h-8 text-primary-foreground" />
-                    </div>
-                    <p className="text-lg font-semibold text-foreground">Sessão Conectada!</p>
-                    <p className="text-sm text-muted-foreground mt-2">
-                      Seu WhatsApp está online e pronto para uso
-                    </p>
+                    ))}
                   </div>
-                ) : !generatingQrCode ? (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <QrCode className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                    <p>Nenhuma sessão ativa</p>
-                    <p className="text-sm mt-2">Clique em "Criar Sessão" para começar</p>
-                  </div>
-              ) : null}
-            </CardContent>
+                )}
+              </CardContent>
+            </Card>
+          </motion.div>
 
-            {/* Rodapé com controles permanentes */}
-            {currentSession && (
-              <CardFooter className="border-t border-border/50 pt-4">
-                <div className="flex items-center justify-between w-full">
-                  {/* Lado esquerdo - Botões de gestão */}
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handleCloseSession}
-                      disabled={closingSession || !sessionStatus?.status}
-                      className="gap-2 border-orange-500 text-orange-500 hover:bg-orange-50 dark:hover:bg-orange-950 disabled:opacity-50"
-                    >
-                      {closingSession ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                      ) : (
-                        <XCircle className="w-4 h-4" />
-                      )}
-                      Fechar Sessão
-                    </Button>
-                    
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handleLogoutSession}
-                      disabled={loggingOut}
-                      className="gap-2 border-red-500 text-red-500 hover:bg-red-50 dark:hover:bg-red-950"
-                    >
-                      {loggingOut ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                      ) : (
-                        <Trash2 className="w-4 h-4" />
-                      )}
-                      Logout da Sessão
-                    </Button>
-                  </div>
-                  
-                  {/* Lado direito - Info da sessão */}
-                  <div className="text-xs text-muted-foreground">
-                    Sessão: <span className="font-mono">{currentSession.api_session}</span>
-                  </div>
-                </div>
-              </CardFooter>
-            )}
-          </Card>
-        </motion.div>
-
-          {/* Test Message Card - Só mostra quando conectado */}
-          {currentSession && 
-           sessionStatus?.status === true && 
-           sessionStatus?.message?.toUpperCase() === 'CONNECTED' && (
+          {/* Test Message Card */}
+          {activeSessions.length > 0 && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.3 }}
             >
-              <Card className="bg-card/90 backdrop-blur-sm border-border/50 shadow-elegant">
+              <Card className="bg-card/90 backdrop-blur-sm border-border/50 shadow-[0_10px_30px_-10px_hsl(var(--primary)/0.2)]">
                 <CardHeader>
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg flex items-center justify-center">
@@ -1115,56 +882,82 @@ const Dashboard = () => {
                 <CardContent className="space-y-4">
                   <div className="space-y-3">
                     <div>
-                      <Label htmlFor="test-phone">Número de Telefone</Label>
-                      <div className="flex items-center gap-2">
-                        <div className="flex items-center gap-1 px-3 py-2 bg-muted rounded-md border border-input">
-                          <span className="text-lg">🇧🇷</span>
-                          <span className="text-sm font-mono font-medium">+55</span>
+                      <Label htmlFor="test-session">Sessão</Label>
+                      <Select
+                        value={selectedTestSession?.id || ''}
+                        onValueChange={(value) => {
+                          const session = sessions.find(s => s.id === value);
+                          setSelectedTestSession(session || null);
+                        }}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione uma sessão ativa" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {activeSessions.map(session => (
+                            <SelectItem key={session.id} value={session.id}>
+                              {session.name} ({session.api_session})
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {selectedTestSession && (
+                      <>
+                        <div>
+                          <Label htmlFor="test-phone">Número de Telefone</Label>
+                          <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-1 px-3 py-2 bg-muted rounded-md border border-input">
+                              <span className="text-lg">🇧🇷</span>
+                              <span className="text-sm font-mono font-medium">+55</span>
+                            </div>
+                            <Input
+                              id="test-phone"
+                              type="text"
+                              placeholder="11987654321"
+                              value={testPhone}
+                              onChange={(e) => setTestPhone(e.target.value.replace(/\D/g, ''))}
+                              className="font-mono flex-1"
+                              maxLength={11}
+                            />
+                          </div>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Formato: DDD + número (somente números)
+                          </p>
                         </div>
-                        <Input
-                          id="test-phone"
-                          type="text"
-                          placeholder="11987654321"
-                          value={testPhone}
-                          onChange={(e) => setTestPhone(e.target.value.replace(/\D/g, ''))}
-                          className="font-mono flex-1"
-                          maxLength={11}
-                        />
-                      </div>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Formato: DDD + número (somente números)
-                      </p>
-                    </div>
-                    
-                    <div>
-                      <Label htmlFor="test-message">Mensagem</Label>
-                      <Textarea
-                        id="test-message"
-                        placeholder="Digite sua mensagem..."
-                        value={testMessage}
-                        onChange={(e) => setTestMessage(e.target.value)}
-                        className="resize-none"
-                        rows={3}
-                      />
-                    </div>
-                    
-                    <Button
-                      onClick={handleSendTestMessage}
-                      disabled={sendingTest || !testPhone || !testMessage}
-                      className="w-full gap-2 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700"
-                    >
-                      {sendingTest ? (
-                        <>
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                          Enviando...
-                        </>
-                      ) : (
-                        <>
-                          <Send className="w-4 h-4" />
-                          Enviar Mensagem de Teste
-                        </>
-                      )}
-                    </Button>
+                        
+                        <div>
+                          <Label htmlFor="test-message">Mensagem</Label>
+                          <Textarea
+                            id="test-message"
+                            placeholder="Digite sua mensagem..."
+                            value={testMessage}
+                            onChange={(e) => setTestMessage(e.target.value)}
+                            className="resize-none"
+                            rows={3}
+                          />
+                        </div>
+                        
+                        <Button
+                          onClick={handleSendTestMessage}
+                          disabled={sendingTest || !testPhone || !testMessage}
+                          className="w-full gap-2 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700"
+                        >
+                          {sendingTest ? (
+                            <>
+                              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                              Enviando...
+                            </>
+                          ) : (
+                            <>
+                              <Send className="w-4 h-4" />
+                              Enviar Mensagem de Teste
+                            </>
+                          )}
+                        </Button>
+                      </>
+                    )}
                   </div>
                 </CardContent>
               </Card>
