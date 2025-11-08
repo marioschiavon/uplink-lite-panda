@@ -11,6 +11,8 @@ import CreateOrgModal from "@/components/CreateOrgModal";
 import CreateSessionModal from "@/components/CreateSessionModal";
 import SessionManagementCard from "@/components/SessionManagementCard";
 import SessionQrModal from "@/components/SessionQrModal";
+import { AnnouncementBanner } from "@/components/AnnouncementBanner";
+import { AnnouncementManager } from "@/components/AnnouncementManager";
 import { toast } from "sonner";
 import { LogOut, Server, Key, Plus, MessageSquare, Send, Copy } from "lucide-react";
 import { motion } from "framer-motion";
@@ -774,6 +776,14 @@ const Dashboard = () => {
           transition={{ duration: 0.5 }}
           className="space-y-6"
         >
+          {/* Announcement Banner */}
+          <AnnouncementBanner />
+
+          {/* Superadmin Announcement Manager */}
+          {userData?.role === 'superadmin' && (
+            <AnnouncementManager />
+          )}
+
           {/* Organization Info Card */}
           <Card className="bg-card/90 backdrop-blur-sm border-border/50 shadow-[0_10px_30px_-10px_hsl(var(--primary)/0.2)]">
             <CardHeader>
