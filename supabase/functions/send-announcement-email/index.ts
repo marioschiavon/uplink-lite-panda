@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { Resend } from "npm:resend@4.0.0";
+import { Resend } from "npm:resend@2.0.0";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
@@ -83,7 +83,7 @@ const handler = async (req: Request): Promise<Response> => {
     const emailPromises = users.map(async (userItem) => {
       try {
         const emailResponse = await resend.emails.send({
-          from: "Panda42 Notifications <onboarding@resend.dev>",
+          from: "Uplink Avisos <avisos@updates.panda42.com.br>",
           to: [userItem.email],
           subject: announcement.email_subject || announcement.title,
           html: `
