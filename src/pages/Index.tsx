@@ -151,7 +151,7 @@ const Index = () => {
               <CardHeader>
                 <Clock className="h-12 w-12 text-primary mb-4" />
                 <CardTitle>Preço Acessível</CardTitle>
-                <CardDescription>Apenas R$ 50/mês por sessão. Sem taxas escondidas ou surpresas.</CardDescription>
+                <CardDescription>Apenas R$ 69,90/mês por sessão. Sem taxas escondidas ou surpresas.</CardDescription>
               </CardHeader>
             </Card>
 
@@ -395,7 +395,7 @@ const Index = () => {
                 Há limite de mensagens?
               </AccordionTrigger>
               <AccordionContent className="text-muted-foreground">
-                O plano mensal de R$ 50 inclui uso normal da sessão. Para volumes muito grandes, entre em contato para planos personalizados.
+                O plano mensal de R$ 69,90 inclui uso normal da sessão. Para volumes muito grandes, entre em contato para planos personalizados.
               </AccordionContent>
             </AccordionItem>
 
