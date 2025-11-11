@@ -51,23 +51,32 @@ serve(async (req) => {
     const preapproval = await mpResponse.json();
     console.log('Detalhes da assinatura recebidos:', JSON.stringify(preapproval, null, 2));
 
-    // Buscar assinatura no banco
+    // Buscar assinatura no banco (com dados da sessão)
     const { data: subscription, error: subError } = await supabaseClient
       .from('subscriptions' as any)
-      .select('*')
+      .select('*, sessions(*)')
       .eq('preapproval_id', preapprovalId)
       .single();
 
     if (subError) {
       console.error('Erro ao buscar assinatura no banco:', subError);
       // Se não existe, pode ser uma nova assinatura criada direto no MP
-      // Vamos tentar criar baseado no external_reference
+      // Vamos tentar criar baseado no external_reference (que agora é session_id)
       if (preapproval.external_reference) {
-        console.log('Criando nova assinatura para org:', preapproval.external_reference);
+        console.log('Criando nova assinatura para sessão:', preapproval.external_reference);
+        
+        // Buscar dados da sessão
+        const { data: sessionData } = await supabaseClient
+          .from('sessions')
+          .select('organization_id')
+          .eq('id', preapproval.external_reference)
+          .single();
+        
         const { error: insertError } = await supabaseClient
           .from('subscriptions' as any)
           .insert({
-            organization_id: preapproval.external_reference,
+            session_id: preapproval.external_reference,
+            organization_id: sessionData?.organization_id,
             preapproval_id: preapprovalId,
             payer_email: preapproval.payer_email,
             status: preapproval.status === 'authorized' ? 'active' : 'pending',
@@ -125,7 +134,23 @@ serve(async (req) => {
       console.log('Subscription atualizada com sucesso');
     }
 
-    // Atualizar organization
+    // NOVO: Liberar ou bloquear a sessão específica baseado no status
+    if (subscription.session_id) {
+      const { error: updateSessionError } = await supabaseClient
+        .from('sessions')
+        .update({
+          requires_subscription: !subscriptionActive, // FALSE se ativo, TRUE se inativo
+        })
+        .eq('id', subscription.session_id);
+
+      if (updateSessionError) {
+        console.error('Erro ao atualizar sessão:', updateSessionError);
+      } else {
+        console.log(`Sessão ${subscription.session_id} ${subscriptionActive ? 'liberada' : 'bloqueada'}`);
+      }
+    }
+
+    // Atualizar organization (manter compatibilidade)
     const { error: updateOrgError } = await supabaseClient
       .from('organizations')
       .update({

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,8 +8,11 @@ import { Loader2, CreditCard, Shield, Check } from "lucide-react";
 
 export default function Checkout() {
   const [loading, setLoading] = useState(false);
+  const [creatingSession, setCreatingSession] = useState(false);
   const [user, setUser] = useState<any>(null);
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const sessionName = searchParams.get('session_name');
 
   useEffect(() => {
     checkAuth();
@@ -26,22 +29,60 @@ export default function Checkout() {
   };
 
   const handleSubscribe = async () => {
+    if (!sessionName) {
+      toast.error("Nome da sessão não encontrado. Volte ao dashboard e tente novamente.");
+      return;
+    }
+
     setLoading(true);
+    setCreatingSession(true);
+
     try {
+      // PASSO 1: Criar a sessão primeiro
+      toast.info("Criando sua sessão...");
+      console.log('Criando sessão:', sessionName);
+      
+      const { data: sessionData, error: sessionError } = await supabase.functions.invoke(
+        'generate-whatsapp-token',
+        { body: { session_name: sessionName } }
+      );
+
+      if (sessionError) {
+        console.error('Erro ao criar sessão:', sessionError);
+        throw new Error('Erro ao criar sessão');
+      }
+
+      if (!sessionData.success || !sessionData.session_id) {
+        throw new Error(sessionData.error || "Erro ao gerar token da sessão");
+      }
+
+      console.log('Sessão criada com sucesso:', sessionData.session_id);
+      setCreatingSession(false);
+
+      // PASSO 2: Criar assinatura para essa sessão
+      toast.info("Preparando pagamento...");
+      console.log('Criando assinatura para sessão:', sessionData.session_id);
+
       const { data, error } = await supabase.functions.invoke('create-subscription', {
-        body: {},
+        body: { session_id: sessionData.session_id }
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Erro ao criar assinatura:', error);
+        throw error;
+      }
 
-      if (data.init_point) {
-        // Redirecionar para página de pagamento do Mercado Pago
+      if (data.success && data.init_point) {
+        console.log('Redirecionando para Mercado Pago:', data.init_point);
         window.location.href = data.init_point;
+      } else {
+        throw new Error(data.error || "Erro ao criar assinatura");
       }
     } catch (error: any) {
-      console.error('Erro ao criar assinatura:', error);
+      console.error("Erro no processo de checkout:", error);
       toast.error(error.message || "Erro ao processar assinatura");
       setLoading(false);
+      setCreatingSession(false);
     }
   };
 
@@ -54,7 +95,10 @@ export default function Checkout() {
           </div>
           <CardTitle className="text-3xl">Assinar Uplink</CardTitle>
           <CardDescription className="text-lg mt-2">
-            Plano de Sessão API WhatsApp
+            {sessionName 
+              ? `Finalize o pagamento para criar a sessão "${sessionName}"`
+              : "Plano de Sessão API WhatsApp"
+            }
           </CardDescription>
         </CardHeader>
 
@@ -99,19 +143,30 @@ export default function Checkout() {
 
           <Button 
             onClick={handleSubscribe} 
-            disabled={loading}
+            disabled={loading || !sessionName}
             className="w-full h-12 text-lg"
             size="lg"
           >
-            {loading ? (
+            {creatingSession && (
               <>
                 <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                Processando...
+                Criando sessão...
               </>
-            ) : (
-              "Assinar agora"
             )}
+            {!creatingSession && loading && (
+              <>
+                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                Processando pagamento...
+              </>
+            )}
+            {!creatingSession && !loading && "Assinar agora"}
           </Button>
+
+          {!sessionName && (
+            <p className="text-sm text-destructive text-center font-medium">
+              ⚠️ Nome da sessão não encontrado. Volte ao dashboard.
+            </p>
+          )}
 
           <div className="text-center text-sm text-muted-foreground">
             Ao assinar, você concorda com nossos{" "}

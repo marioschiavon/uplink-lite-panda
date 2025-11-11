@@ -30,6 +30,7 @@ interface OrgData {
   name: string;
   plan: string | null;
   session_limit: number | null;
+  is_legacy: boolean;
 }
 
 interface SessionData {
@@ -127,7 +128,8 @@ const Dashboard = () => {
         id: org.id,
         name: org.name,
         plan: org.plan,
-        session_limit: org.session_limit
+        session_limit: org.session_limit,
+        is_legacy: (org as any).is_legacy || false
       };
       
       setOrgData(orgDataTyped);
@@ -417,59 +419,47 @@ const Dashboard = () => {
   const handleCreateSession = async (sessionName: string) => {
     if (!orgData) return;
     
-    // Verificar limite de sessões
-    const activeSessionsCount = sessions.length;
-    if (orgData.session_limit && activeSessionsCount >= orgData.session_limit) {
-      toast.error(`Limite de ${orgData.session_limit} sessões atingido. Exclua uma sessão existente.`);
-      setShowCreateSessionModal(false);
+    setShowCreateSessionModal(false);
+    
+    // PROTEÇÃO PARA CLIENTES LEGACY
+    if (orgData.is_legacy) {
+      console.log('Cliente LEGACY - criando sessão sem cobrança');
+      
+      // Verificar limite de sessões (se houver)
+      const activeSessionsCount = sessions.length;
+      if (orgData.session_limit && activeSessionsCount >= orgData.session_limit) {
+        toast.error(`Limite de ${orgData.session_limit} sessões atingido. Exclua uma sessão existente.`);
+        return;
+      }
+      
+      setCreatingSession(true);
+      
+      try {
+        const { data, error } = await supabase.functions.invoke('generate-whatsapp-token', {
+          body: { session_name: sessionName }
+        });
+
+        if (error) throw error;
+
+        if (data.success && data.session_id) {
+          await fetchUserData();
+          toast.success("Sessão criada com sucesso! Clique em 'Iniciar Sessão' para conectar.");
+        } else {
+          throw new Error(data.error || "Erro ao gerar token");
+        }
+      } catch (error: any) {
+        console.error("Erro ao criar sessão:", error);
+        toast.error(error.message || "Erro ao criar sessão");
+      } finally {
+        setCreatingSession(false);
+      }
       return;
     }
     
-    setCreatingSession(true);
-    setGeneratingQrCode(true);
-    setShowCreateSessionModal(false);
-    
-    try {
-      const { data, error } = await supabase.functions.invoke('generate-whatsapp-token', {
-        body: { session_name: sessionName }
-      });
-
-      if (error) throw error;
-
-      if (data.success && data.session_id) {
-        const { data: newSession, error: fetchError } = await supabase
-          .from('sessions')
-          .select('*')
-          .eq('id', data.session_id)
-          .single();
-        
-        if (fetchError) throw fetchError;
-        
-        const typedSession: SessionData = {
-          id: newSession.id,
-          name: newSession.name,
-          api_session: (newSession as any).api_session,
-          api_token: (newSession as any).api_token,
-          api_token_full: (newSession as any).api_token_full,
-          status: (newSession as any).status,
-          qr: (newSession as any).qr,
-          organization_id: newSession.organization_id
-        };
-        
-        setSessions(prev => [...prev, typedSession]);
-        
-        toast.success("Sessão criada com sucesso! Clique em 'Iniciar Sessão' para conectar.");
-      } else {
-        throw new Error(data.error || "Erro ao gerar token");
-      }
-    } catch (error: any) {
-      console.error("Erro ao criar sessão:", error);
-      toast.error(error.message || "Erro ao criar sessão");
-      setGeneratingQrCode(false);
-    } finally {
-      setCreatingSession(false);
-      setGeneratingQrCode(false);
-    }
+    // NOVO CLIENTE - Redirecionar para checkout com nome da sessão
+    console.log('Novo cliente - redirecionando para checkout');
+    toast.info("Configure o pagamento para criar sua sessão");
+    navigate(`/checkout?session_name=${encodeURIComponent(sessionName)}`);
   };
 
   const handleRefreshQr = async (session: SessionData) => {

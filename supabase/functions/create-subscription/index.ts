@@ -32,44 +32,49 @@ serve(async (req) => {
 
     console.log(`Authenticated user: ${user.id}`);
 
-    // Buscar dados do usuário e organização
+    // Buscar session_id do body
+    const { session_id } = await req.json();
+    if (!session_id) {
+      throw new Error('session_id é obrigatório');
+    }
+
+    console.log(`Creating subscription for session: ${session_id}`);
+
+    // Buscar dados da sessão e organização
+    const { data: sessionData, error: sessionError } = await supabaseClient
+      .from('sessions')
+      .select('id, name, organization_id, organizations(id, name)')
+      .eq('id', session_id)
+      .single();
+
+    if (sessionError || !sessionData) {
+      console.error('Session data error:', sessionError);
+      throw new Error('Sessão não encontrada');
+    }
+
+    // Verificar se usuário pertence à organização da sessão
     const { data: userData, error: userDataError } = await supabaseClient
       .from('users')
       .select('organization_id, email')
       .eq('id', user.id)
       .single();
 
-    if (userDataError || !userData?.organization_id) {
-      console.error('User data error:', userDataError);
-      throw new Error('Organização não encontrada');
+    if (userDataError || userData.organization_id !== sessionData.organization_id) {
+      throw new Error('Você não tem permissão para criar assinatura para esta sessão');
     }
 
-    console.log(`User organization: ${userData.organization_id}`);
+    console.log(`Session: ${sessionData.name}, Organization: ${(sessionData as any).organizations.name}`);
 
-    // Buscar organização
-    const { data: orgData, error: orgError } = await supabaseClient
-      .from('organizations')
-      .select('id, name')
-      .eq('id', userData.organization_id)
-      .single();
-
-    if (orgError || !orgData) {
-      console.error('Organization data error:', orgError);
-      throw new Error('Organização não encontrada');
-    }
-
-    console.log(`Creating subscription for organization: ${orgData.name}`);
-
-    // Verificar se já existe assinatura ativa
+    // Verificar se já existe assinatura ativa para essa sessão
     const { data: existingSubscription } = await supabaseClient
       .from('subscriptions' as any)
       .select('*')
-      .eq('organization_id', orgData.id)
+      .eq('session_id', session_id)
       .eq('status', 'active')
       .single();
 
     if (existingSubscription) {
-      throw new Error('Já existe uma assinatura ativa para esta organização');
+      throw new Error('Já existe uma assinatura ativa para esta sessão');
     }
 
     // Obter token do Mercado Pago
@@ -82,8 +87,8 @@ serve(async (req) => {
     const backUrl = `https://kfsvpbujmetlendgwnrs.supabase.co`.replace('supabase.co', 'lovable.app');
     
     const subscriptionData = {
-      reason: `Uplink - Sessão API WhatsApp - ${orgData.name}`,
-      external_reference: orgData.id,
+      reason: `Uplink - Sessão ${sessionData.name} - ${(sessionData as any).organizations.name}`,
+      external_reference: session_id,
       payer_email: userData.email,
       back_url: `${backUrl}/dashboard`,
       auto_recurring: {
@@ -113,17 +118,18 @@ serve(async (req) => {
 
     console.log('Subscription created in MP:', mpResult.id);
 
-    // Salvar assinatura no banco
+    // Salvar assinatura no banco (vinculada à sessão)
     const { error: insertError } = await supabaseClient
       .from('subscriptions' as any)
       .insert({
-        organization_id: orgData.id,
+        session_id: session_id,
+        organization_id: sessionData.organization_id,
         preapproval_id: mpResult.id,
         payer_email: userData.email,
         status: 'pending',
         plan_name: 'api_session',
         amount: 69.90,
-        external_reference: orgData.id,
+        external_reference: session_id,
       });
 
     if (insertError) {
