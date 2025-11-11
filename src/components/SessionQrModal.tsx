@@ -1,9 +1,12 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Copy, RefreshCw, XCircle, Trash2, Loader2, Server } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Copy, RefreshCw, XCircle, Trash2, Loader2, Server, Settings, ChevronDown, AlertTriangle } from "lucide-react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
+import { useState } from "react";
 
 interface SessionData {
   id: string;
@@ -51,6 +54,9 @@ const SessionQrModal = ({
   generatingQrCode = false,
   qrExpiresIn = null
 }: SessionQrModalProps) => {
+  const [showAdvancedActions, setShowAdvancedActions] = useState(false);
+  const [confirmAction, setConfirmAction] = useState<'close' | 'delete' | null>(null);
+
   if (!session) return null;
 
   const handleCopyToken = () => {
@@ -194,35 +200,100 @@ const SessionQrModal = ({
           )}
         </div>
 
-        {/* Action Buttons */}
-        <div className="flex gap-2 justify-end border-t pt-4">
-          <Button
-            variant="outline"
-            onClick={onCloseSession}
-            disabled={closingSession || !isConnected}
-            className="gap-2"
-          >
-            {closingSession ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <XCircle className="w-4 h-4" />
-            )}
-            Fechar Sessão
-          </Button>
-          <Button
-            variant="destructive"
-            onClick={onLogoutSession}
-            disabled={loggingOut}
-            className="gap-2"
-          >
-            {loggingOut ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <Trash2 className="w-4 h-4" />
-            )}
-            Excluir Sessão
-          </Button>
-        </div>
+        {/* Advanced Actions - Collapsible */}
+        <Collapsible open={showAdvancedActions} onOpenChange={setShowAdvancedActions}>
+          <div className="border-t pt-4">
+            <CollapsibleTrigger asChild>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="w-full justify-start text-muted-foreground hover:text-foreground"
+              >
+                <Settings className="w-4 h-4 mr-2" />
+                Ações Avançadas
+                <ChevronDown className={`w-4 h-4 ml-auto transition-transform ${showAdvancedActions ? 'rotate-180' : ''}`} />
+              </Button>
+            </CollapsibleTrigger>
+            
+            <CollapsibleContent className="space-y-3 pt-4">
+              <p className="text-xs text-muted-foreground flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4" />
+                Atenção: Estas ações afetam sua sessão WhatsApp
+              </p>
+              
+              <div className="flex gap-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setConfirmAction('close')}
+                  disabled={closingSession || !isConnected}
+                  className="gap-2"
+                >
+                  <XCircle className="w-4 h-4" />
+                  {closingSession ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Fechando...
+                    </>
+                  ) : (
+                    'Fechar Sessão'
+                  )}
+                </Button>
+                
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setConfirmAction('delete')}
+                  disabled={loggingOut}
+                  className="gap-2 text-destructive hover:text-destructive"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  {loggingOut ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Excluindo...
+                    </>
+                  ) : (
+                    'Excluir Sessão'
+                  )}
+                </Button>
+              </div>
+            </CollapsibleContent>
+          </div>
+        </Collapsible>
+
+        {/* Confirmation Dialog */}
+        <AlertDialog open={confirmAction !== null} onOpenChange={() => setConfirmAction(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle className="flex items-center gap-2">
+                <AlertTriangle className="w-5 h-5 text-destructive" />
+                {confirmAction === 'delete' ? 'Excluir Sessão?' : 'Fechar Sessão?'}
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                {confirmAction === 'delete' 
+                  ? 'Esta ação é permanente e não pode ser desfeita. A sessão será completamente removida e você precisará criar uma nova sessão para reconectar.'
+                  : 'Isso irá desconectar seu WhatsApp desta sessão. Você precisará escanear o QR Code novamente para reconectar.'}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+              <AlertDialogAction 
+                onClick={() => {
+                  if (confirmAction === 'delete') {
+                    onLogoutSession();
+                  } else {
+                    onCloseSession();
+                  }
+                  setConfirmAction(null);
+                }}
+                className={confirmAction === 'delete' ? 'bg-destructive hover:bg-destructive/90' : ''}
+              >
+                {confirmAction === 'delete' ? 'Excluir Permanentemente' : 'Confirmar Fechamento'}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </DialogContent>
     </Dialog>
   );
