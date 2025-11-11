@@ -14,7 +14,7 @@ import SessionQrModal from "@/components/SessionQrModal";
 import { AnnouncementBanner } from "@/components/AnnouncementBanner";
 import { AnnouncementManager } from "@/components/AnnouncementManager";
 import { toast } from "sonner";
-import { LogOut, Server, Key, Plus, MessageSquare, Send, Copy } from "lucide-react";
+import { LogOut, Server, Key, Plus, MessageSquare, Send, Copy, CreditCard } from "lucide-react";
 import { motion } from "framer-motion";
 
 interface UserData {
@@ -746,6 +746,14 @@ const Dashboard = () => {
                 Monitoramento
               </Button>
             )}
+            <Button 
+              variant="outline" 
+              onClick={() => navigate("/subscriptions")}
+              className="gap-2"
+            >
+              <CreditCard className="w-4 h-4" />
+              Assinaturas
+            </Button>
             <Button 
               variant="outline" 
               onClick={handleLogout}
