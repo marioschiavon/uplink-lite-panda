@@ -2,12 +2,13 @@ import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import CreateSessionModal from "@/components/CreateSessionModal";
 import SessionQrModal from "@/components/SessionQrModal";
 import { SessionsGrid } from "@/components/dashboard/SessionsGrid";
 import { StatsCard } from "@/components/dashboard/StatsCard";
 import { toast } from "sonner";
-import { MessageSquare, Zap, Clock, AlertTriangle } from "lucide-react";
+import { MessageSquare, Zap, Clock, AlertTriangle, Plus } from "lucide-react";
 import { motion } from "framer-motion";
 
 interface SessionData {
@@ -578,6 +579,30 @@ const Sessions = () => {
         generatingQrCode={generatingQrCode}
         qrExpiresIn={qrExpiresIn}
       />
+
+      {/* Header with New Session Button */}
+      <motion.div
+        className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4"
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+      >
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Sessões WhatsApp</h1>
+          <p className="text-muted-foreground mt-1">
+            Gerencie suas conexões WhatsApp
+          </p>
+        </div>
+        <Button
+          onClick={() => setShowCreateSessionModal(true)}
+          size="lg"
+          className="gap-2 shadow-lg hover:shadow-xl transition-all"
+          disabled={creatingSession}
+        >
+          <Plus className="h-5 w-5" />
+          Nova Sessão
+        </Button>
+      </motion.div>
 
       {/* Stats Cards */}
       <motion.div
