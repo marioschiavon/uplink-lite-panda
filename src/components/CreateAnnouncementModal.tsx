@@ -9,6 +9,7 @@ import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Send } from "lucide-react";
+import type { AnnouncementInsert, AnnouncementRow } from "@/integrations/supabase/types/announcements";
 
 interface CreateAnnouncementModalProps {
   open: boolean;
@@ -49,7 +50,7 @@ export const CreateAnnouncementModal = ({ open, onOpenChange, onSuccess }: Creat
       }
 
       // Criar anúncio
-      const { data: announcement, error: createError } = await supabase
+      const { data: announcement, error: createError } = await (supabase as any)
         .from("announcements")
         .insert({
           title: formData.title,

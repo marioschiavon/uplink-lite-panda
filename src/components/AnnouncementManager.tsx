@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { CreateAnnouncementModal } from "./CreateAnnouncementModal";
 import { Plus, Trash2, Mail, Eye, Calendar } from "lucide-react";
+import type { AnnouncementRow, AnnouncementEmailLogRow } from "@/integrations/supabase/types/announcements";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -50,14 +51,14 @@ export const AnnouncementManager = () => {
     try {
       setLoading(true);
 
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from("announcements")
         .select("*")
         .order("created_at", { ascending: false });
 
       if (error) throw error;
 
-      setAnnouncements(data || []);
+      setAnnouncements((data || []) as Announcement[]);
 
       // Buscar estatísticas para cada anúncio
       for (const announcement of data || []) {
@@ -78,19 +79,19 @@ export const AnnouncementManager = () => {
   const fetchAnnouncementStats = async (announcementId: string) => {
     try {
       const [readsResult, emailsResult] = await Promise.all([
-        supabase
+        (supabase as any)
           .from("announcement_reads")
           .select("id", { count: "exact" })
           .eq("announcement_id", announcementId),
-        supabase
+        (supabase as any)
           .from("announcement_email_logs")
           .select("status")
           .eq("announcement_id", announcementId),
       ]);
 
       const totalReads = readsResult.count || 0;
-      const emailsSent = emailsResult.data?.filter(e => e.status === "sent").length || 0;
-      const emailsFailed = emailsResult.data?.filter(e => e.status === "failed").length || 0;
+      const emailsSent = emailsResult.data?.filter((e: any) => e.status === "sent").length || 0;
+      const emailsFailed = emailsResult.data?.filter((e: any) => e.status === "failed").length || 0;
 
       setStats(prev => ({
         ...prev,
@@ -103,7 +104,7 @@ export const AnnouncementManager = () => {
 
   const handleDelete = async (id: string) => {
     try {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from("announcements")
         .delete()
         .eq("id", id);

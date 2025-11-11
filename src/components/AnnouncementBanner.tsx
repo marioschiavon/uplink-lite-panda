@@ -4,6 +4,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { X, Info, AlertTriangle, CheckCircle, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import type { AnnouncementRow, AnnouncementReadInsert } from "@/integrations/supabase/types/announcements";
 
 interface Announcement {
   id: string;
@@ -34,7 +35,7 @@ export const AnnouncementBanner = () => {
       if (!user.user) return;
 
       // Buscar anúncios ativos
-      const { data: activeAnnouncements, error: announcementsError } = await supabase
+      const { data: activeAnnouncements, error: announcementsError } = await (supabase as any)
         .from("announcements")
         .select("*")
         .eq("is_active", true)
@@ -44,7 +45,7 @@ export const AnnouncementBanner = () => {
       if (announcementsError) throw announcementsError;
 
       // Buscar anúncios já lidos
-      const { data: reads, error: readsError } = await supabase
+      const { data: reads, error: readsError } = await (supabase as any)
         .from("announcement_reads")
         .select("announcement_id")
         .eq("user_id", user.user.id);
@@ -58,7 +59,7 @@ export const AnnouncementBanner = () => {
         a => !readIds.includes(a.id) && !dismissedIds.includes(a.id)
       ) || [];
 
-      setAnnouncements(unreadAnnouncements);
+      setAnnouncements(unreadAnnouncements as Announcement[]);
     } catch (error: any) {
       console.error("Erro ao buscar anúncios:", error);
     }
@@ -69,7 +70,7 @@ export const AnnouncementBanner = () => {
       const { data: user } = await supabase.auth.getUser();
       if (!user.user) return;
 
-      await supabase.from("announcement_reads").insert({
+      await (supabase as any).from("announcement_reads").insert({
         announcement_id: announcementId,
         user_id: user.user.id,
       });
