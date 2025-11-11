@@ -1,25 +1,21 @@
-import { useEffect, useState, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import CreateOrgModal from "@/components/CreateOrgModal";
-import CreateSessionModal from "@/components/CreateSessionModal";
-import SessionQrModal from "@/components/SessionQrModal";
 import { AnnouncementBanner } from "@/components/AnnouncementBanner";
-import { AnnouncementManager } from "@/components/AnnouncementManager";
-import { SidebarProvider } from "@/components/ui/sidebar";
-import { AppSidebar } from "@/components/layout/AppSidebar";
-import { AppHeader } from "@/components/layout/AppHeader";
 import { StatsCard } from "@/components/dashboard/StatsCard";
 import { OrganizationBanner } from "@/components/dashboard/OrganizationBanner";
-import { QuickActions } from "@/components/dashboard/QuickActions";
-import { SessionsGrid } from "@/components/dashboard/SessionsGrid";
 import { BearerTokenSheet } from "@/components/dashboard/BearerTokenSheet";
 import { SendTestMessageDialog } from "@/components/dashboard/SendTestMessageDialog";
 import { toast } from "sonner";
-import { Zap, MessageSquare, Activity, CreditCard } from "lucide-react";
+import { Zap, MessageSquare, Activity, CreditCard, ArrowRight, Plus } from "lucide-react";
 import { motion } from "framer-motion";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Badge } from "@/components/ui/badge";
+import { formatDistanceToNow } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 interface UserData {
   id: string;
@@ -42,10 +38,7 @@ interface SessionData {
   name: string;
   api_session: string | null;
   api_token: string | null;
-  api_token_full: string | null;
   status: string | null;
-  qr: string | null;
-  organization_id: string;
   created_at?: string;
   updated_at?: string;
 }
@@ -62,18 +55,8 @@ const Dashboard = () => {
   const [userData, setUserData] = useState<UserData | null>(null);
   const [orgData, setOrgData] = useState<OrgData | null>(null);
   const [sessions, setSessions] = useState<SessionData[]>([]);
-  const [selectedSession, setSelectedSession] = useState<SessionData | null>(null);
   const [showOrgModal, setShowOrgModal] = useState(false);
-  const [showCreateSessionModal, setShowCreateSessionModal] = useState(false);
-  const [showSessionModal, setShowSessionModal] = useState(false);
   const [sessionsStatus, setSessionsStatus] = useState<Record<string, SessionStatus>>({});
-  const [creatingSession, setCreatingSession] = useState(false);
-  const [startingSession, setStartingSession] = useState(false);
-  const [refreshingQr, setRefreshingQr] = useState(false);
-  const [closingSession, setClosingSession] = useState(false);
-  const [loggingOut, setLoggingOut] = useState(false);
-  const [qrExpiresIn, setQrExpiresIn] = useState<number | null>(null);
-  const [generatingQrCode, setGeneratingQrCode] = useState(false);
 
   const fetchUserData = async () => {
     try {
@@ -138,7 +121,8 @@ const Dashboard = () => {
         .from('sessions')
         .select('*')
         .eq('organization_id', userRecord.organization_id)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .limit(4);
 
       if (sessionsError) {
         console.error('Error fetching sessions:', sessionsError);
@@ -148,10 +132,7 @@ const Dashboard = () => {
           name: s.name,
           api_session: s.api_session,
           api_token: s.api_token,
-          api_token_full: s.api_token_full,
           status: s.status,
-          qr: s.qr,
-          organization_id: s.organization_id,
           created_at: s.created_at,
           updated_at: s.updated_at
         }));
@@ -207,402 +188,6 @@ const Dashboard = () => {
     }
   };
 
-  const checkConnectionStatus = useCallback(async (sessionId: string, apiSession: string, apiToken: string) => {
-    try {
-      const response = await fetch(
-        `https://wpp.panda42.com.br/api/${apiSession}/check-connection-session`,
-        {
-          headers: {
-            'accept': '*/*',
-            'Authorization': `Bearer ${apiToken}`
-          }
-        }
-      );
-      
-      if (response.ok) {
-        const data = await response.json();
-        
-        setSessionsStatus(currentStatus => {
-          const current = currentStatus[sessionId];
-          if (data.status === true) {
-            return { ...currentStatus, [sessionId]: data };
-          }
-          if (!current?.qrCode) {
-            return { ...currentStatus, [sessionId]: data };
-          }
-          return currentStatus;
-        });
-      }
-    } catch (error) {
-      console.error('Erro ao verificar conexão:', error);
-    }
-  }, []);
-
-  const handleStartSession = useCallback(async (session: SessionData) => {
-    if (!session.api_session || !session.api_token) {
-      toast.error("Sessão não encontrada.");
-      return;
-    }
-    
-    setStartingSession(true);
-    setGeneratingQrCode(true);
-    setSelectedSession(session);
-    setShowSessionModal(true);
-    
-    try {
-      console.log('Iniciando sessão:', session.api_session);
-      
-      const startResponse = await fetch(
-        `https://wpp.panda42.com.br/api/${session.api_session}/start-session`,
-        {
-          method: 'POST',
-          headers: {
-            'accept': '*/*',
-            'Authorization': `Bearer ${session.api_token}`
-          },
-          body: ''
-        }
-      );
-      
-      if (!startResponse.ok) {
-        throw new Error(`Erro ao iniciar sessão: ${startResponse.status}`);
-      }
-      
-      toast.info("Gerando QR Code, aguarde 10 segundos...");
-      
-      await new Promise(resolve => setTimeout(resolve, 10000));
-      
-      const qrResponse = await fetch(
-        `https://wpp.panda42.com.br/api/${session.api_session}/qrcode-session`,
-        {
-          headers: {
-            'accept': '*/*',
-            'Authorization': `Bearer ${session.api_token}`
-          }
-        }
-      );
-      
-      if (!qrResponse.ok) {
-        throw new Error(`Erro ao buscar QR Code: ${qrResponse.status}`);
-      }
-      
-      const blob = await qrResponse.blob();
-      const reader = new FileReader();
-      
-      reader.onloadend = () => {
-        setSessionsStatus(prev => ({
-          ...prev,
-          [session.id]: {
-            status: false,
-            message: 'qrcode',
-            qrCode: reader.result as string
-          }
-        }));
-        setGeneratingQrCode(false);
-        toast.success("QR Code gerado! Escaneie para conectar.");
-      };
-      
-      reader.readAsDataURL(blob);
-      
-    } catch (error: any) {
-      console.error('Erro ao iniciar sessão:', error);
-      toast.error(error.message || "Erro ao iniciar sessão");
-      setGeneratingQrCode(false);
-      setShowSessionModal(false);
-    } finally {
-      setStartingSession(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchUserData();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === "SIGNED_OUT") {
-        navigate("/login");
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, [navigate]);
-
-  useEffect(() => {
-    if (sessions.length === 0) return;
-    
-    const intervalId = setInterval(() => {
-      sessions.forEach(session => {
-        if (session.api_session && session.api_token) {
-          checkConnectionStatus(session.id, session.api_session, session.api_token);
-        }
-      });
-    }, 10000);
-    
-    return () => clearInterval(intervalId);
-  }, [sessions, checkConnectionStatus]);
-
-  useEffect(() => {
-    if (!selectedSession || !showSessionModal) return;
-    
-    const sessionStatus = sessionsStatus[selectedSession.id];
-    
-    if (sessionStatus?.status === false && (generatingQrCode || sessionStatus.qrCode)) {
-      const intervalId = setInterval(async () => {
-        if (!selectedSession.api_session || !selectedSession.api_token) return;
-        
-        try {
-          const qrResponse = await fetch(
-            `https://wpp.panda42.com.br/api/${selectedSession.api_session}/qrcode-session`,
-            {
-              headers: {
-                'accept': '*/*',
-                'Authorization': `Bearer ${selectedSession.api_token}`
-              }
-            }
-          );
-          
-          if (qrResponse.ok) {
-            const blob = await qrResponse.blob();
-            const reader = new FileReader();
-            
-            reader.onloadend = () => {
-              setSessionsStatus(prev => ({
-                ...prev,
-                [selectedSession.id]: {
-                  status: false,
-                  message: 'qrcode',
-                  qrCode: reader.result as string
-                }
-              }));
-              setGeneratingQrCode(false);
-            };
-            
-            reader.readAsDataURL(blob);
-          }
-        } catch (error) {
-          console.error('Erro no polling de QR Code:', error);
-        }
-      }, 5000);
-      
-      return () => clearInterval(intervalId);
-    }
-  }, [selectedSession, showSessionModal, sessionsStatus, generatingQrCode]);
-
-  useEffect(() => {
-    if (selectedSession && sessionsStatus[selectedSession.id]?.qrCode) {
-      setQrExpiresIn(50);
-      
-      const intervalId = setInterval(() => {
-        setQrExpiresIn(prev => {
-          if (prev === null || prev <= 1) {
-            clearInterval(intervalId);
-            toast.warning("QR Code expirado! Clique em 'Renovar QR' para gerar um novo.", {
-              duration: 5000
-            });
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-      
-      return () => clearInterval(intervalId);
-    } else {
-      setQrExpiresIn(null);
-    }
-  }, [selectedSession, sessionsStatus]);
-
-  const handleCreateSession = async (sessionName: string) => {
-    if (!orgData) return;
-    
-    setShowCreateSessionModal(false);
-    
-    // PROTEÇÃO PARA CLIENTES LEGACY
-    if (orgData.is_legacy) {
-      console.log('Cliente LEGACY - criando sessão sem cobrança');
-      
-      const activeSessionsCount = sessions.length;
-      if (orgData.session_limit && activeSessionsCount >= orgData.session_limit) {
-        toast.error(`Limite de ${orgData.session_limit} sessões atingido. Exclua uma sessão existente.`);
-        return;
-      }
-      
-      setCreatingSession(true);
-      
-      try {
-        const { data, error } = await supabase.functions.invoke('generate-whatsapp-token', {
-          body: { session_name: sessionName }
-        });
-
-        if (error) throw error;
-
-        if (data.success && data.session_id) {
-          await fetchUserData();
-          toast.success("Sessão criada com sucesso! Clique em 'Iniciar Sessão' para conectar.");
-        } else {
-          throw new Error(data.error || "Erro ao gerar token");
-        }
-      } catch (error: any) {
-        console.error("Erro ao criar sessão:", error);
-        toast.error(error.message || "Erro ao criar sessão");
-      } finally {
-        setCreatingSession(false);
-      }
-      return;
-    }
-    
-    // NOVO CLIENTE - Redirecionar para checkout
-    console.log('Novo cliente - redirecionando para checkout');
-    toast.info("Configure o pagamento para criar sua sessão");
-    navigate(`/checkout?session_name=${encodeURIComponent(sessionName)}`);
-  };
-
-  const handleRefreshQr = async (session: SessionData) => {
-    if (!session.api_session || !session.api_token) {
-      toast.error("Sessão não encontrada.");
-      return;
-    }
-    
-    setRefreshingQr(true);
-    setGeneratingQrCode(true);
-    
-    try {
-      toast.info("Buscando QR Code atualizado...");
-      
-      const qrResponse = await fetch(
-        `https://wpp.panda42.com.br/api/${session.api_session}/qrcode-session`,
-        {
-          headers: {
-            'accept': '*/*',
-            'Authorization': `Bearer ${session.api_token}`
-          }
-        }
-      );
-      
-      if (!qrResponse.ok) {
-        throw new Error(`Erro ao buscar QR Code: ${qrResponse.status}`);
-      }
-      
-      const blob = await qrResponse.blob();
-      const reader = new FileReader();
-      
-      reader.onloadend = () => {
-        setSessionsStatus(prev => ({
-          ...prev,
-          [session.id]: {
-            status: false,
-            message: 'qrcode',
-            qrCode: reader.result as string
-          }
-        }));
-        setQrExpiresIn(50);
-        setGeneratingQrCode(false);
-        toast.success("QR Code atualizado!");
-      };
-      
-      reader.readAsDataURL(blob);
-      
-    } catch (error: any) {
-      console.error('Erro ao atualizar QR Code:', error);
-      toast.error(error.message || "Erro ao atualizar QR Code");
-      setGeneratingQrCode(false);
-    } finally {
-      setRefreshingQr(false);
-    }
-  };
-
-  const handleCloseSession = async (session: SessionData) => {
-    if (!session.api_session || !session.api_token) {
-      toast.error("Sessão não encontrada");
-      return;
-    }
-    
-    setClosingSession(true);
-    
-    try {
-      const response = await fetch(
-        `https://wpp.panda42.com.br/api/${session.api_session}/close-session`,
-        {
-          method: 'POST',
-          headers: {
-            'accept': '*/*',
-            'Authorization': `Bearer ${session.api_token}`
-          },
-          body: ''
-        }
-      );
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Erro ${response.status}: ${errorText}`);
-      }
-      
-      setSessionsStatus(prev => ({
-        ...prev,
-        [session.id]: { status: false, message: 'offline' }
-      }));
-      
-      toast.success("Sessão fechada com sucesso!");
-      await fetchUserData();
-    } catch (error: any) {
-      console.error('Erro ao fechar sessão:', error);
-      toast.error(error.message || "Erro ao fechar sessão");
-    } finally {
-      setClosingSession(false);
-    }
-  };
-
-  const handleDeleteSession = async (sessionId: string) => {
-    const session = sessions.find(s => s.id === sessionId);
-    if (!session) return;
-    
-    if (!confirm(`Tem certeza que deseja excluir a sessão "${session.name}"? Esta ação não pode ser desfeita.`)) {
-      return;
-    }
-    
-    setLoggingOut(true);
-    
-    try {
-      if (session.api_session && session.api_token) {
-        try {
-          await fetch(
-            `https://wpp.panda42.com.br/api/${session.api_session}/logout-session`,
-            {
-              method: 'POST',
-              headers: {
-                'accept': '*/*',
-                'Authorization': `Bearer ${session.api_token}`
-              },
-              body: ''
-            }
-          );
-        } catch (apiError) {
-          console.warn('Erro ao fazer logout na API externa:', apiError);
-        }
-      }
-      
-      const { error } = await supabase
-        .from('sessions')
-        .delete()
-        .eq('id', session.id);
-      
-      if (error) throw error;
-      
-      setSessions(prev => prev.filter(s => s.id !== session.id));
-      
-      if (selectedSession?.id === session.id) {
-        setSelectedSession(null);
-        setShowSessionModal(false);
-      }
-      
-      toast.success("Sessão excluída com sucesso!");
-      
-    } catch (error: any) {
-      console.error('Erro ao excluir sessão:', error);
-      toast.error(error.message || "Erro ao excluir sessão");
-    } finally {
-      setLoggingOut(false);
-    }
-  };
-
   const handleSendTestMessage = async (sessionId: string, phoneNumber: string, message: string) => {
     const session = sessions.find(s => s.id === sessionId);
     if (!session?.api_session || !session?.api_token) {
@@ -644,245 +229,310 @@ const Dashboard = () => {
     }
   };
 
-  const handleRefresh = () => {
-    sessions.forEach(session => {
-      if (session.api_session && session.api_token) {
-        fetchSessionStatus(session.id, session.api_session, session.api_token);
+  useEffect(() => {
+    fetchUserData();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "SIGNED_OUT") {
+        navigate("/login");
       }
     });
-    toast.success("Status atualizado!");
-  };
+
+    return () => subscription.unsubscribe();
+  }, [navigate]);
 
   if (loading) {
     return (
-      <SidebarProvider>
-        <div className="flex min-h-screen w-full">
-          <AppSidebar />
-          <div className="flex-1 flex flex-col">
-            <AppHeader />
-            <main className="flex-1 overflow-auto bg-gradient-to-br from-background to-muted/20">
-              <div className="container mx-auto p-6 space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                  {[1, 2, 3, 4].map((i) => (
-                    <Skeleton key={i} className="h-28 rounded-lg" />
-                  ))}
-                </div>
-                <Skeleton className="h-32 rounded-lg" />
-                <Skeleton className="h-64 rounded-lg" />
-              </div>
-            </main>
-          </div>
+      <div className="container mx-auto p-6 space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {[1, 2, 3, 4].map((i) => (
+            <Skeleton key={i} className="h-28 rounded-lg" />
+          ))}
         </div>
-      </SidebarProvider>
+        <Skeleton className="h-32 rounded-lg" />
+        <Skeleton className="h-64 rounded-lg" />
+      </div>
     );
   }
 
   const activeSessions = sessions.filter(s => sessionsStatus[s.id]?.status === true);
 
+  const getStatusBadge = (sessionId: string) => {
+    const status = sessionsStatus[sessionId];
+    if (status?.status === true) {
+      return <Badge className="bg-green-500/10 text-green-600">Online</Badge>;
+    }
+    if (status?.qrCode || status?.message?.toUpperCase() === 'QRCODE') {
+      return <Badge className="bg-yellow-500/10 text-yellow-600">QR Code</Badge>;
+    }
+    return <Badge className="bg-red-500/10 text-red-600">Offline</Badge>;
+  };
+
   return (
-    <SidebarProvider>
-      <div className="flex min-h-screen w-full">
-        <AppSidebar />
-        
-        <div className="flex-1 flex flex-col">
-          <AppHeader />
-          
-          <main className="flex-1 overflow-auto bg-gradient-to-br from-background to-muted/20">
-            <div className="container mx-auto p-6 space-y-6">
-              <CreateOrgModal 
-                open={showOrgModal} 
-                onOrgCreated={() => {
-                  setShowOrgModal(false);
-                  fetchUserData();
-                }}
-                onClose={() => setShowOrgModal(false)}
+    <div className="container mx-auto p-6 space-y-6">
+      <CreateOrgModal 
+        open={showOrgModal} 
+        onOrgCreated={() => {
+          setShowOrgModal(false);
+          fetchUserData();
+        }}
+        onClose={() => setShowOrgModal(false)}
+      />
+
+      {/* Announcement Banner */}
+      <AnnouncementBanner />
+
+      {/* Stats Cards */}
+      <motion.div
+        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4"
+        variants={{
+          hidden: { opacity: 0 },
+          show: {
+            opacity: 1,
+            transition: { staggerChildren: 0.1 }
+          }
+        }}
+        initial="hidden"
+        animate="show"
+      >
+        <motion.div
+          variants={{
+            hidden: { opacity: 0, y: 20 },
+            show: { opacity: 1, y: 0 }
+          }}
+        >
+          <StatsCard
+            title="Sessões Ativas"
+            value={activeSessions.length}
+            icon={Zap}
+            subtitle={`${activeSessions.length} de ${sessions.length} online`}
+            color="green"
+            progress={sessions.length > 0 ? (activeSessions.length / sessions.length) * 100 : 0}
+          />
+        </motion.div>
+
+        <motion.div
+          variants={{
+            hidden: { opacity: 0, y: 20 },
+            show: { opacity: 1, y: 0 }
+          }}
+        >
+          <StatsCard
+            title="Total de Sessões"
+            value={sessions.length}
+            icon={MessageSquare}
+            subtitle={`Limite: ${orgData?.session_limit || '∞'}`}
+            color="blue"
+            progress={orgData?.session_limit ? (sessions.length / orgData.session_limit) * 100 : 0}
+          />
+        </motion.div>
+
+        <motion.div
+          variants={{
+            hidden: { opacity: 0, y: 20 },
+            show: { opacity: 1, y: 0 }
+          }}
+        >
+          <StatsCard
+            title="Status Geral"
+            value={activeSessions.length > 0 ? "Operacional" : "Aguardando"}
+            icon={Activity}
+            subtitle={orgData?.is_legacy ? "Cliente Legacy" : "Cliente Ativo"}
+            color="purple"
+          />
+        </motion.div>
+
+        <motion.div
+          variants={{
+            hidden: { opacity: 0, y: 20 },
+            show: { opacity: 1, y: 0 }
+          }}
+        >
+          <StatsCard
+            title="Plano Atual"
+            value={orgData?.plan || "Basic"}
+            icon={CreditCard}
+            subtitle={orgData?.is_legacy ? "Sem cobrança" : "Ativo"}
+            color="orange"
+          />
+        </motion.div>
+      </motion.div>
+
+      {/* Organization Banner */}
+      {orgData && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.1 }}
+        >
+          <OrganizationBanner
+            name={orgData.name}
+            isLegacy={orgData.is_legacy}
+            plan={orgData.plan || undefined}
+            sessionCount={sessions.length}
+            sessionLimit={orgData.session_limit || 0}
+          />
+        </motion.div>
+      )}
+
+      {/* Quick Actions */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.2 }}
+        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
+      >
+        <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => navigate("/sessions")}>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <MessageSquare className="h-5 w-5" />
+              Gerenciar Sessões
+            </CardTitle>
+            <CardDescription>
+              Crie e gerencie suas sessões WhatsApp
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button variant="outline" className="w-full">
+              <Plus className="h-4 w-4 mr-2" />
+              Nova Sessão
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => navigate("/subscriptions")}>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <CreditCard className="h-5 w-5" />
+              Assinaturas
+            </CardTitle>
+            <CardDescription>
+              Gerencie suas assinaturas e pagamentos
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button variant="outline" className="w-full">
+              Ver Assinaturas
+              <ArrowRight className="h-4 w-4 ml-2" />
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card className="hover:shadow-lg transition-shadow">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Activity className="h-5 w-5" />
+              Ferramentas
+            </CardTitle>
+            <CardDescription>
+              Teste mensagens e veja tokens de API
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="flex gap-2">
+            {activeSessions.length > 0 && activeSessions[0].api_token && (
+              <BearerTokenSheet
+                token={activeSessions[0].api_token}
+                sessionName={activeSessions[0].name}
               />
-
-              <CreateSessionModal
-                open={showCreateSessionModal}
-                onSessionCreated={(sessionName) => handleCreateSession(sessionName)}
-                onClose={() => setShowCreateSessionModal(false)}
+            )}
+            
+            {activeSessions.length > 0 && (
+              <SendTestMessageDialog
+                sessions={activeSessions.map(s => ({ id: s.id, name: s.name }))}
+                onSend={handleSendTestMessage}
               />
+            )}
+          </CardContent>
+        </Card>
+      </motion.div>
 
-              <SessionQrModal
-                session={selectedSession}
-                status={selectedSession ? sessionsStatus[selectedSession.id] : null}
-                open={showSessionModal}
-                onClose={() => {
-                  setShowSessionModal(false);
-                  setQrExpiresIn(null);
-                }}
-                onRefreshQr={() => selectedSession && handleRefreshQr(selectedSession)}
-                onCloseSession={() => selectedSession && handleCloseSession(selectedSession)}
-                onLogoutSession={() => selectedSession && handleDeleteSession(selectedSession.id)}
-                refreshingQr={refreshingQr}
-                closingSession={closingSession}
-                loggingOut={loggingOut}
-                generatingQrCode={generatingQrCode}
-                qrExpiresIn={qrExpiresIn}
-              />
+      {/* Últimas Sessões Preview */}
+      {sessions.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.3 }}
+        >
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>Últimas Sessões</CardTitle>
+                  <CardDescription>
+                    Preview das suas sessões mais recentes
+                  </CardDescription>
+                </div>
+                <Button variant="ghost" asChild>
+                  <Link to="/sessions">
+                    Ver Todas
+                    <ArrowRight className="h-4 w-4 ml-2" />
+                  </Link>
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {sessions.slice(0, 3).map((session) => (
+                  <div
+                    key={session.id}
+                    className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
+                  >
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3 mb-1">
+                        <h4 className="font-semibold">{session.name}</h4>
+                        {getStatusBadge(session.id)}
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        {session.api_session || 'Sem sessão configurada'}
+                      </p>
+                      {session.updated_at && (
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Atualizado {formatDistanceToNow(new Date(session.updated_at), { addSuffix: true, locale: ptBR })}
+                        </p>
+                      )}
+                    </div>
+                    <Button variant="ghost" size="sm" onClick={() => navigate("/sessions")}>
+                      Ver Detalhes
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+      )}
 
-              {/* Announcement Banner */}
-              <AnnouncementBanner />
-
-              {/* Superadmin Announcement Manager */}
-              {userData?.role === 'superadmin' && (
-                <AnnouncementManager />
-              )}
-
-              {/* Stats Cards */}
-              <motion.div
-                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4"
-                variants={{
-                  hidden: { opacity: 0 },
-                  show: {
-                    opacity: 1,
-                    transition: { staggerChildren: 0.1 }
-                  }
-                }}
-                initial="hidden"
-                animate="show"
-              >
-                <motion.div
-                  variants={{
-                    hidden: { opacity: 0, y: 20 },
-                    show: { opacity: 1, y: 0 }
-                  }}
-                >
-                  <StatsCard
-                    title="Sessões Ativas"
-                    value={activeSessions.length}
-                    icon={Zap}
-                    subtitle={`${activeSessions.length} de ${sessions.length} online`}
-                    color="green"
-                    progress={sessions.length > 0 ? (activeSessions.length / sessions.length) * 100 : 0}
-                  />
-                </motion.div>
-
-                <motion.div
-                  variants={{
-                    hidden: { opacity: 0, y: 20 },
-                    show: { opacity: 1, y: 0 }
-                  }}
-                >
-                  <StatsCard
-                    title="Total de Sessões"
-                    value={sessions.length}
-                    icon={MessageSquare}
-                    subtitle={`Limite: ${orgData?.session_limit || '∞'}`}
-                    color="blue"
-                    progress={orgData?.session_limit ? (sessions.length / orgData.session_limit) * 100 : 0}
-                  />
-                </motion.div>
-
-                <motion.div
-                  variants={{
-                    hidden: { opacity: 0, y: 20 },
-                    show: { opacity: 1, y: 0 }
-                  }}
-                >
-                  <StatsCard
-                    title="Status Geral"
-                    value={activeSessions.length > 0 ? "Operacional" : "Aguardando"}
-                    icon={Activity}
-                    subtitle={orgData?.is_legacy ? "Cliente Legacy" : "Cliente Ativo"}
-                    color="purple"
-                  />
-                </motion.div>
-
-                <motion.div
-                  variants={{
-                    hidden: { opacity: 0, y: 20 },
-                    show: { opacity: 1, y: 0 }
-                  }}
-                >
-                  <StatsCard
-                    title="Plano Atual"
-                    value={orgData?.plan || "Basic"}
-                    icon={CreditCard}
-                    subtitle={orgData?.is_legacy ? "Sem cobrança" : "Ativo"}
-                    color="orange"
-                  />
-                </motion.div>
-              </motion.div>
-
-              {/* Organization Banner */}
-              {orgData && (
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: 0.1 }}
-                >
-                  <OrganizationBanner
-                    name={orgData.name}
-                    isLegacy={orgData.is_legacy}
-                    plan={orgData.plan || undefined}
-                    sessionCount={sessions.length}
-                    sessionLimit={orgData.session_limit || 0}
-                  />
-                </motion.div>
-              )}
-
-              {/* Quick Actions */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.2 }}
-                className="flex flex-col sm:flex-row gap-3 items-start"
-              >
-                <QuickActions
-                  onNewSession={() => setShowCreateSessionModal(true)}
-                  onSendMessage={() => {}} // Dialog handles its own state
-                  onRefresh={handleRefresh}
-                />
-                
-                {activeSessions.length > 0 && activeSessions[0].api_token && (
-                  <BearerTokenSheet
-                    token={activeSessions[0].api_token}
-                    sessionName={activeSessions[0].name}
-                  />
-                )}
-                
-                {activeSessions.length > 0 && (
-                  <SendTestMessageDialog
-                    sessions={activeSessions.map(s => ({ id: s.id, name: s.name }))}
-                    onSend={handleSendTestMessage}
-                  />
-                )}
-              </motion.div>
-
-              {/* Sessions Grid */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.3 }}
-              >
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Minhas Sessões WhatsApp</CardTitle>
-                    <CardDescription>
-                      {sessions.length}/{orgData?.session_limit || '∞'} sessões criadas
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <SessionsGrid
-                      sessions={sessions}
-                      sessionStatuses={sessionsStatus}
-                      onViewQr={(session) => {
-                        setSelectedSession(session);
-                        setShowSessionModal(true);
-                      }}
-                      onStartSession={handleStartSession}
-                      onDeleteSession={handleDeleteSession}
-                    />
-                  </CardContent>
-                </Card>
-              </motion.div>
-            </div>
-          </main>
-        </div>
-      </div>
-    </SidebarProvider>
+      {/* Anúncios Recentes (Superadmin apenas) */}
+      {userData?.role === 'superadmin' && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.4 }}
+        >
+          <Card className="border-primary/20">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <Activity className="h-5 w-5 text-primary" />
+                    Gerenciar Anúncios
+                  </CardTitle>
+                  <CardDescription>
+                    Acesso administrativo para gerenciar anúncios do sistema
+                  </CardDescription>
+                </div>
+                <Button variant="default" asChild>
+                  <Link to="/announcements">
+                    Acessar
+                    <ArrowRight className="h-4 w-4 ml-2" />
+                  </Link>
+                </Button>
+              </div>
+            </CardHeader>
+          </Card>
+        </motion.div>
+      )}
+    </div>
   );
 };
 

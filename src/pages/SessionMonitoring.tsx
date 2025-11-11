@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
-import { RefreshCw, ArrowLeft, Activity } from "lucide-react";
+import { RefreshCw, Activity } from "lucide-react";
 import SessionCard from "@/components/SessionCard";
 import SessionDetailsModal from "@/components/SessionDetailsModal";
 
@@ -195,111 +195,100 @@ const SessionMonitoring = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background p-6">
-      <div className="max-w-7xl mx-auto space-y-6">
-        {/* Header */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => navigate("/dashboard")}
-                >
-                  <ArrowLeft className="h-5 w-5" />
-                </Button>
-                <div>
-                  <CardTitle className="flex items-center gap-2">
-                    <Activity className="h-6 w-6 text-primary" />
-                    Monitoramento de Sessões
-                  </CardTitle>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Visão geral de todas as sessões ativas do sistema
-                  </p>
-                </div>
-              </div>
-              <Button
-                onClick={handleRefresh}
-                disabled={refreshing}
-                variant="outline"
-              >
-                <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
-                Atualizar
-              </Button>
+    <div className="max-w-7xl mx-auto p-6 space-y-6">
+      {/* Header */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <Activity className="h-6 w-6 text-primary" />
+                Monitoramento de Sessões
+              </CardTitle>
+              <p className="text-sm text-muted-foreground mt-1">
+                Visão geral de todas as sessões ativas do sistema
+              </p>
             </div>
-          </CardHeader>
-        </Card>
+            <Button
+              onClick={handleRefresh}
+              disabled={refreshing}
+              variant="outline"
+            >
+              <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
+              Atualizar
+            </Button>
+          </div>
+        </CardHeader>
+      </Card>
 
-        {/* Filtros */}
+      {/* Filtros */}
+      <Card>
+        <CardContent className="pt-6">
+          <div className="flex flex-wrap gap-2">
+            <Button
+              variant={filter === 'all' ? 'default' : 'outline'}
+              onClick={() => setFilter('all')}
+            >
+              Todas ({getStatusCount('all')})
+            </Button>
+            <Button
+              variant={filter === 'online' ? 'default' : 'outline'}
+              onClick={() => setFilter('online')}
+            >
+              🟢 Online ({getStatusCount('online')})
+            </Button>
+            <Button
+              variant={filter === 'qrcode' ? 'default' : 'outline'}
+              onClick={() => setFilter('qrcode')}
+            >
+              🟡 QR Code ({getStatusCount('qrcode')})
+            </Button>
+            <Button
+              variant={filter === 'offline' ? 'default' : 'outline'}
+              onClick={() => setFilter('offline')}
+            >
+              🔴 Offline ({getStatusCount('offline')})
+            </Button>
+            <Button
+              variant={filter === 'no-session' ? 'default' : 'outline'}
+              onClick={() => setFilter('no-session')}
+            >
+              ⚪ Sem Sessão ({getStatusCount('no-session')})
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Grid de Cards */}
+      {loading ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <Card key={i} className="animate-pulse">
+              <CardContent className="p-6">
+                <div className="h-32 bg-muted rounded" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {filteredSessions.map((session) => (
+            <SessionCard
+              key={session.id}
+              session={session}
+              onClick={() => handleCardClick(session)}
+            />
+          ))}
+        </div>
+      )}
+
+      {!loading && filteredSessions.length === 0 && (
         <Card>
-          <CardContent className="pt-6">
-            <div className="flex flex-wrap gap-2">
-              <Button
-                variant={filter === 'all' ? 'default' : 'outline'}
-                onClick={() => setFilter('all')}
-              >
-                Todas ({getStatusCount('all')})
-              </Button>
-              <Button
-                variant={filter === 'online' ? 'default' : 'outline'}
-                onClick={() => setFilter('online')}
-              >
-                🟢 Online ({getStatusCount('online')})
-              </Button>
-              <Button
-                variant={filter === 'qrcode' ? 'default' : 'outline'}
-                onClick={() => setFilter('qrcode')}
-              >
-                🟡 QR Code ({getStatusCount('qrcode')})
-              </Button>
-              <Button
-                variant={filter === 'offline' ? 'default' : 'outline'}
-                onClick={() => setFilter('offline')}
-              >
-                🔴 Offline ({getStatusCount('offline')})
-              </Button>
-              <Button
-                variant={filter === 'no-session' ? 'default' : 'outline'}
-                onClick={() => setFilter('no-session')}
-              >
-                ⚪ Sem Sessão ({getStatusCount('no-session')})
-              </Button>
-            </div>
+          <CardContent className="p-12 text-center text-muted-foreground">
+            Nenhuma sessão encontrada com este filtro
           </CardContent>
         </Card>
-
-        {/* Grid de Cards */}
-        {loading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {[1, 2, 3, 4, 5, 6].map((i) => (
-              <Card key={i} className="animate-pulse">
-                <CardContent className="p-6">
-                  <div className="h-32 bg-muted rounded" />
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredSessions.map((session) => (
-              <SessionCard
-                key={session.id}
-                session={session}
-                onClick={() => handleCardClick(session)}
-              />
-            ))}
-          </div>
-        )}
-
-        {!loading && filteredSessions.length === 0 && (
-          <Card>
-            <CardContent className="p-12 text-center text-muted-foreground">
-              Nenhuma sessão encontrada com este filtro
-            </CardContent>
-          </Card>
-        )}
-      </div>
+      )}
 
       {/* Modal de Detalhes */}
       <SessionDetailsModal

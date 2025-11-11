@@ -25,12 +25,12 @@ interface NavItem {
 
 const mainItems: NavItem[] = [
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
-  { title: "Sessões", url: "/dashboard", icon: MessageSquare },
+  { title: "Sessões", url: "/sessions", icon: MessageSquare },
   { title: "Assinaturas", url: "/subscriptions", icon: CreditCard },
 ];
 
 const adminItems: NavItem[] = [
-  { title: "Anúncios", url: "/dashboard", icon: Megaphone, adminOnly: true },
+  { title: "Anúncios", url: "/announcements", icon: Megaphone, adminOnly: true },
   { title: "Monitoramento", url: "/monitoring", icon: Activity, adminOnly: true },
 ];
 
