@@ -44,8 +44,9 @@ const SessionManagementCard = ({
     if (status?.status === true) {
       return {
         color: 'bg-green-500',
-        textColor: 'text-green-600',
-        bgColor: 'bg-green-50 dark:bg-green-950',
+        textColor: 'text-green-600 dark:text-green-400',
+        bgColor: 'bg-green-500/10',
+        borderColor: 'border-green-500/20',
         label: 'Online',
         emoji: '🟢'
       };
@@ -54,8 +55,9 @@ const SessionManagementCard = ({
     if (status?.qrCode || status?.message?.toUpperCase() === 'QRCODE') {
       return {
         color: 'bg-yellow-500',
-        textColor: 'text-yellow-600',
-        bgColor: 'bg-yellow-50 dark:bg-yellow-950',
+        textColor: 'text-yellow-600 dark:text-yellow-400',
+        bgColor: 'bg-yellow-500/10',
+        borderColor: 'border-yellow-500/20',
         label: 'QR Code',
         emoji: '🟡'
       };
@@ -63,8 +65,9 @@ const SessionManagementCard = ({
     
     return {
       color: 'bg-red-500',
-      textColor: 'text-red-600',
-      bgColor: 'bg-red-50 dark:bg-red-950',
+      textColor: 'text-red-600 dark:text-red-400',
+      bgColor: 'bg-red-500/10',
+      borderColor: 'border-red-500/20',
       label: 'Offline',
       emoji: '🔴'
     };
@@ -76,15 +79,16 @@ const SessionManagementCard = ({
 
   return (
     <motion.div
-      whileHover={{ scale: 1.02 }}
+      whileHover={{ y: -4 }}
       transition={{ duration: 0.2 }}
       className="h-full"
     >
-      <Card className="hover:shadow-lg transition-all border-2 hover:border-primary/50 h-full flex flex-col">
+      <Card className={`hover:shadow-lg transition-all border-2 ${statusConfig.borderColor} hover:border-primary/50 h-full flex flex-col overflow-hidden`}>
+        <div className={`h-1 ${statusConfig.color}`} />
         <CardContent className="p-6 space-y-4 flex-1 flex flex-col">
           {/* Status Badge */}
           <div className="flex items-center justify-between">
-            <Badge className={`${statusConfig.bgColor} ${statusConfig.textColor} border-0`}>
+            <Badge className={`${statusConfig.bgColor} ${statusConfig.textColor} border-0 font-medium`}>
               <span className={`inline-block w-2 h-2 rounded-full ${statusConfig.color} mr-2 animate-pulse`} />
               {statusConfig.label}
             </Badge>
