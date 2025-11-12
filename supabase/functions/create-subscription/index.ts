@@ -118,8 +118,14 @@ serve(async (req) => {
 
     console.log('Subscription created in MP:', mpResult.id);
 
+    // Criar cliente admin para bypass de RLS
+    const supabaseAdmin = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
+
     // Salvar assinatura no banco (vinculada à sessão)
-    const { error: insertError } = await supabaseClient
+    const { error: insertError } = await supabaseAdmin
       .from('subscriptions' as any)
       .insert({
         session_id: session_id,
