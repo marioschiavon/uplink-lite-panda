@@ -17,6 +17,7 @@ interface SessionData {
   organization_id: string;
   created_at?: string;
   updated_at?: string;
+  requires_subscription?: boolean;
 }
 
 interface SessionStatus {
@@ -28,6 +29,7 @@ interface SessionStatus {
 interface SessionManagementCardProps {
   session: SessionData;
   status: SessionStatus | null;
+  hasActiveSubscription?: boolean;
   onViewQr: () => void;
   onStartSession: () => void;
   onDelete: () => void;
@@ -36,6 +38,7 @@ interface SessionManagementCardProps {
 const SessionManagementCard = ({ 
   session, 
   status,
+  hasActiveSubscription,
   onViewQr,
   onStartSession,
   onDelete
@@ -126,7 +129,7 @@ const SessionManagementCard = ({
               </Button>
             )}
             
-            {!isOnline && !hasQrCode && (
+            {!isOnline && !hasQrCode && (session.requires_subscription === undefined || session.requires_subscription === false || hasActiveSubscription) && (
               <Button
                 onClick={onStartSession}
                 className="w-full gap-2"
@@ -134,6 +137,16 @@ const SessionManagementCard = ({
               >
                 <Play className="w-4 h-4" />
                 Iniciar Sessão
+              </Button>
+            )}
+
+            {!isOnline && !hasQrCode && session.requires_subscription && !hasActiveSubscription && (
+              <Button
+                onClick={() => window.location.href = `/checkout?session_name=${session.name}`}
+                className="w-full gap-2"
+                variant="default"
+              >
+                Assinar para Ativar
               </Button>
             )}
 

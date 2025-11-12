@@ -202,8 +202,51 @@ const Sessions = () => {
   }, []);
 
   const handleStartSession = useCallback(async (session: SessionData) => {
-    if (!session.api_session || !session.api_token) {
-      toast.error("Sessão não encontrada.");
+    // Validar se precisa de assinatura
+    if (session.requires_subscription) {
+      const { data: subscription } = await supabase
+        .from('subscriptions')
+        .select('status')
+        .eq('session_id', session.id)
+        .eq('status', 'active')
+        .maybeSingle();
+
+      if (!subscription) {
+        toast.error("Esta sessão requer assinatura ativa. Finalize o pagamento primeiro.");
+        navigate(`/checkout?session_name=${session.name}`);
+        return;
+      }
+    }
+
+    // Se não tem api_session ainda, gerar token primeiro
+    if (!session.api_session) {
+      toast.info("Configurando sua sessão...");
+      setStartingSession(true);
+      
+      try {
+        const { data: tokenData, error: tokenError } = await supabase.functions.invoke(
+          'generate-whatsapp-token',
+          { body: { session_name: session.name } }
+        );
+        
+        if (tokenError || !tokenData.success) {
+          throw new Error(tokenError?.message || "Erro ao configurar sessão. Verifique se a API está online.");
+        }
+        
+        toast.success("Sessão configurada! Clique em 'Iniciar Sessão' novamente para conectar.");
+        await fetchSessions();
+        return;
+      } catch (error: any) {
+        console.error('Erro ao configurar sessão:', error);
+        toast.error(error.message || "Erro ao configurar sessão");
+        return;
+      } finally {
+        setStartingSession(false);
+      }
+    }
+
+    if (!session.api_token) {
+      toast.error("Token não encontrado.");
       return;
     }
     

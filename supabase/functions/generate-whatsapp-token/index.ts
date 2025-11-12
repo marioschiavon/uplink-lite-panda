@@ -107,28 +107,67 @@ serve(async (req) => {
     const data = await response.json();
     console.log(`Token generated successfully for organization`);
 
-    // 8. Criar registro na tabela sessions usando service_role
+    // 8. Criar ou atualizar registro na tabela sessions usando service_role
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    const { data: sessionData, error: insertError } = await supabaseAdmin
+    // Verificar se sessão já existe
+    const { data: existingSession } = await supabaseAdmin
       .from('sessions')
-      .insert({
-        organization_id: userData.organization_id,
-        name: session_name,
-        api_session: session_name,
-        api_token: data.token,
-        api_token_full: data.full,
-        status: 'pending'
-      })
-      .select()
-      .single();
+      .select('*')
+      .eq('organization_id', userData.organization_id)
+      .eq('name', session_name)
+      .maybeSingle();
 
-    if (insertError) {
-      console.error('Error inserting session:', insertError);
-      throw new Error('Failed to create session in database');
+    let sessionData;
+
+    if (existingSession) {
+      // UPDATE: adicionar tokens gerados
+      const { data: updatedSession, error: updateError } = await supabaseAdmin
+        .from('sessions')
+        .update({
+          api_session: session_name,
+          api_token: data.token,
+          api_token_full: data.full,
+          status: 'configured',
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', existingSession.id)
+        .select()
+        .single();
+
+      if (updateError) {
+        console.error('Error updating session:', updateError);
+        throw new Error('Failed to update session in database');
+      }
+
+      sessionData = updatedSession;
+      console.log('Session updated:', sessionData.id);
+    } else {
+      // INSERT: criar nova sessão (clientes legacy)
+      const { data: newSession, error: insertError } = await supabaseAdmin
+        .from('sessions')
+        .insert({
+          organization_id: userData.organization_id,
+          name: session_name,
+          api_session: session_name,
+          api_token: data.token,
+          api_token_full: data.full,
+          status: 'configured',
+          requires_subscription: false
+        })
+        .select()
+        .single();
+
+      if (insertError) {
+        console.error('Error inserting session:', insertError);
+        throw new Error('Failed to create session in database');
+      }
+
+      sessionData = newSession;
+      console.log('Session created:', sessionData.id);
     }
 
     // 9. Atualizar organizations (compatibilidade temporária)
