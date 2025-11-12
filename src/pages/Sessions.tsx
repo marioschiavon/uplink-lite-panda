@@ -366,8 +366,6 @@ const Sessions = () => {
   const handleCreateSession = async (sessionName: string) => {
     if (!orgData) return;
     
-    setShowCreateSessionModal(false);
-    
     if (orgData.is_legacy) {
       const activeSessionsCount = sessions.length;
       if (orgData.session_limit && activeSessionsCount >= orgData.session_limit) {
@@ -386,6 +384,7 @@ const Sessions = () => {
 
         if (data.success && data.session_id) {
           await fetchSessions();
+          setShowCreateSessionModal(false);
           toast.success("Sessão criada com sucesso! Clique em 'Iniciar Sessão' para conectar.");
         } else {
           throw new Error(data.error || "Erro ao gerar token");
@@ -560,6 +559,7 @@ const Sessions = () => {
         open={showCreateSessionModal}
         onSessionCreated={(sessionName) => handleCreateSession(sessionName)}
         onClose={() => setShowCreateSessionModal(false)}
+        isCreating={creatingSession}
       />
 
       <SessionQrModal

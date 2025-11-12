@@ -10,11 +10,11 @@ interface CreateSessionModalProps {
   open: boolean;
   onSessionCreated: (sessionName: string) => void;
   onClose: () => void;
+  isCreating?: boolean;
 }
 
-const CreateSessionModal = ({ open, onSessionCreated, onClose }: CreateSessionModalProps) => {
+const CreateSessionModal = ({ open, onSessionCreated, onClose, isCreating = false }: CreateSessionModalProps) => {
   const [sessionName, setSessionName] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const validateSessionName = (name: string): string | null => {
     if (!name || name.trim().length === 0) {
@@ -46,12 +46,11 @@ const CreateSessionModal = ({ open, onSessionCreated, onClose }: CreateSessionMo
       return;
     }
     
-    setIsSubmitting(true);
     onSessionCreated(sessionName);
   };
 
   const handleClose = () => {
-    if (!isSubmitting) {
+    if (!isCreating) {
       setSessionName("");
       onClose();
     }
@@ -77,7 +76,7 @@ const CreateSessionModal = ({ open, onSessionCreated, onClose }: CreateSessionMo
               placeholder="Ex: vendas-sp, suporte_2024"
               value={sessionName}
               onChange={(e) => setSessionName(e.target.value)}
-              disabled={isSubmitting}
+              disabled={isCreating}
               className="font-mono"
               autoFocus
             />
@@ -103,16 +102,16 @@ const CreateSessionModal = ({ open, onSessionCreated, onClose }: CreateSessionMo
               type="button"
               variant="outline"
               onClick={handleClose}
-              disabled={isSubmitting}
+              disabled={isCreating}
             >
               Cancelar
             </Button>
             <Button
               type="submit"
-              disabled={isSubmitting}
+              disabled={isCreating}
               className="gap-2 bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-700"
             >
-              {isSubmitting ? (
+              {isCreating ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
                   Criando...
