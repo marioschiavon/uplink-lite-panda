@@ -388,7 +388,7 @@ const Sessions = () => {
 
   useEffect(() => {
     if (selectedSession && sessionsStatus[selectedSession.id]?.qrCode) {
-      setQrExpiresIn(50);
+      setQrExpiresIn(120);
       
       const intervalId = setInterval(() => {
         setQrExpiresIn(prev => {
@@ -488,7 +488,7 @@ const Sessions = () => {
             qrCode: reader.result as string
           }
         }));
-        setQrExpiresIn(50);
+        setQrExpiresIn(120);
         setGeneratingQrCode(false);
         toast.success("QR Code atualizado!");
       };
