@@ -275,6 +275,52 @@ const Sessions = () => {
     }
   }, []);
 
+  const handleQrExpiration = async (session: SessionData) => {
+    if (!session.api_session || !session.api_token) return;
+    
+    try {
+      const response = await fetch(
+        `https://wpp.panda42.com.br/api/${session.api_session}/check-connection-session`,
+        {
+          headers: {
+            'accept': '*/*',
+            'Authorization': `Bearer ${session.api_token}`
+          }
+        }
+      );
+      
+      if (response.ok) {
+        const data = await response.json();
+        
+        if (data.status === false) {
+          setSessionsStatus(prev => ({
+            ...prev,
+            [session.id]: {
+              status: false,
+              message: 'Disconnected'
+            }
+          }));
+          
+          setShowSessionModal(false);
+          setSelectedSession(null);
+          
+          toast.info(
+            "QR Code expirou e a sessão ainda está desconectada. Clique em 'Iniciar Sessão' para tentar novamente.",
+            { duration: 5000 }
+          );
+        } else if (data.status === true) {
+          setSessionsStatus(prev => ({
+            ...prev,
+            [session.id]: data
+          }));
+          toast.success("Sessão conectada com sucesso! ✓");
+        }
+      }
+    } catch (error) {
+      console.error('Erro ao verificar status na expiração:', error);
+    }
+  };
+
   useEffect(() => {
     fetchSessions();
   }, []);
@@ -348,9 +394,11 @@ const Sessions = () => {
         setQrExpiresIn(prev => {
           if (prev === null || prev <= 1) {
             clearInterval(intervalId);
-            toast.warning("QR Code expirado! Clique em 'Renovar QR' para gerar um novo.", {
-              duration: 5000
-            });
+            
+            if (selectedSession) {
+              handleQrExpiration(selectedSession);
+            }
+            
             return 0;
           }
           return prev - 1;
