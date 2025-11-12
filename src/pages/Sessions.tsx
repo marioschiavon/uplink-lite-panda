@@ -205,7 +205,7 @@ const Sessions = () => {
     // Validar se precisa de assinatura
     if (session.requires_subscription) {
       const { data: subscription } = await supabase
-        .from('subscriptions')
+        .from('subscriptions' as any)
         .select('status')
         .eq('session_id', session.id)
         .eq('status', 'active')
