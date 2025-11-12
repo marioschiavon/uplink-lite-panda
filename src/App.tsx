@@ -7,6 +7,8 @@ import { ProtectedLayout } from "./components/layout/ProtectedLayout";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
+import ResetPassword from "./pages/ResetPassword";
+import UpdatePassword from "./pages/UpdatePassword";
 import Dashboard from "./pages/Dashboard";
 import Sessions from "./pages/Sessions";
 import SessionMonitoring from "./pages/SessionMonitoring";
@@ -28,6 +30,8 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/update-password" element={<UpdatePassword />} />
           <Route path="/checkout" element={<Checkout />} />
           
           {/* Protected Routes with Sidebar */}

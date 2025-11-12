@@ -38,33 +38,49 @@ export default function Checkout() {
     setCreatingSession(true);
 
     try {
-      // PASSO 1: Criar a sessão primeiro
-      toast.info("Criando sua sessão...");
-      console.log('Criando sessão:', sessionName);
+      // PASSO 1: Criar registro de sessão PENDENTE no banco (sem chamar API externa)
+      toast.info("Preparando sua sessão...");
+      console.log('Criando registro de sessão:', sessionName);
       
-      const { data: sessionData, error: sessionError } = await supabase.functions.invoke(
-        'generate-whatsapp-token',
-        { body: { session_name: sessionName } }
-      );
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Usuário não autenticado');
+
+      const { data: userRecord } = await supabase
+        .from("users")
+        .select("organization_id")
+        .eq("id", user.id)
+        .single();
+
+      if (!userRecord?.organization_id) {
+        throw new Error('Organização não encontrada');
+      }
+
+      // Criar sessão pendente (sem api_session/token ainda)
+      const { data: newSession, error: sessionError } = await supabase
+        .from('sessions')
+        .insert({
+          name: sessionName,
+          organization_id: userRecord.organization_id,
+          requires_subscription: true,
+          status: 'pending_payment'
+        })
+        .select()
+        .single();
 
       if (sessionError) {
         console.error('Erro ao criar sessão:', sessionError);
-        throw new Error('Erro ao criar sessão');
+        throw new Error('Erro ao criar registro da sessão');
       }
 
-      if (!sessionData.success || !sessionData.session_id) {
-        throw new Error(sessionData.error || "Erro ao gerar token da sessão");
-      }
-
-      console.log('Sessão criada com sucesso:', sessionData.session_id);
+      console.log('Sessão criada:', newSession.id);
       setCreatingSession(false);
 
-      // PASSO 2: Criar assinatura para essa sessão
-      toast.info("Preparando pagamento...");
-      console.log('Criando assinatura para sessão:', sessionData.session_id);
+      // PASSO 2: Criar assinatura no Mercado Pago
+      toast.info("Redirecionando para pagamento...");
+      console.log('Criando assinatura para sessão:', newSession.id);
 
       const { data, error } = await supabase.functions.invoke('create-subscription', {
-        body: { session_id: sessionData.session_id }
+        body: { session_id: newSession.id }
       });
 
       if (error) {
