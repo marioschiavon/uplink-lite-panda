@@ -95,6 +95,14 @@ const Login = () => {
                 />
               </div>
             </div>
+            <div className="flex items-center justify-end">
+              <Link 
+                to="/reset-password" 
+                className="text-sm text-primary hover:text-primary/80 font-medium"
+              >
+                Esqueci minha senha
+              </Link>
+            </div>
             <Button 
               type="submit" 
               className="w-full bg-gradient-to-r from-primary to-secondary hover:opacity-90 transition-opacity" 
