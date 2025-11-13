@@ -94,7 +94,7 @@ serve(async (req) => {
     const subscriptionData = {
       payer_email: userData.email,
       back_url: `${backUrl}/dashboard`,
-      reason: `Uplink - Sessão ${sessionData.name} - ${(sessionData as any).organizations.name}`,
+      reason: `Uplink - ${sessionData.name}`,
       external_reference: session_id,
       auto_recurring: {
         frequency: 1,

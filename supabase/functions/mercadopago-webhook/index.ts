@@ -1,5 +1,106 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { Resend } from "https://esm.sh/resend@4.0.0";
+
+async function sendSubscriptionEmail(
+  type: 'created' | 'cancelled' | 'payment_failed',
+  data: {
+    email: string;
+    sessionName: string;
+    preapprovalId: string;
+    amount?: number;
+    nextPaymentDate?: string;
+  }
+) {
+  const resend = new Resend(Deno.env.get('RESEND_API_KEY'));
+  
+  const templates = {
+    created: {
+      subject: '✅ Assinatura Uplink Ativada',
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <h1 style="color: #10b981;">Assinatura Ativada com Sucesso!</h1>
+          <p>Olá!</p>
+          <p>Sua assinatura da sessão <strong>${data.sessionName}</strong> foi ativada com sucesso.</p>
+          <div style="background-color: #f0fdf4; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #10b981;">
+            <p><strong>Detalhes:</strong></p>
+            <ul>
+              <li>Sessão: ${data.sessionName}</li>
+              <li>Valor: R$ ${data.amount?.toFixed(2)}</li>
+              <li>Próximo pagamento: ${new Date(data.nextPaymentDate!).toLocaleDateString('pt-BR')}</li>
+              <li>ID da Assinatura: ${data.preapprovalId}</li>
+            </ul>
+          </div>
+          <p>Sua sessão já está disponível para uso!</p>
+          <p style="color: #666; font-size: 12px; margin-top: 30px;">
+            Uplink - Sistema de Gestão WhatsApp<br>
+            ${new Date().toLocaleString('pt-BR')}
+          </p>
+        </div>
+      `
+    },
+    cancelled: {
+      subject: '⚠️ Assinatura Uplink Cancelada',
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <h1 style="color: #ef4444;">Assinatura Cancelada</h1>
+          <p>Olá!</p>
+          <p>Sua assinatura da sessão <strong>${data.sessionName}</strong> foi cancelada.</p>
+          <div style="background-color: #fff5f5; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #ef4444;">
+            <p><strong>O que isso significa:</strong></p>
+            <ul>
+              <li>O acesso à sessão será bloqueado</li>
+              <li>Não haverá novas cobranças</li>
+              <li>Você pode reativar a qualquer momento</li>
+            </ul>
+          </div>
+          <p>Se foi um erro, você pode criar uma nova assinatura no painel.</p>
+          <p style="color: #666; font-size: 12px; margin-top: 30px;">
+            Uplink - Sistema de Gestão WhatsApp<br>
+            ${new Date().toLocaleString('pt-BR')}
+          </p>
+        </div>
+      `
+    },
+    payment_failed: {
+      subject: '❌ Falha no Pagamento da Assinatura Uplink',
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <h1 style="color: #f59e0b;">Falha no Pagamento</h1>
+          <p>Olá!</p>
+          <p>Não conseguimos processar o pagamento da sua assinatura <strong>${data.sessionName}</strong>.</p>
+          <div style="background-color: #fffaf0; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #f59e0b;">
+            <p><strong>O que fazer:</strong></p>
+            <ul>
+              <li>Verifique se há saldo disponível no cartão</li>
+              <li>Acesse o Mercado Pago para atualizar forma de pagamento</li>
+              <li>Entre em contato com o suporte se precisar de ajuda</li>
+            </ul>
+          </div>
+          <p><strong>IMPORTANTE:</strong> O acesso à sessão pode ser suspenso se o pagamento não for regularizado.</p>
+          <p style="color: #666; font-size: 12px; margin-top: 30px;">
+            Uplink - Sistema de Gestão WhatsApp<br>
+            ${new Date().toLocaleString('pt-BR')}
+          </p>
+        </div>
+      `
+    }
+  };
+
+  const template = templates[type];
+
+  try {
+    await resend.emails.send({
+      from: 'Uplink Assinaturas <assinaturas@updates.panda42.com.br>',
+      to: [data.email],
+      subject: template.subject,
+      html: template.html,
+    });
+    console.log(`✅ Email de ${type} enviado para ${data.email}`);
+  } catch (error) {
+    console.error(`❌ Erro ao enviar email de ${type}:`, error);
+  }
+}
 
 serve(async (req) => {
   try {
@@ -102,6 +203,15 @@ serve(async (req) => {
         newStatus = 'active';
         subscriptionActive = true;
         console.log('Assinatura autorizada - ativando acesso');
+        
+        // Enviar email de confirmação
+        await sendSubscriptionEmail('created', {
+          email: preapproval.payer_email || subscription.payer_email,
+          sessionName: subscription.sessions?.name || 'Sua sessão',
+          preapprovalId: preapprovalId,
+          amount: 69.90,
+          nextPaymentDate: preapproval.next_payment_date,
+        });
         break;
       case 'paused':
         newStatus = 'paused';
@@ -110,6 +220,29 @@ serve(async (req) => {
       case 'cancelled':
         newStatus = 'cancelled';
         console.log('Assinatura cancelada');
+        
+        // Enviar email de cancelamento
+        await sendSubscriptionEmail('cancelled', {
+          email: preapproval.payer_email || subscription.payer_email,
+          sessionName: subscription.sessions?.name || 'Sua sessão',
+          preapprovalId: preapprovalId,
+        });
+        break;
+      case 'pending':
+        // Se status anterior era 'active' e agora é 'pending', houve falha no pagamento
+        if (subscription.status === 'active') {
+          console.log('Falha detectada no pagamento recorrente');
+          
+          await sendSubscriptionEmail('payment_failed', {
+            email: preapproval.payer_email || subscription.payer_email,
+            sessionName: subscription.sessions?.name || 'Sua sessão',
+            preapprovalId: preapprovalId,
+          });
+          
+          newStatus = 'past_due';
+        } else {
+          newStatus = 'pending';
+        }
         break;
       default:
         console.log('Status desconhecido:', preapproval.status);
