@@ -86,12 +86,24 @@ serve(async (req) => {
     // Criar assinatura no Mercado Pago
     const backUrl = `https://kfsvpbujmetlendgwnrs.supabase.co`.replace('supabase.co', 'lovable.app');
     
+    // Calcular datas de início e fim (1 ano de duração)
+    const startDate = new Date();
+    const endDate = new Date();
+    endDate.setFullYear(endDate.getFullYear() + 1);
+    
     const subscriptionData = {
-      preapproval_plan_id: "dabea6daad5d4fb8afca202589f0d82e", // Plano UPLINKLITE
+      payer_email: userData.email,
+      back_url: `${backUrl}/dashboard`,
       reason: `Uplink - Sessão ${sessionData.name} - ${(sessionData as any).organizations.name}`,
       external_reference: session_id,
-      payer_email: userData.email,
-      back_url: `${backUrl}/dashboard`
+      auto_recurring: {
+        frequency: 1,
+        frequency_type: "months",
+        transaction_amount: 69.90,
+        currency_id: "BRL",
+        start_date: startDate.toISOString(),
+        end_date: endDate.toISOString()
+      }
     };
 
     console.log('Creating subscription in Mercado Pago...');
