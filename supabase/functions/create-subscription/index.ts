@@ -87,6 +87,7 @@ serve(async (req) => {
     const backUrl = `https://kfsvpbujmetlendgwnrs.supabase.co`.replace('supabase.co', 'lovable.app');
     
     const subscriptionData = {
+      preapproval_plan_id: "dabea6daad5d4fb8afca202589f0d82e", // Plano UPLINKLITE
       reason: `Uplink - Sessão ${sessionData.name} - ${(sessionData as any).organizations.name}`,
       external_reference: session_id,
       payer_email: userData.email,
@@ -95,8 +96,8 @@ serve(async (req) => {
         frequency: 1,
         frequency_type: "months",
         transaction_amount: 69.90,
-        currency_id: "BRL",
-      },
+        currency_id: "BRL"
+      }
     };
 
     console.log('Creating subscription in Mercado Pago...');
@@ -112,8 +113,16 @@ serve(async (req) => {
     const mpResult = await mpResponse.json();
 
     if (!mpResponse.ok) {
-      console.error('Mercado Pago error:', mpResult);
-      throw new Error(`Erro ao criar assinatura no Mercado Pago: ${mpResult.message || 'Erro desconhecido'}`);
+      const errorDetails = {
+        status: mpResponse.status,
+        statusText: mpResponse.statusText,
+        message: mpResult.message,
+        error: mpResult.error,
+        cause: mpResult.cause,
+        token_used: accessToken.substring(0, 15) + '...'
+      };
+      console.error('Mercado Pago API Error:', JSON.stringify(errorDetails, null, 2));
+      throw new Error(`Erro ao criar assinatura no Mercado Pago (${mpResponse.status}): ${mpResult.message || mpResult.error || 'Erro desconhecido'}`);
     }
 
     console.log('Subscription created in MP:', mpResult.id);
