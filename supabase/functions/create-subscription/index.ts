@@ -91,13 +91,7 @@ serve(async (req) => {
       reason: `Uplink - Sessão ${sessionData.name} - ${(sessionData as any).organizations.name}`,
       external_reference: session_id,
       payer_email: userData.email,
-      back_url: `${backUrl}/dashboard`,
-      auto_recurring: {
-        frequency: 1,
-        frequency_type: "months",
-        transaction_amount: 69.90,
-        currency_id: "BRL"
-      }
+      back_url: `${backUrl}/dashboard`
     };
 
     console.log('Creating subscription in Mercado Pago...');
