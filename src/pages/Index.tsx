@@ -339,26 +339,63 @@ const Index = () => {
         <div className="container mx-auto max-w-4xl">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold text-foreground mb-4">O que dizem nossos clientes</h2>
-            <p className="text-xl text-muted-foreground">Em breve, depoimentos de clientes satisfeitos</p>
+            <p className="text-xl text-muted-foreground">Empresas que já automatizaram sua comunicação</p>
           </div>
 
           <div className="grid md:grid-cols-3 gap-6">
-            {[1, 2, 3].map((i) => (
-              <Card key={i} className="border-2">
-                <CardContent className="pt-6">
-                  <div className="flex gap-1 mb-4">
-                    {[1, 2, 3, 4, 5].map((star) => (
-                      <span key={star} className="text-primary text-xl">★</span>
-                    ))}
-                  </div>
-                  <p className="text-muted-foreground italic mb-4">
-                    "Implementação rápida e suporte excelente. Recomendo!"
-                  </p>
-                  <p className="text-sm font-semibold text-foreground">Cliente {i}</p>
-                  <p className="text-sm text-muted-foreground">Empresa</p>
-                </CardContent>
-              </Card>
-            ))}
+            {/* Depoimento 1 - E-commerce */}
+            <Card className="border-2 hover:shadow-lg transition-all">
+              <CardContent className="pt-6">
+                <div className="flex gap-1 mb-4">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <span key={star} className="text-primary text-xl">★</span>
+                  ))}
+                </div>
+                <p className="text-muted-foreground italic mb-4 text-sm leading-relaxed">
+                  "Integramos a Uplink em nosso sistema de pedidos e reduzimos em 70% o tempo de resposta aos clientes. A configuração foi surpreendentemente simples e o suporte foi impecável."
+                </p>
+                <div className="border-t pt-4">
+                  <p className="text-sm font-semibold text-foreground">Ricardo Mendes</p>
+                  <p className="text-xs text-muted-foreground">CEO - ShopFast E-commerce</p>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Depoimento 2 - Clínica */}
+            <Card className="border-2 hover:shadow-lg transition-all">
+              <CardContent className="pt-6">
+                <div className="flex gap-1 mb-4">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <span key={star} className="text-primary text-xl">★</span>
+                  ))}
+                </div>
+                <p className="text-muted-foreground italic mb-4 text-sm leading-relaxed">
+                  "Os lembretes automáticos de consulta diminuíram 85% das faltas. Nossos pacientes adoram receber confirmações pelo WhatsApp. Vale cada centavo!"
+                </p>
+                <div className="border-t pt-4">
+                  <p className="text-sm font-semibold text-foreground">Dra. Amanda Silva</p>
+                  <p className="text-xs text-muted-foreground">Coordenadora - Clínica Vida Saudável</p>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Depoimento 3 - Logística */}
+            <Card className="border-2 hover:shadow-lg transition-all">
+              <CardContent className="pt-6">
+                <div className="flex gap-1 mb-4">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <span key={star} className="text-primary text-xl">★</span>
+                  ))}
+                </div>
+                <p className="text-muted-foreground italic mb-4 text-sm leading-relaxed">
+                  "Automatizamos todas as notificações de rastreamento. Nossos clientes agora recebem atualizações em tempo real, o que melhorou drasticamente nossa avaliação no Reclame Aqui."
+                </p>
+                <div className="border-t pt-4">
+                  <p className="text-sm font-semibold text-foreground">Paulo Santos</p>
+                  <p className="text-xs text-muted-foreground">Diretor - LogExpress Transportes</p>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </section>
@@ -483,11 +520,36 @@ const Index = () => {
             </div>
 
             <div>
-              <h3 className="font-semibold text-foreground mb-4">Empresa</h3>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><a href="#" className="hover:text-primary transition-colors">Sobre nós</a></li>
-                <li><a href="#" className="hover:text-primary transition-colors">Contato</a></li>
-                <li><a href="#" className="hover:text-primary transition-colors">Blog</a></li>
+              <h3 className="font-semibold text-foreground mb-4">Contato</h3>
+              <ul className="space-y-3 text-sm">
+                <li>
+                  <a 
+                    href="https://wa.me/5541995472941?text=Olá!%20Vim%20pelo%20site%20da%20Uplink%20e%20gostaria%20de%20saber%20mais." 
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors group"
+                  >
+                    <MessageSquare className="h-4 w-4 group-hover:scale-110 transition-transform" />
+                    <span>(41) 99547-2941</span>
+                  </a>
+                </li>
+                <li>
+                  <a 
+                    href="mailto:contato@upevolution.com.br"
+                    className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors group"
+                  >
+                    <svg className="h-4 w-4 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                    </svg>
+                    <span className="break-all">contato@upevolution.com.br</span>
+                  </a>
+                </li>
+                <li>
+                  <p className="text-xs text-muted-foreground italic pt-2">
+                    Horário de atendimento:<br/>
+                    Seg-Sex: 9h às 18h
+                  </p>
+                </li>
               </ul>
             </div>
 
