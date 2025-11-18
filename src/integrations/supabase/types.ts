@@ -436,11 +436,14 @@ export type Database = {
           payer_email: string | null
           payer_id: string | null
           payment_method_id: string | null
+          payment_provider: string | null
           plan_name: string
           preapproval_id: string | null
           session_id: string | null
           start_date: string | null
           status: string
+          stripe_customer_id: string | null
+          stripe_subscription_id: string | null
           updated_at: string | null
         }
         Insert: {
@@ -454,11 +457,14 @@ export type Database = {
           payer_email?: string | null
           payer_id?: string | null
           payment_method_id?: string | null
+          payment_provider?: string | null
           plan_name?: string
           preapproval_id?: string | null
           session_id?: string | null
           start_date?: string | null
           status?: string
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -472,11 +478,14 @@ export type Database = {
           payer_email?: string | null
           payer_id?: string | null
           payment_method_id?: string | null
+          payment_provider?: string | null
           plan_name?: string
           preapproval_id?: string | null
           session_id?: string | null
           start_date?: string | null
           status?: string
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
           updated_at?: string | null
         }
         Relationships: [
