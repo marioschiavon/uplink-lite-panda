@@ -14,6 +14,109 @@ export type Database = {
   }
   public: {
     Tables: {
+      announcement_email_logs: {
+        Row: {
+          announcement_id: string
+          error_message: string | null
+          id: string
+          sent_at: string | null
+          status: string
+          user_email: string
+        }
+        Insert: {
+          announcement_id: string
+          error_message?: string | null
+          id?: string
+          sent_at?: string | null
+          status?: string
+          user_email: string
+        }
+        Update: {
+          announcement_id?: string
+          error_message?: string | null
+          id?: string
+          sent_at?: string | null
+          status?: string
+          user_email?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "announcement_email_logs_announcement_id_fkey"
+            columns: ["announcement_id"]
+            isOneToOne: false
+            referencedRelation: "announcements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      announcement_reads: {
+        Row: {
+          announcement_id: string
+          id: string
+          read_at: string | null
+          user_id: string
+        }
+        Insert: {
+          announcement_id: string
+          id?: string
+          read_at?: string | null
+          user_id: string
+        }
+        Update: {
+          announcement_id?: string
+          id?: string
+          read_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "announcement_reads_announcement_id_fkey"
+            columns: ["announcement_id"]
+            isOneToOne: false
+            referencedRelation: "announcements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      announcements: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          email_subject: string | null
+          expires_at: string | null
+          id: string
+          is_active: boolean | null
+          message: string
+          send_email: boolean | null
+          title: string
+          type: string
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          email_subject?: string | null
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          message: string
+          send_email?: boolean | null
+          title: string
+          type?: string
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          email_subject?: string | null
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          message?: string
+          send_email?: boolean | null
+          title?: string
+          type?: string
+        }
+        Relationships: []
+      }
       api_logs: {
         Row: {
           created_at: string
@@ -216,70 +319,100 @@ export type Database = {
           agent_limit: number | null
           api_message_limit: number | null
           api_message_usage: number | null
+          api_session: string | null
           api_token: string | null
+          api_token_full: string | null
           created_at: string | null
           id: string
+          is_legacy: boolean | null
           name: string
           plan: string | null
           routing_mode: Database["public"]["Enums"]["routing_mode"] | null
           session_limit: number | null
           settings: Json | null
+          subscription_expires_at: string | null
+          subscription_status: string | null
           updated_at: string | null
         }
         Insert: {
           agent_limit?: number | null
           api_message_limit?: number | null
           api_message_usage?: number | null
+          api_session?: string | null
           api_token?: string | null
+          api_token_full?: string | null
           created_at?: string | null
           id?: string
+          is_legacy?: boolean | null
           name: string
           plan?: string | null
           routing_mode?: Database["public"]["Enums"]["routing_mode"] | null
           session_limit?: number | null
           settings?: Json | null
+          subscription_expires_at?: string | null
+          subscription_status?: string | null
           updated_at?: string | null
         }
         Update: {
           agent_limit?: number | null
           api_message_limit?: number | null
           api_message_usage?: number | null
+          api_session?: string | null
           api_token?: string | null
+          api_token_full?: string | null
           created_at?: string | null
           id?: string
+          is_legacy?: boolean | null
           name?: string
           plan?: string | null
           routing_mode?: Database["public"]["Enums"]["routing_mode"] | null
           session_limit?: number | null
           settings?: Json | null
+          subscription_expires_at?: string | null
+          subscription_status?: string | null
           updated_at?: string | null
         }
         Relationships: []
       }
       sessions: {
         Row: {
+          api_session: string | null
+          api_token: string | null
+          api_token_full: string | null
           created_at: string | null
           id: string
           name: string | null
           organization_id: string | null
           qr: string | null
+          requires_subscription: boolean | null
           status: string | null
+          updated_at: string | null
         }
         Insert: {
+          api_session?: string | null
+          api_token?: string | null
+          api_token_full?: string | null
           created_at?: string | null
           id?: string
           name?: string | null
           organization_id?: string | null
           qr?: string | null
+          requires_subscription?: boolean | null
           status?: string | null
+          updated_at?: string | null
         }
         Update: {
+          api_session?: string | null
+          api_token?: string | null
+          api_token_full?: string | null
           created_at?: string | null
           id?: string
           name?: string | null
           organization_id?: string | null
           qr?: string | null
+          requires_subscription?: boolean | null
           status?: string | null
+          updated_at?: string | null
         }
         Relationships: [
           {
@@ -290,6 +423,90 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      subscriptions: {
+        Row: {
+          amount: number
+          cancelled_at: string | null
+          created_at: string | null
+          external_reference: string | null
+          id: string
+          next_payment_date: string | null
+          organization_id: string
+          payer_email: string | null
+          payer_id: string | null
+          payment_method_id: string | null
+          plan_name: string
+          preapproval_id: string | null
+          session_id: string | null
+          start_date: string | null
+          status: string
+          updated_at: string | null
+        }
+        Insert: {
+          amount?: number
+          cancelled_at?: string | null
+          created_at?: string | null
+          external_reference?: string | null
+          id?: string
+          next_payment_date?: string | null
+          organization_id: string
+          payer_email?: string | null
+          payer_id?: string | null
+          payment_method_id?: string | null
+          plan_name?: string
+          preapproval_id?: string | null
+          session_id?: string | null
+          start_date?: string | null
+          status?: string
+          updated_at?: string | null
+        }
+        Update: {
+          amount?: number
+          cancelled_at?: string | null
+          created_at?: string | null
+          external_reference?: string | null
+          id?: string
+          next_payment_date?: string | null
+          organization_id?: string
+          payer_email?: string | null
+          payer_id?: string | null
+          payment_method_id?: string | null
+          plan_name?: string
+          preapproval_id?: string | null
+          session_id?: string | null
+          start_date?: string | null
+          status?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscriptions_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subscriptions_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      superadmin_users: {
+        Row: {
+          user_id: string
+        }
+        Insert: {
+          user_id: string
+        }
+        Update: {
+          user_id?: string
+        }
+        Relationships: []
       }
       ticket_messages: {
         Row: {
@@ -374,35 +591,6 @@ export type Database = {
           },
         ]
       }
-      user_organization: {
-        Row: {
-          created_at: string | null
-          organization_id: string
-          role: Database["public"]["Enums"]["user_role"]
-          user_id: string
-        }
-        Insert: {
-          created_at?: string | null
-          organization_id: string
-          role?: Database["public"]["Enums"]["user_role"]
-          user_id: string
-        }
-        Update: {
-          created_at?: string | null
-          organization_id?: string
-          role?: Database["public"]["Enums"]["user_role"]
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "user_organization_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       users: {
         Row: {
           availability: string | null
@@ -411,7 +599,7 @@ export type Database = {
           id: string
           name: string | null
           organization_id: string | null
-          role: string | null
+          role: Database["public"]["Enums"]["user_role"] | null
           updated_at: string | null
         }
         Insert: {
@@ -421,7 +609,7 @@ export type Database = {
           id: string
           name?: string | null
           organization_id?: string | null
-          role?: string | null
+          role?: Database["public"]["Enums"]["user_role"] | null
           updated_at?: string | null
         }
         Update: {
@@ -431,7 +619,7 @@ export type Database = {
           id?: string
           name?: string | null
           organization_id?: string | null
-          role?: string | null
+          role?: Database["public"]["Enums"]["user_role"] | null
           updated_at?: string | null
         }
         Relationships: [
@@ -460,35 +648,21 @@ export type Database = {
         Args: { p_email: string; p_org_name: string; p_user_id: string }
         Returns: string
       }
-      current_user_org: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
-      get_user_company: {
-        Args: { user_id: string }
-        Returns: string
-      }
-      get_user_organization: {
-        Args: { user_id: string }
-        Returns: string
-      }
+      current_user_org: { Args: never; Returns: string }
+      get_user_company: { Args: { user_id: string }; Returns: string }
+      get_user_organization: { Args: { user_id: string }; Returns: string }
       get_user_role: {
         Args: { user_id: string }
-        Returns: string
+        Returns: Database["public"]["Enums"]["user_role"]
       }
-      increment_api_usage: {
-        Args: { org: string }
-        Returns: undefined
-      }
-      rotate_org_api_token: {
-        Args: { org_id: string }
-        Returns: string
-      }
+      increment_api_usage: { Args: { org: string }; Returns: undefined }
+      is_superadmin: { Args: never; Returns: boolean }
+      rotate_org_api_token: { Args: { org_id: string }; Returns: string }
     }
     Enums: {
       routing_mode: "manual" | "auto" | "hybrid"
       ticket_status: "waiting" | "in_progress" | "closed"
-      user_role: "admin" | "agent"
+      user_role: "admin" | "agent" | "superadmin"
       user_status: "active" | "inactive"
     }
     CompositeTypes: {
@@ -619,7 +793,7 @@ export const Constants = {
     Enums: {
       routing_mode: ["manual", "auto", "hybrid"],
       ticket_status: ["waiting", "in_progress", "closed"],
-      user_role: ["admin", "agent"],
+      user_role: ["admin", "agent", "superadmin"],
       user_status: ["active", "inactive"],
     },
   },
