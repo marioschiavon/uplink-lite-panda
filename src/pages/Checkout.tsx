@@ -55,44 +55,70 @@ export default function Checkout() {
         throw new Error('Organização não encontrada');
       }
 
-      // Criar sessão pendente (sem api_session/token ainda)
-      const { data: newSession, error: sessionError } = await supabase
+      // UPSERT: Verificar se sessão já existe
+      let sessionId: string;
+      const { data: existingSession } = await supabase
         .from('sessions')
-        .insert({
-          name: sessionName,
-          organization_id: userRecord.organization_id,
-          requires_subscription: true,
-          status: 'pending_payment'
-        })
-        .select()
-        .single();
+        .select('id, status')
+        .eq('name', sessionName)
+        .eq('organization_id', userRecord.organization_id)
+        .maybeSingle();
 
-      if (sessionError) {
-        console.error('Erro ao criar sessão:', sessionError);
-        throw new Error('Erro ao criar registro da sessão');
+      if (existingSession) {
+        // Sessão já existe - reutilizar
+        sessionId = existingSession.id;
+        console.log('Sessão existente encontrada:', sessionId, 'Status:', existingSession.status);
+        
+        // Se estava em outro status, atualizar para pending_payment
+        if (existingSession.status !== 'pending_payment') {
+          await supabase
+            .from('sessions')
+            .update({ status: 'pending_payment' })
+            .eq('id', sessionId);
+          console.log('Status atualizado para pending_payment');
+        }
+      } else {
+        // Criar nova sessão
+        const { data: newSession, error: sessionError } = await supabase
+          .from('sessions')
+          .insert({
+            name: sessionName,
+            organization_id: userRecord.organization_id,
+            requires_subscription: true,
+            status: 'pending_payment'
+          })
+          .select()
+          .single();
+
+        if (sessionError) {
+          console.error('Erro ao criar sessão:', sessionError);
+          throw new Error('Erro ao criar registro da sessão');
+        }
+
+        sessionId = newSession.id;
+        console.log('Nova sessão criada:', sessionId);
       }
-
-      console.log('Sessão criada:', newSession.id);
+      
       setCreatingSession(false);
 
-      // PASSO 2: Criar assinatura no Mercado Pago
+      // PASSO 2: Criar checkout do Stripe
       toast.info("Redirecionando para pagamento...");
-      console.log('Criando assinatura para sessão:', newSession.id);
+      console.log('Criando checkout para sessão:', sessionId);
 
-      const { data, error } = await supabase.functions.invoke('create-subscription', {
-        body: { session_id: newSession.id }
+      const { data, error } = await supabase.functions.invoke('create-stripe-checkout', {
+        body: { session_id: sessionId }
       });
 
       if (error) {
-        console.error('Erro ao criar assinatura:', error);
+        console.error('Erro ao criar checkout:', error);
         throw error;
       }
 
-      if (data.success && data.init_point) {
-        console.log('Redirecionando para Mercado Pago:', data.init_point);
-        window.location.href = data.init_point;
+      if (data.success && data.url) {
+        console.log('Redirecionando para Stripe Checkout:', data.url);
+        window.location.href = data.url;
       } else {
-        throw new Error(data.error || "Erro ao criar assinatura");
+        throw new Error(data.error || "Erro ao criar sessão de pagamento");
       }
     } catch (error: any) {
       console.error("Erro no processo de checkout:", error);

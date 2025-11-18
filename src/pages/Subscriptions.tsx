@@ -45,6 +45,28 @@ const Subscriptions = () => {
     fetchData();
   }, []);
 
+  const handleManageSubscription = async (customerId?: string, stripeSubscriptionId?: string) => {
+    if (!customerId || !stripeSubscriptionId) {
+      toast.error('Informações de assinatura não encontradas');
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase.functions.invoke('create-stripe-portal', {
+        body: { customer_id: customerId }
+      });
+
+      if (error) throw error;
+      
+      if (data.url) {
+        window.open(data.url, '_blank');
+      }
+    } catch (error: any) {
+      console.error('Erro ao abrir portal:', error);
+      toast.error('Erro ao abrir portal de gerenciamento');
+    }
+  };
+
   const fetchData = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();

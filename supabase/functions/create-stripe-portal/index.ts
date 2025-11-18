@@ -1,0 +1,51 @@
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import Stripe from "https://esm.sh/stripe@14.21.0?target=deno";
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
+
+serve(async (req) => {
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    const { customer_id } = await req.json();
+    
+    if (!customer_id) {
+      throw new Error('customer_id é obrigatório');
+    }
+    
+    const stripeSecretKey = Deno.env.get('STRIPE_SECRET_KEY');
+    if (!stripeSecretKey) {
+      throw new Error('STRIPE_SECRET_KEY não configurado');
+    }
+
+    const stripe = new Stripe(stripeSecretKey, {
+      apiVersion: '2023-10-16',
+      httpClient: Stripe.createFetchHttpClient(),
+    });
+
+    const origin = req.headers.get('origin') || 'https://kfsvpbujmetlendgwnrs.lovable.app';
+
+    const session = await stripe.billingPortal.sessions.create({
+      customer: customer_id,
+      return_url: `${origin}/subscriptions`,
+    });
+
+    console.log('Portal session criada para customer:', customer_id);
+
+    return new Response(
+      JSON.stringify({ success: true, url: session.url }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  } catch (error: any) {
+    console.error('Erro ao criar portal session:', error);
+    return new Response(
+      JSON.stringify({ success: false, error: error.message }),
+      { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
+});
