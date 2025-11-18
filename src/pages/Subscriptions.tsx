@@ -196,10 +196,6 @@ const Subscriptions = () => {
     }
   };
 
-  const handleManageSubscription = (preapprovalId: string) => {
-    // Link direto para gerenciar assinatura no Mercado Pago
-    window.open(`https://www.mercadopago.com.br/subscriptions/${preapprovalId}`, "_blank");
-  };
 
   if (loading) {
     return (
