@@ -30,6 +30,9 @@ interface SessionWithSubscription {
     amount: number;
     next_payment_date: string | null;
     preapproval_id: string;
+    stripe_customer_id?: string;
+    stripe_subscription_id?: string;
+    payment_provider?: string;
     created_at: string;
   };
 }
@@ -130,6 +133,9 @@ const Subscriptions = () => {
               amount: (subData as any).amount,
               next_payment_date: (subData as any).next_payment_date,
               preapproval_id: (subData as any).preapproval_id,
+              stripe_customer_id: (subData as any).stripe_customer_id,
+              stripe_subscription_id: (subData as any).stripe_subscription_id,
+              payment_provider: (subData as any).payment_provider,
               created_at: (subData as any).created_at,
             } : undefined,
           };
