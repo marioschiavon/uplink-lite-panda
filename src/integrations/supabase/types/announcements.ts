@@ -8,6 +8,8 @@ export interface AnnouncementRow {
   type: "info" | "warning" | "success" | "error";
   send_email: boolean | null;
   email_subject: string | null;
+  recipient_type?: "all" | "specific";
+  recipient_emails?: string | null;
   created_by: string | null;
   created_at: string | null;
   expires_at: string | null;
@@ -21,6 +23,8 @@ export interface AnnouncementInsert {
   type?: string;
   send_email?: boolean | null;
   email_subject?: string | null;
+  recipient_type?: "all" | "specific";
+  recipient_emails?: string | null;
   created_by?: string | null;
   created_at?: string | null;
   expires_at?: string | null;

@@ -11,6 +11,9 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// Função para delay entre envios (rate limiting - 1 email por segundo)
+const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
 interface SendAnnouncementRequest {
   announcementId: string;
 }
@@ -67,24 +70,50 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    // Buscar todos os usuários ativos
-    const { data: users, error: usersError } = await supabase
-      .from("users")
-      .select("email, name")
-      .not("email", "is", null);
+    // Buscar usuários conforme configuração do anúncio
+    let targetEmails: string[] = [];
 
-    if (usersError || !users) {
-      throw new Error("Erro ao buscar usuários");
+    if (announcement.recipient_type === 'specific' && announcement.recipient_emails) {
+      // Emails específicos - limpar e validar
+      targetEmails = announcement.recipient_emails
+        .split(',')
+        .map((email: string) => email.trim())
+        .filter((email: string) => email.includes('@'));
+        
+      console.log(`📧 Enviando para ${targetEmails.length} emails específicos`);
+    } else {
+      // Todos os usuários
+      const { data: users, error: usersError } = await supabase
+        .from("users")
+        .select("email")
+        .not("email", "is", null);
+
+      if (usersError || !users) {
+        throw new Error("Erro ao buscar usuários");
+      }
+      
+      targetEmails = users.map((u: any) => u.email);
+      console.log(`📧 Enviando para ${targetEmails.length} usuários (todos)`);
     }
 
-    console.log(`Enviando email para ${users.length} usuários`);
+    if (targetEmails.length === 0) {
+      throw new Error("Nenhum destinatário encontrado");
+    }
 
-    // Enviar email para cada usuário
-    const emailPromises = users.map(async (userItem) => {
+    console.log(`🚀 Iniciando envio sequencial (1 email/segundo)`);
+
+    const results = [];
+    const DELAY_MS = 1000; // 1 segundo entre cada envio
+
+    for (let i = 0; i < targetEmails.length; i++) {
+      const email = targetEmails[i];
+      
       try {
+        console.log(`📧 [${i + 1}/${targetEmails.length}] Enviando para: ${email}`);
+        
         const emailResponse = await resend.emails.send({
           from: "Uplink Avisos <avisos@updates.panda42.com.br>",
-          to: [userItem.email],
+          to: [email],
           subject: announcement.email_subject || announcement.title,
           html: `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
@@ -114,38 +143,43 @@ const handler = async (req: Request): Promise<Response> => {
           `,
         });
 
-        // Registrar log de sucesso
+        // Log de sucesso
         await supabase.from("announcement_email_logs").insert({
           announcement_id: announcementId,
-          user_email: userItem.email,
+          user_email: email,
           status: "sent",
         });
 
-        console.log(`Email enviado para ${userItem.email}:`, emailResponse);
-        return { email: userItem.email, success: true };
+        console.log(`✅ Enviado com sucesso: ${email}`);
+        results.push({ email, success: true });
+
       } catch (error: any) {
-        console.error(`Erro ao enviar email para ${userItem.email}:`, error);
+        console.error(`❌ Erro ao enviar para ${email}:`, error.message);
         
-        // Registrar log de erro
+        // Log de erro
         await supabase.from("announcement_email_logs").insert({
           announcement_id: announcementId,
-          user_email: userItem.email,
+          user_email: email,
           status: "failed",
           error_message: error.message,
         });
 
-        return { email: userItem.email, success: false, error: error.message };
+        results.push({ email, success: false, error: error.message });
       }
-    });
 
-    const results = await Promise.all(emailPromises);
+      // Aguardar 1 segundo antes do próximo (exceto no último)
+      if (i < targetEmails.length - 1) {
+        await delay(DELAY_MS);
+      }
+    }
+
     const successCount = results.filter(r => r.success).length;
     const failCount = results.filter(r => !r.success).length;
 
     return new Response(
       JSON.stringify({
         message: `Emails enviados: ${successCount} sucesso, ${failCount} falhas`,
-        total: users.length,
+        total: targetEmails.length,
         success: successCount,
         failed: failCount,
         results: results,

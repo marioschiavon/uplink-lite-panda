@@ -87,6 +87,8 @@ export type Database = {
           id: string
           is_active: boolean | null
           message: string
+          recipient_emails: string | null
+          recipient_type: string | null
           send_email: boolean | null
           title: string
           type: string
@@ -99,6 +101,8 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           message: string
+          recipient_emails?: string | null
+          recipient_type?: string | null
           send_email?: boolean | null
           title: string
           type?: string
@@ -111,6 +115,8 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           message?: string
+          recipient_emails?: string | null
+          recipient_type?: string | null
           send_email?: boolean | null
           title?: string
           type?: string

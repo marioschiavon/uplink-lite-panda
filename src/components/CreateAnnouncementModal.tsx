@@ -29,6 +29,8 @@ export const CreateAnnouncementModal = ({ open, onOpenChange, onSuccess }: Creat
     sendEmail: false,
     emailSubject: "",
     expiresInDays: "",
+    recipientType: "all" as "all" | "specific",
+    recipientEmails: "",
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -58,6 +60,10 @@ export const CreateAnnouncementModal = ({ open, onOpenChange, onSuccess }: Creat
           type: formData.type,
           send_email: formData.sendEmail,
           email_subject: formData.sendEmail ? (formData.emailSubject || formData.title) : null,
+          recipient_type: formData.sendEmail ? formData.recipientType : 'all',
+          recipient_emails: formData.sendEmail && formData.recipientType === 'specific' 
+            ? formData.recipientEmails 
+            : null,
           created_by: user.user.id,
           expires_at: expiresAt?.toISOString() || null,
         })
@@ -102,6 +108,8 @@ export const CreateAnnouncementModal = ({ open, onOpenChange, onSuccess }: Creat
         sendEmail: false,
         emailSubject: "",
         expiresInDays: "",
+        recipientType: "all",
+        recipientEmails: "",
       });
 
       onSuccess();
@@ -198,15 +206,64 @@ export const CreateAnnouncementModal = ({ open, onOpenChange, onSuccess }: Creat
           </div>
 
           {formData.sendEmail && (
-            <div className="space-y-2">
-              <Label htmlFor="emailSubject">Assunto do Email</Label>
-              <Input
-                id="emailSubject"
-                value={formData.emailSubject}
-                onChange={(e) => setFormData({ ...formData, emailSubject: e.target.value })}
-                placeholder="Se vazio, usará o título"
-              />
-            </div>
+            <>
+              <div className="space-y-2">
+                <Label htmlFor="emailSubject">Assunto do Email (opcional)</Label>
+                <Input
+                  id="emailSubject"
+                  placeholder="Se vazio, usará o título do anúncio"
+                  value={formData.emailSubject}
+                  onChange={(e) => setFormData({ ...formData, emailSubject: e.target.value })}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Enviar para</Label>
+                <Select
+                  value={formData.recipientType}
+                  onValueChange={(value: "all" | "specific") => 
+                    setFormData({ ...formData, recipientType: value })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos os usuários</SelectItem>
+                    <SelectItem value="specific">Emails específicos</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {formData.recipientType === "specific" && (
+                <div className="space-y-2">
+                  <Label htmlFor="recipientEmails">
+                    Emails dos destinatários
+                    <span className="text-xs text-muted-foreground ml-2">
+                      (separados por vírgula)
+                    </span>
+                  </Label>
+                  <Textarea
+                    id="recipientEmails"
+                    placeholder="usuario1@exemplo.com, usuario2@exemplo.com"
+                    value={formData.recipientEmails}
+                    onChange={(e) => setFormData({ ...formData, recipientEmails: e.target.value })}
+                    rows={4}
+                    className="font-mono text-sm"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Digite os emails separados por vírgula. Emails inválidos serão ignorados.
+                  </p>
+                </div>
+              )}
+
+              <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-md p-3">
+                <p className="text-xs text-blue-800 dark:text-blue-200">
+                  <strong>ℹ️ Envio controlado:</strong> Os emails serão enviados com intervalo de 1 segundo entre cada um para evitar sobrecarga.
+                  {formData.recipientType === "all" && " Pode levar alguns minutos para enviar a todos."}
+                </p>
+              </div>
+            </>
           )}
 
           <div className="flex gap-3 pt-4">
