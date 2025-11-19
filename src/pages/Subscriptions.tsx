@@ -31,6 +31,8 @@ interface SessionWithSubscription {
     next_payment_date: string | null;
     preapproval_id: string;
     created_at: string;
+    stripe_customer_id?: string;
+    payment_provider?: string;
   };
 }
 
@@ -109,6 +111,8 @@ const Subscriptions = () => {
               next_payment_date: (subData as any).next_payment_date,
               preapproval_id: (subData as any).preapproval_id,
               created_at: (subData as any).created_at,
+              stripe_customer_id: (subData as any).stripe_customer_id,
+              payment_provider: (subData as any).payment_provider,
             } : undefined,
           };
         })
@@ -174,9 +178,33 @@ const Subscriptions = () => {
     }
   };
 
-  const handleManageSubscription = (preapprovalId: string) => {
-    // Link direto para gerenciar assinatura no Mercado Pago
-    window.open(`https://www.mercadopago.com.br/subscriptions/${preapprovalId}`, "_blank");
+  const handleManageSubscription = async (customerId?: string, provider?: string) => {
+    if (!customerId) {
+      toast.error('ID do cliente não encontrado');
+      return;
+    }
+
+    // Se for Mercado Pago, manter comportamento antigo
+    if (provider === 'mercadopago') {
+      window.open('https://www.mercadopago.com.br/subscriptions', '_blank');
+      return;
+    }
+
+    // Stripe - usar Customer Portal
+    try {
+      const { data, error } = await supabase.functions.invoke('create-stripe-portal', {
+        body: { customer_id: customerId }
+      });
+
+      if (error) throw error;
+      
+      if (data.url) {
+        window.open(data.url, '_blank');
+      }
+    } catch (error: any) {
+      console.error('Erro ao abrir portal:', error);
+      toast.error('Erro ao abrir portal de gerenciamento');
+    }
   };
 
   if (loading) {
@@ -307,11 +335,16 @@ const Subscriptions = () => {
                         <div className="flex gap-2">
                           <Button
                             variant="outline"
-                            onClick={() => handleManageSubscription(session.subscription!.preapproval_id)}
+                            onClick={() => handleManageSubscription(
+                              session.subscription?.stripe_customer_id,
+                              session.subscription?.payment_provider
+                            )}
+                            disabled={!session.subscription?.stripe_customer_id && 
+                                     session.subscription?.payment_provider !== 'mercadopago'}
                             className="flex-1"
                           >
                             <ExternalLink className="h-4 w-4 mr-2" />
-                            Gerenciar no Mercado Pago
+                            Gerenciar Assinatura
                           </Button>
                         </div>
                       )}
@@ -369,7 +402,7 @@ const Subscriptions = () => {
         </CardHeader>
         <CardContent className="space-y-2 text-sm text-muted-foreground">
           <p>
-            • Para cancelar uma assinatura, clique em "Gerenciar no Mercado Pago"
+            • Para cancelar uma assinatura, clique em "Gerenciar Assinatura"
           </p>
           <p>
             • Cada sessão possui uma assinatura independente de R$ 69,90/mês

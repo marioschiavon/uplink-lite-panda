@@ -75,24 +75,24 @@ export default function Checkout() {
       console.log('Sessão criada:', newSession.id);
       setCreatingSession(false);
 
-      // PASSO 2: Criar assinatura no Mercado Pago
+      // PASSO 2: Criar checkout Stripe
       toast.info("Redirecionando para pagamento...");
-      console.log('Criando assinatura para sessão:', newSession.id);
+      console.log('Criando checkout Stripe para sessão:', newSession.id);
 
-      const { data, error } = await supabase.functions.invoke('create-subscription', {
+      const { data, error } = await supabase.functions.invoke('create-stripe-checkout', {
         body: { session_id: newSession.id }
       });
 
       if (error) {
-        console.error('Erro ao criar assinatura:', error);
+        console.error('Erro ao criar checkout:', error);
         throw error;
       }
 
-      if (data.success && data.init_point) {
-        console.log('Redirecionando para Mercado Pago:', data.init_point);
-        window.location.href = data.init_point;
+      if (data.success && data.url) {
+        console.log('Redirecionando para Stripe Checkout:', data.url);
+        window.location.href = data.url;
       } else {
-        throw new Error(data.error || "Erro ao criar assinatura");
+        throw new Error(data.error || "Erro ao criar sessão de pagamento");
       }
     } catch (error: any) {
       console.error("Erro no processo de checkout:", error);
