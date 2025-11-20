@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
-import { Loader2, CreditCard, Shield, Check } from "lucide-react";
+import { Loader2, CreditCard, Shield, Check, ArrowLeft } from "lucide-react";
 
 export default function Checkout() {
   const [loading, setLoading] = useState(false);
@@ -103,7 +103,19 @@ export default function Checkout() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
+    <div className="min-h-screen bg-background flex items-center justify-center p-4 relative">
+      <div className="absolute top-4 left-4">
+        <Button
+          variant="ghost"
+          onClick={() => navigate("/dashboard")}
+          disabled={loading}
+          className="gap-2"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Voltar ao Dashboard
+        </Button>
+      </div>
+
       <Card className="max-w-lg w-full border-2 border-primary/20">
         <CardHeader className="text-center pb-8">
           <div className="mx-auto mb-4 h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
@@ -176,6 +188,15 @@ export default function Checkout() {
               </>
             )}
             {!creatingSession && !loading && "Assinar agora"}
+          </Button>
+
+          <Button
+            variant="ghost"
+            onClick={() => navigate("/dashboard")}
+            disabled={loading}
+            className="w-full"
+          >
+            Voltar ao Dashboard
           </Button>
 
           {!sessionName && (
