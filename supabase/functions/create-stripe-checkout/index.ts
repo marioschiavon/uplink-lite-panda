@@ -104,10 +104,18 @@ serve(async (req) => {
       mode: 'subscription',
       line_items: [
         {
-          price: 'price_1SUdTIR7psEPMC6HkuaEUrwS',
+          price: 'price_1SVWEfQs5BDRSUmXT5cPQTuh',
           quantity: 1,
         },
       ],
+      subscription_data: {
+        description: `Uplink - Sessão ${sessionData.name}`,
+        metadata: {
+          session_id: session_id,
+          session_name: sessionData.name,
+          organization_id: sessionData.organization_id,
+        }
+      },
       metadata: {
         session_id: session_id,
         session_name: sessionData.name,
