@@ -10,7 +10,7 @@ import { OrganizationBanner } from "@/components/dashboard/OrganizationBanner";
 import { BearerTokenSheet } from "@/components/dashboard/BearerTokenSheet";
 import { SendTestMessageDialog } from "@/components/dashboard/SendTestMessageDialog";
 import { toast } from "sonner";
-import { Zap, MessageSquare, Activity, CreditCard, ArrowRight, Plus } from "lucide-react";
+import { Zap, MessageSquare, CreditCard, ArrowRight, Plus, DollarSign, Settings, Megaphone } from "lucide-react";
 import { motion } from "framer-motion";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
@@ -57,6 +57,8 @@ const Dashboard = () => {
   const [sessions, setSessions] = useState<SessionData[]>([]);
   const [showOrgModal, setShowOrgModal] = useState(false);
   const [sessionsStatus, setSessionsStatus] = useState<Record<string, SessionStatus>>({});
+  const [activeSubscriptionsCount, setActiveSubscriptionsCount] = useState(0);
+  const [monthlyTotal, setMonthlyTotal] = useState(0);
 
   const fetchUserData = async () => {
     try {
@@ -147,6 +149,21 @@ const Dashboard = () => {
           })
         );
       }
+
+      // Buscar assinaturas ativas
+      const { data: activeSubscriptions } = await supabase
+        .from('subscriptions')
+        .select('amount, status')
+        .eq('organization_id', userRecord.organization_id)
+        .eq('status', 'active');
+
+      const subscriptionCount = activeSubscriptions?.length || 0;
+      const total = activeSubscriptions?.reduce((sum, sub) => 
+        sum + Number(sub.amount || 0), 0
+      ) || 0;
+
+      setActiveSubscriptionsCount(subscriptionCount);
+      setMonthlyTotal(total);
     } catch (error: any) {
       console.error("❌ Error fetching data:", error);
       toast.error(`Erro ao carregar dados: ${error.message || 'Erro desconhecido'}`);
@@ -302,12 +319,11 @@ const Dashboard = () => {
           }}
         >
           <StatsCard
-            title="Sessões Ativas"
+            title="Sessões Conectadas"
             value={activeSessions.length}
             icon={Zap}
-            subtitle={`${activeSessions.length} de ${sessions.length} online`}
+            subtitle="Conectadas via WhatsApp"
             color="green"
-            progress={sessions.length > 0 ? (activeSessions.length / sessions.length) * 100 : 0}
           />
         </motion.div>
 
@@ -318,12 +334,11 @@ const Dashboard = () => {
           }}
         >
           <StatsCard
-            title="Total de Sessões"
+            title="Sessões Criadas"
             value={sessions.length}
             icon={MessageSquare}
-            subtitle={`Limite: ${orgData?.session_limit || '∞'}`}
+            subtitle="Crie quantas precisar"
             color="blue"
-            progress={orgData?.session_limit ? (sessions.length / orgData.session_limit) * 100 : 0}
           />
         </motion.div>
 
@@ -334,25 +349,25 @@ const Dashboard = () => {
           }}
         >
           <StatsCard
-            title="Status Geral"
-            value={activeSessions.length > 0 ? "Operacional" : "Aguardando"}
-            icon={Activity}
-            subtitle={orgData?.is_legacy ? "Cliente Legacy" : "Cliente Ativo"}
-            color="purple"
-          />
-        </motion.div>
-
-        <motion.div
-          variants={{
-            hidden: { opacity: 0, y: 20 },
-            show: { opacity: 1, y: 0 }
-          }}
-        >
-          <StatsCard
-            title="Plano Atual"
-            value={orgData?.plan || "Basic"}
+            title="Assinaturas Ativas"
+            value={activeSubscriptionsCount}
             icon={CreditCard}
-            subtitle={orgData?.is_legacy ? "Sem cobrança" : "Ativo"}
+            subtitle="R$ 69,90 por sessão/mês"
+            color="green"
+          />
+        </motion.div>
+
+        <motion.div
+          variants={{
+            hidden: { opacity: 0, y: 20 },
+            show: { opacity: 1, y: 0 }
+          }}
+        >
+          <StatsCard
+            title="Custo Mensal"
+            value={`R$ ${monthlyTotal.toFixed(2)}`}
+            icon={DollarSign}
+            subtitle="Total das suas assinaturas"
             color="orange"
           />
         </motion.div>
@@ -368,9 +383,7 @@ const Dashboard = () => {
           <OrganizationBanner
             name={orgData.name}
             isLegacy={orgData.is_legacy}
-            plan={orgData.plan || undefined}
             sessionCount={sessions.length}
-            sessionLimit={orgData.session_limit || 0}
           />
         </motion.div>
       )}
@@ -421,7 +434,7 @@ const Dashboard = () => {
         <Card className="hover:shadow-lg transition-shadow">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Activity className="h-5 w-5" />
+              <Settings className="h-5 w-5" />
               Ferramentas
             </CardTitle>
             <CardDescription>
@@ -514,7 +527,7 @@ const Dashboard = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <CardTitle className="flex items-center gap-2">
-                    <Activity className="h-5 w-5 text-primary" />
+                    <Megaphone className="h-5 w-5 text-primary" />
                     Gerenciar Anúncios
                   </CardTitle>
                   <CardDescription>
