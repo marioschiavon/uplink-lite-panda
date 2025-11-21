@@ -228,6 +228,13 @@ serve(async (req) => {
       case 'customer.subscription.deleted': {
         const subscription = event.data.object as Stripe.Subscription;
         
+        // Buscar dados da subscription antes de atualizar
+        const { data: subData } = await supabaseAdmin
+          .from('subscriptions')
+          .select('session_id, payer_email, amount')
+          .eq('stripe_subscription_id', subscription.id)
+          .single();
+
         await supabaseAdmin.from('subscriptions')
           .update({
             status: 'cancelled',
@@ -235,20 +242,131 @@ serve(async (req) => {
           })
           .eq('stripe_subscription_id', subscription.id);
 
-        // Bloquear sessão
-        const { data: sub } = await supabaseAdmin
-          .from('subscriptions')
-          .select('session_id')
-          .eq('stripe_subscription_id', subscription.id)
-          .single();
+        // Bloquear sessão e buscar nome
+        if (subData) {
+          const { data: sessionData } = await supabaseAdmin
+            .from('sessions')
+            .select('name')
+            .eq('id', (subData as any).session_id)
+            .single();
 
-        if (sub) {
           await supabaseAdmin.from('sessions').update({
             status: 'disconnected',
             requires_subscription: true,
-          }).eq('id', (sub as any).session_id);
+          }).eq('id', (subData as any).session_id);
           
-          console.log('🔒 Sessão bloqueada:', (sub as any).session_id);
+          console.log('🔒 Sessão bloqueada:', (subData as any).session_id);
+
+          // Enviar email de notificação de cancelamento
+          if ((subData as any).payer_email) {
+            try {
+              const sessionName = (sessionData as any)?.name || 'Sua sessão';
+              const amount = (subData as any).amount || 0;
+              
+              await resend.emails.send({
+                from: 'Uplink <onboarding@resend.dev>',
+                to: [(subData as any).payer_email],
+                subject: '⚠️ Assinatura Cancelada - Sessão Desconectada',
+                html: `
+                  <!DOCTYPE html>
+                  <html>
+                  <head>
+                    <meta charset="utf-8">
+                    <style>
+                      body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; }
+                      .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+                      .header { background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white; padding: 30px; border-radius: 10px 10px 0 0; text-align: center; }
+                      .content { background: #f9fafb; padding: 30px; border-radius: 0 0 10px 10px; }
+                      .card { background: white; padding: 20px; border-radius: 8px; margin: 20px 0; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+                      .warning-badge { display: inline-block; background: #dc2626; color: white; padding: 8px 16px; border-radius: 20px; font-size: 14px; font-weight: 600; margin-bottom: 20px; }
+                      .detail-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #e5e7eb; }
+                      .detail-label { color: #6b7280; font-weight: 500; }
+                      .detail-value { color: #111827; font-weight: 600; }
+                      .button { display: inline-block; background: #667eea; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; font-weight: 600; margin-top: 20px; }
+                      .button-secondary { background: #6b7280; }
+                      .footer { text-align: center; color: #6b7280; font-size: 14px; margin-top: 30px; }
+                    </style>
+                  </head>
+                  <body>
+                    <div class="container">
+                      <div class="header">
+                        <h1 style="margin: 0; font-size: 28px;">⚠️ Assinatura Cancelada</h1>
+                      </div>
+                      <div class="content">
+                        <div class="warning-badge">⊗ Sessão Desconectada</div>
+                        
+                        <p style="font-size: 16px; margin-bottom: 20px;">
+                          Sua assinatura do Uplink foi cancelada e sua sessão foi desconectada automaticamente.
+                        </p>
+                        
+                        <div class="card">
+                          <h2 style="margin-top: 0; color: #111827; font-size: 20px;">📋 Detalhes do Cancelamento</h2>
+                          
+                          <div class="detail-row">
+                            <span class="detail-label">Sessão:</span>
+                            <span class="detail-value">${sessionName}</span>
+                          </div>
+                          
+                          <div class="detail-row">
+                            <span class="detail-label">Plano:</span>
+                            <span class="detail-value">API Session</span>
+                          </div>
+                          
+                          <div class="detail-row">
+                            <span class="detail-label">Valor:</span>
+                            <span class="detail-value">R$ ${amount.toFixed(2)}/mês</span>
+                          </div>
+                          
+                          <div class="detail-row" style="border: none;">
+                            <span class="detail-label">Status:</span>
+                            <span class="detail-value" style="color: #dc2626;">● Cancelada</span>
+                          </div>
+                        </div>
+                        
+                        <div style="background: #fef2f2; border-left: 4px solid #dc2626; padding: 15px; border-radius: 4px; margin: 20px 0;">
+                          <p style="margin: 0; color: #991b1b;">
+                            <strong>⚠️ O que acontece agora:</strong><br>
+                            • Sua sessão foi desconectada do WhatsApp<br>
+                            • Você não poderá mais enviar mensagens via API<br>
+                            • Seus dados permanecem seguros e podem ser restaurados
+                          </p>
+                        </div>
+                        
+                        <div style="background: #eff6ff; border-left: 4px solid #3b82f6; padding: 15px; border-radius: 4px; margin: 20px 0;">
+                          <p style="margin: 0; color: #1e40af;">
+                            <strong>💡 Quer continuar usando?</strong><br>
+                            Você pode reativar sua sessão a qualquer momento. Basta criar uma nova assinatura e sua sessão será reconectada automaticamente.
+                          </p>
+                        </div>
+                        
+                        <div style="text-align: center;">
+                          <a href="https://kfsvpbujmetlendgwnrs.lovable.app/subscriptions" class="button">
+                            Reativar Assinatura
+                          </a>
+                          <br>
+                          <a href="https://kfsvpbujmetlendgwnrs.lovable.app" class="button button-secondary" style="margin-top: 10px;">
+                            Acessar Painel
+                          </a>
+                        </div>
+                        
+                        <div class="footer">
+                          <p>Se o cancelamento foi um erro, você pode reativar sua assinatura imediatamente.</p>
+                          <p style="font-size: 12px; color: #9ca3af;">
+                            Tem dúvidas? Responda este email ou acesse nossa central de suporte.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </body>
+                  </html>
+                `,
+              });
+              
+              console.log('📧 Email de cancelamento enviado para:', (subData as any).payer_email);
+            } catch (emailError) {
+              console.error('❌ Erro ao enviar email de cancelamento:', emailError);
+            }
+          }
         }
 
         console.log('❌ Assinatura cancelada:', subscription.id);
