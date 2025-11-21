@@ -55,6 +55,7 @@ const Sessions = () => {
   const [loggingOut, setLoggingOut] = useState(false);
   const [qrExpiresIn, setQrExpiresIn] = useState<number | null>(null);
   const [generatingQrCode, setGeneratingQrCode] = useState(false);
+  const [qrCodeKey, setQrCodeKey] = useState<string>("");
 
   const fetchSessions = async () => {
     try {
@@ -302,6 +303,7 @@ const Sessions = () => {
             qrCode: reader.result as string
           }
         }));
+        setQrCodeKey(Date.now().toString());
         setGeneratingQrCode(false);
         toast.success("QR Code gerado! Escaneie para conectar.");
       };
@@ -430,7 +432,7 @@ const Sessions = () => {
   }, [selectedSession, showSessionModal, sessionsStatus, generatingQrCode]);
 
   useEffect(() => {
-    if (selectedSession && sessionsStatus[selectedSession.id]?.qrCode) {
+    if (selectedSession && sessionsStatus[selectedSession.id]?.qrCode && qrCodeKey) {
       setQrExpiresIn(120);
       
       const intervalId = setInterval(() => {
@@ -452,7 +454,7 @@ const Sessions = () => {
     } else {
       setQrExpiresIn(null);
     }
-  }, [selectedSession, sessionsStatus]);
+  }, [selectedSession, qrCodeKey]);
 
   const handleCreateSession = async (sessionName: string) => {
     if (!orgData) return;
@@ -531,7 +533,7 @@ const Sessions = () => {
             qrCode: reader.result as string
           }
         }));
-        setQrExpiresIn(120);
+        setQrCodeKey(Date.now().toString());
         setGeneratingQrCode(false);
         toast.success("QR Code atualizado!");
       };
@@ -660,6 +662,7 @@ const Sessions = () => {
         onClose={() => {
           setShowSessionModal(false);
           setQrExpiresIn(null);
+          setQrCodeKey("");
         }}
         onRefreshQr={() => selectedSession && handleRefreshQr(selectedSession)}
         onCloseSession={() => selectedSession && handleCloseSession(selectedSession)}
