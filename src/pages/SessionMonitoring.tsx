@@ -4,9 +4,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
-import { RefreshCw, Activity } from "lucide-react";
+import { RefreshCw, Activity, Zap, AlertCircle, QrCode } from "lucide-react";
 import SessionCard from "@/components/SessionCard";
 import SessionDetailsModal from "@/components/SessionDetailsModal";
+import { StatsCard } from "@/components/dashboard/StatsCard";
+import { motion } from "framer-motion";
+import { cn } from "@/lib/utils";
 
 interface SessionData {
   id: string;
@@ -186,6 +189,7 @@ const SessionMonitoring = () => {
 
   const filteredSessions = sessions.filter(session => {
     if (filter === 'all') return true;
+    if (filter === 'offline') return session.status === 'offline' || session.status === 'no-session';
     return session.status === filter;
   });
 
@@ -195,7 +199,7 @@ const SessionMonitoring = () => {
   };
 
   return (
-    <div className="max-w-7xl mx-auto p-6 space-y-6">
+    <div className="container mx-auto p-6 space-y-6">
       {/* Header */}
       <Card>
         <CardHeader>
@@ -221,43 +225,106 @@ const SessionMonitoring = () => {
         </CardHeader>
       </Card>
 
-      {/* Filtros */}
-      <Card>
-        <CardContent className="pt-6">
-          <div className="flex flex-wrap gap-2">
-            <Button
-              variant={filter === 'all' ? 'default' : 'outline'}
-              onClick={() => setFilter('all')}
-            >
-              Todas ({getStatusCount('all')})
-            </Button>
-            <Button
-              variant={filter === 'online' ? 'default' : 'outline'}
-              onClick={() => setFilter('online')}
-            >
-              🟢 Online ({getStatusCount('online')})
-            </Button>
-            <Button
-              variant={filter === 'qrcode' ? 'default' : 'outline'}
-              onClick={() => setFilter('qrcode')}
-            >
-              🟡 QR Code ({getStatusCount('qrcode')})
-            </Button>
-            <Button
-              variant={filter === 'offline' ? 'default' : 'outline'}
-              onClick={() => setFilter('offline')}
-            >
-              🔴 Offline ({getStatusCount('offline')})
-            </Button>
-            <Button
-              variant={filter === 'no-session' ? 'default' : 'outline'}
-              onClick={() => setFilter('no-session')}
-            >
-              ⚪ Sem Sessão ({getStatusCount('no-session')})
-            </Button>
+      {/* Filtros como Stats Cards */}
+      <motion.div
+        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4"
+        variants={{
+          hidden: { opacity: 0 },
+          show: {
+            opacity: 1,
+            transition: { staggerChildren: 0.1 }
+          }
+        }}
+        initial="hidden"
+        animate="show"
+      >
+        <motion.div
+          variants={{
+            hidden: { opacity: 0, y: 20 },
+            show: { opacity: 1, y: 0 }
+          }}
+          onClick={() => setFilter('all')}
+          className="cursor-pointer"
+        >
+          <div className={cn(
+            "transition-all duration-200",
+            filter === 'all' && "ring-2 ring-primary ring-offset-2"
+          )}>
+            <StatsCard
+              title="Total de Sessões"
+              value={getStatusCount('all')}
+              icon={Activity}
+              color="blue"
+            />
           </div>
-        </CardContent>
-      </Card>
+        </motion.div>
+
+        <motion.div
+          variants={{
+            hidden: { opacity: 0, y: 20 },
+            show: { opacity: 1, y: 0 }
+          }}
+          onClick={() => setFilter('online')}
+          className="cursor-pointer"
+        >
+          <div className={cn(
+            "transition-all duration-200",
+            filter === 'online' && "ring-2 ring-primary ring-offset-2"
+          )}>
+            <StatsCard
+              title="Online"
+              value={getStatusCount('online')}
+              icon={Zap}
+              subtitle="Conectadas"
+              color="green"
+            />
+          </div>
+        </motion.div>
+
+        <motion.div
+          variants={{
+            hidden: { opacity: 0, y: 20 },
+            show: { opacity: 1, y: 0 }
+          }}
+          onClick={() => setFilter('qrcode')}
+          className="cursor-pointer"
+        >
+          <div className={cn(
+            "transition-all duration-200",
+            filter === 'qrcode' && "ring-2 ring-primary ring-offset-2"
+          )}>
+            <StatsCard
+              title="QR Code"
+              value={getStatusCount('qrcode')}
+              icon={QrCode}
+              subtitle="Aguardando conexão"
+              color="orange"
+            />
+          </div>
+        </motion.div>
+
+        <motion.div
+          variants={{
+            hidden: { opacity: 0, y: 20 },
+            show: { opacity: 1, y: 0 }
+          }}
+          onClick={() => setFilter('offline')}
+          className="cursor-pointer"
+        >
+          <div className={cn(
+            "transition-all duration-200",
+            filter === 'offline' && "ring-2 ring-primary ring-offset-2"
+          )}>
+            <StatsCard
+              title="Offline"
+              value={getStatusCount('offline') + getStatusCount('no-session')}
+              icon={AlertCircle}
+              subtitle="Desconectadas"
+              color="purple"
+            />
+          </div>
+        </motion.div>
+      </motion.div>
 
       {/* Grid de Cards */}
       {loading ? (
