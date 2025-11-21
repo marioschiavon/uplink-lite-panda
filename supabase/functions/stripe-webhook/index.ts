@@ -1,11 +1,14 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import Stripe from "https://esm.sh/stripe@14.21.0?target=deno";
+import { Resend } from "https://esm.sh/resend@2.0.0";
 
 const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY')!, {
   apiVersion: '2023-10-16',
   httpClient: Stripe.createFetchHttpClient(),
 });
+
+const resend = new Resend(Deno.env.get('RESEND_API_KEY')!);
 
 serve(async (req) => {
   const signature = req.headers.get('stripe-signature');
@@ -97,6 +100,104 @@ serve(async (req) => {
         }).eq('id', sessionId);
 
         console.log('✅ Assinatura ativada para sessão:', sessionId);
+
+        // Enviar email de confirmação
+        if (session.customer_details?.email) {
+          try {
+            const sessionName = session.metadata?.session_name || 'Sua sessão';
+            const amount = (stripeSubscription.items.data[0].price.unit_amount || 0) / 100;
+            
+            await resend.emails.send({
+              from: 'Uplink <onboarding@resend.dev>',
+              to: [session.customer_details.email],
+              subject: '✅ Assinatura Ativada com Sucesso - Uplink',
+              html: `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                  <meta charset="utf-8">
+                  <style>
+                    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; }
+                    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+                    .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 10px 10px 0 0; text-align: center; }
+                    .content { background: #f9fafb; padding: 30px; border-radius: 0 0 10px 10px; }
+                    .card { background: white; padding: 20px; border-radius: 8px; margin: 20px 0; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+                    .success-badge { display: inline-block; background: #10b981; color: white; padding: 8px 16px; border-radius: 20px; font-size: 14px; font-weight: 600; margin-bottom: 20px; }
+                    .detail-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #e5e7eb; }
+                    .detail-label { color: #6b7280; font-weight: 500; }
+                    .detail-value { color: #111827; font-weight: 600; }
+                    .button { display: inline-block; background: #667eea; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; font-weight: 600; margin-top: 20px; }
+                    .footer { text-align: center; color: #6b7280; font-size: 14px; margin-top: 30px; }
+                  </style>
+                </head>
+                <body>
+                  <div class="container">
+                    <div class="header">
+                      <h1 style="margin: 0; font-size: 28px;">🎉 Assinatura Ativada!</h1>
+                    </div>
+                    <div class="content">
+                      <div class="success-badge">✓ Pagamento Confirmado</div>
+                      
+                      <p style="font-size: 16px; margin-bottom: 20px;">
+                        Olá! Sua assinatura do Uplink foi ativada com sucesso e sua sessão já está pronta para uso.
+                      </p>
+                      
+                      <div class="card">
+                        <h2 style="margin-top: 0; color: #111827; font-size: 20px;">📋 Detalhes da Assinatura</h2>
+                        
+                        <div class="detail-row">
+                          <span class="detail-label">Sessão:</span>
+                          <span class="detail-value">${sessionName}</span>
+                        </div>
+                        
+                        <div class="detail-row">
+                          <span class="detail-label">Plano:</span>
+                          <span class="detail-value">API Session</span>
+                        </div>
+                        
+                        <div class="detail-row">
+                          <span class="detail-label">Valor:</span>
+                          <span class="detail-value">R$ ${amount.toFixed(2)}/mês</span>
+                        </div>
+                        
+                        <div class="detail-row" style="border: none;">
+                          <span class="detail-label">Status:</span>
+                          <span class="detail-value" style="color: #10b981;">● Ativa</span>
+                        </div>
+                      </div>
+                      
+                      <div style="background: #eff6ff; border-left: 4px solid #3b82f6; padding: 15px; border-radius: 4px; margin: 20px 0;">
+                        <p style="margin: 0; color: #1e40af;">
+                          <strong>✨ Próximos Passos:</strong><br>
+                          Sua sessão está conectada e pronta para uso. Acesse o painel para começar a enviar mensagens via API.
+                        </p>
+                      </div>
+                      
+                      <div style="text-align: center;">
+                        <a href="https://kfsvpbujmetlendgwnrs.lovable.app" class="button">
+                          Acessar Painel
+                        </a>
+                      </div>
+                      
+                      <div class="footer">
+                        <p>Sua próxima cobrança será em ${new Date(stripeSubscription.current_period_end * 1000).toLocaleDateString('pt-BR')}</p>
+                        <p style="font-size: 12px; color: #9ca3af;">
+                          Se precisar de ajuda, responda este email ou acesse nossa central de suporte.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </body>
+                </html>
+              `,
+            });
+            
+            console.log('📧 Email de confirmação enviado para:', session.customer_details.email);
+          } catch (emailError) {
+            console.error('❌ Erro ao enviar email:', emailError);
+          }
+        }
+
         break;
       }
 
