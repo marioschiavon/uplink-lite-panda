@@ -33,6 +33,8 @@ interface SessionWithSubscription {
     created_at: string;
     stripe_customer_id?: string;
     payment_provider?: string;
+    cancel_at_period_end?: boolean;
+    current_period_end?: string;
   };
 }
 
@@ -113,6 +115,8 @@ const Subscriptions = () => {
               created_at: (subData as any).created_at,
               stripe_customer_id: (subData as any).stripe_customer_id,
               payment_provider: (subData as any).payment_provider,
+              cancel_at_period_end: (subData as any).cancel_at_period_end,
+              current_period_end: (subData as any).current_period_end,
             } : undefined,
           };
         })
@@ -142,6 +146,16 @@ const Subscriptions = () => {
         <Badge variant="outline" className="bg-yellow-500/10 text-yellow-600 border-yellow-200">
           <Clock className="h-3 w-3 mr-1" />
           Aguardando Pagamento
+        </Badge>
+      );
+    }
+
+    // Badge especial para cancelamento agendado
+    if (session.subscription.status === "active" && session.subscription.cancel_at_period_end) {
+      return (
+        <Badge variant="outline" className="bg-orange-500/10 text-orange-600 border-orange-200">
+          <AlertTriangle className="h-3 w-3 mr-1" />
+          Cancelamento Agendado
         </Badge>
       );
     }
@@ -255,7 +269,10 @@ const Subscriptions = () => {
           <CardHeader className="pb-3">
             <CardDescription>Assinaturas Ativas</CardDescription>
             <CardTitle className="text-3xl text-green-600">
-              {sessions.filter(s => s.subscription?.status === "active" || !s.requires_subscription).length}
+              {sessions.filter(s => 
+                (s.subscription?.status === "active" && !s.subscription?.cancel_at_period_end) || 
+                !s.requires_subscription
+              ).length}
             </CardTitle>
           </CardHeader>
         </Card>
@@ -309,6 +326,42 @@ const Subscriptions = () => {
 
                 <CardContent>
                   <Separator className="mb-4" />
+
+                  {/* Aviso de Cancelamento Agendado */}
+                  {session.subscription?.status === "active" && session.subscription?.cancel_at_period_end && (
+                    <Alert className="border-orange-200 bg-orange-50 mb-4">
+                      <AlertTriangle className="h-4 w-4 text-orange-600" />
+                      <AlertDescription className="text-orange-800">
+                        <div className="space-y-3">
+                          <div>
+                            <p className="font-semibold mb-2">⚠️ Cancelamento Agendado</p>
+                            <p className="mb-2">
+                              Você cancelou esta assinatura, mas ela continuará ativa até{" "}
+                              <strong>
+                                {session.subscription.current_period_end && 
+                                  format(new Date(session.subscription.current_period_end), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                              </strong>
+                            </p>
+                            <p className="text-sm mb-3">
+                              Após essa data, a sessão será desconectada automaticamente e você precisará reativar a assinatura para voltar a usar.
+                            </p>
+                          </div>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleManageSubscription(
+                              session.subscription?.stripe_customer_id,
+                              session.subscription?.payment_provider
+                            )}
+                            className="border-orange-300"
+                          >
+                            <ExternalLink className="h-4 w-4 mr-2" />
+                            Reverter Cancelamento
+                          </Button>
+                        </div>
+                      </AlertDescription>
+                    </Alert>
+                  )}
 
                   {/* Informações da Assinatura */}
                   {session.subscription ? (
@@ -450,8 +503,9 @@ const Subscriptions = () => {
               3
             </div>
             <div>
-              <p className="font-medium text-foreground">Cancelamento</p>
+              <p className="font-medium text-foreground">Cancelamento e Período de Uso</p>
               <p className="text-muted-foreground">
+                Ao cancelar, você pode usar a sessão até o fim do período já pago (30 dias). Após essa data, a sessão será desconectada automaticamente.
                 Após cancelar, a sessão permanece ativa até o fim do período pago. Depois disso, será desconectada automaticamente. Você pode reativar a qualquer momento.
               </p>
             </div>

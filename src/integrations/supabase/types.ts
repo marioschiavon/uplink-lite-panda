@@ -433,8 +433,10 @@ export type Database = {
       subscriptions: {
         Row: {
           amount: number
+          cancel_at_period_end: boolean | null
           cancelled_at: string | null
           created_at: string | null
+          current_period_end: string | null
           external_reference: string | null
           id: string
           next_payment_date: string | null
@@ -454,8 +456,10 @@ export type Database = {
         }
         Insert: {
           amount?: number
+          cancel_at_period_end?: boolean | null
           cancelled_at?: string | null
           created_at?: string | null
+          current_period_end?: string | null
           external_reference?: string | null
           id?: string
           next_payment_date?: string | null
@@ -475,8 +479,10 @@ export type Database = {
         }
         Update: {
           amount?: number
+          cancel_at_period_end?: boolean | null
           cancelled_at?: string | null
           created_at?: string | null
+          current_period_end?: string | null
           external_reference?: string | null
           id?: string
           next_payment_date?: string | null

@@ -210,10 +210,12 @@ serve(async (req) => {
 
         const updateData: any = {
           status: newStatus,
+          cancel_at_period_end: subscription.cancel_at_period_end || false,
         };
 
-        // Só atualizar next_payment_date se existir
+        // Atualizar datas de período
         if (subscription.current_period_end) {
+          updateData.current_period_end = new Date(subscription.current_period_end * 1000).toISOString();
           updateData.next_payment_date = new Date(subscription.current_period_end * 1000).toISOString();
         }
 
@@ -221,7 +223,8 @@ serve(async (req) => {
           .update(updateData)
           .eq('stripe_subscription_id', subscription.id);
 
-        console.log('✅ Assinatura atualizada:', subscription.id, '| Novo status:', newStatus);
+        console.log('✅ Assinatura atualizada:', subscription.id, '| Novo status:', newStatus, 
+                    '| Cancelamento agendado:', subscription.cancel_at_period_end);
         break;
       }
 
