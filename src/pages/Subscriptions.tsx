@@ -332,7 +332,7 @@ const Subscriptions = () => {
                       </div>
 
                       {session.subscription.status === "active" && (
-                        <div className="flex gap-2">
+                        <div className="flex flex-col gap-3">
                           <Button
                             variant="outline"
                             onClick={() => handleManageSubscription(
@@ -341,11 +341,14 @@ const Subscriptions = () => {
                             )}
                             disabled={!session.subscription?.stripe_customer_id && 
                                      session.subscription?.payment_provider !== 'mercadopago'}
-                            className="flex-1"
+                            className="w-full"
                           >
                             <ExternalLink className="h-4 w-4 mr-2" />
                             Gerenciar Assinatura
                           </Button>
+                          <div className="text-xs text-muted-foreground text-center">
+                            Use o portal para cancelar ou atualizar método de pagamento
+                          </div>
                         </div>
                       )}
 
@@ -359,25 +362,39 @@ const Subscriptions = () => {
                       )}
 
                       {(session.subscription.status === "cancelled" || session.subscription.status === "paused") && (
-                        <Alert className="border-red-200 bg-red-50">
-                          <XCircle className="h-4 w-4 text-red-600" />
-                          <AlertDescription className="text-red-800">
-                            Esta assinatura foi cancelada. A sessão não pode ser utilizada.
-                          </AlertDescription>
-                        </Alert>
+                        <div className="space-y-3">
+                          <Alert className="border-red-200 bg-red-50">
+                            <XCircle className="h-4 w-4 text-red-600" />
+                            <AlertDescription className="text-red-800">
+                              <p className="mb-3">Esta assinatura foi cancelada. A sessão não pode ser utilizada.</p>
+                              <Button
+                                size="sm"
+                                onClick={() => navigate(`/checkout?session_id=${session.id}&session_name=${encodeURIComponent(session.name)}`)}
+                                className="bg-green-600 hover:bg-green-700"
+                              >
+                                <CheckCircle2 className="h-4 w-4 mr-2" />
+                                Reativar Assinatura
+                              </Button>
+                            </AlertDescription>
+                          </Alert>
+                        </div>
                       )}
                     </div>
                   ) : session.requires_subscription ? (
                     <Alert className="border-yellow-200 bg-yellow-50">
                       <AlertTriangle className="h-4 w-4 text-yellow-600" />
                       <AlertDescription className="text-yellow-800">
-                        <p className="mb-2">Esta sessão ainda não possui assinatura ativa.</p>
-                        <Button
-                          size="sm"
-                          onClick={() => navigate(`/checkout?session_name=${encodeURIComponent(session.name)}`)}
-                        >
-                          Ativar Assinatura
-                        </Button>
+                        <div className="flex flex-col gap-3">
+                          <p>Esta sessão ainda não possui assinatura ativa.</p>
+                          <Button
+                            size="sm"
+                            onClick={() => navigate(`/checkout?session_id=${session.id}&session_name=${encodeURIComponent(session.name)}`)}
+                            className="bg-primary hover:bg-primary/90 w-fit"
+                          >
+                            <CreditCard className="h-4 w-4 mr-2" />
+                            Ativar Assinatura (R$ 69,90/mês)
+                          </Button>
+                        </div>
                       </AlertDescription>
                     </Alert>
                   ) : (
@@ -396,23 +413,61 @@ const Subscriptions = () => {
       </div>
 
       {/* Help Section */}
-      <Card className="mt-8 border-primary/20">
+      <Card className="mt-8 border-primary/20 bg-muted/30">
         <CardHeader>
-          <CardTitle className="text-lg">Precisa de Ajuda?</CardTitle>
+          <CardTitle className="text-lg flex items-center gap-2">
+            <AlertTriangle className="h-5 w-5 text-primary" />
+            Como Funciona
+          </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-2 text-sm text-muted-foreground">
-          <p>
-            • Para cancelar uma assinatura, clique em "Gerenciar Assinatura"
-          </p>
-          <p>
-            • Cada sessão possui uma assinatura independente de R$ 69,90/mês
-          </p>
-          <p>
-            • O cancelamento de uma assinatura não afeta as outras sessões
-          </p>
-          <p>
-            • Após o cancelamento, a sessão será bloqueada na próxima renovação
-          </p>
+        <CardContent className="space-y-3 text-sm">
+          <div className="flex gap-3">
+            <div className="flex-shrink-0 w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold text-xs">
+              1
+            </div>
+            <div>
+              <p className="font-medium text-foreground">Gerenciar Assinatura</p>
+              <p className="text-muted-foreground">
+                Clique no botão "Gerenciar Assinatura" para acessar o portal do Stripe onde você pode cancelar, atualizar método de pagamento ou ver histórico de cobranças.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex gap-3">
+            <div className="flex-shrink-0 w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold text-xs">
+              2
+            </div>
+            <div>
+              <p className="font-medium text-foreground">Assinaturas Independentes</p>
+              <p className="text-muted-foreground">
+                Cada sessão possui uma assinatura separada de R$ 69,90/mês. Cancelar uma não afeta as outras.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex gap-3">
+            <div className="flex-shrink-0 w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold text-xs">
+              3
+            </div>
+            <div>
+              <p className="font-medium text-foreground">Cancelamento</p>
+              <p className="text-muted-foreground">
+                Após cancelar, a sessão permanece ativa até o fim do período pago. Depois disso, será desconectada automaticamente. Você pode reativar a qualquer momento.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex gap-3">
+            <div className="flex-shrink-0 w-6 h-6 rounded-full bg-green-500/10 flex items-center justify-center text-green-600 font-semibold text-xs">
+              ✓
+            </div>
+            <div>
+              <p className="font-medium text-foreground">Reativação Instantânea</p>
+              <p className="text-muted-foreground">
+                Sessões canceladas podem ser reativadas imediatamente clicando em "Reativar Assinatura".
+              </p>
+            </div>
+          </div>
         </CardContent>
       </Card>
     </div>
