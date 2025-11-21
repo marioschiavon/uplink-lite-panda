@@ -13,9 +13,12 @@ import {
   XCircle, 
   Clock, 
   ExternalLink,
-  AlertTriangle
+  AlertTriangle,
+  MessageSquare,
+  DollarSign
 } from "lucide-react";
 import { motion } from "framer-motion";
+import { StatsCard } from "@/components/dashboard/StatsCard";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -233,7 +236,7 @@ const Subscriptions = () => {
   }
 
   return (
-    <div className="container max-w-5xl mx-auto py-8 px-4">
+    <div className="container mx-auto p-6 space-y-6">
       {/* Header */}
       <div className="mb-8">
         <div className="flex items-center gap-3 mb-2">
@@ -257,38 +260,90 @@ const Subscriptions = () => {
       )}
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-        <Card>
-          <CardHeader className="pb-3">
-            <CardDescription>Total de Sessões</CardDescription>
-            <CardTitle className="text-3xl">{sessions.length}</CardTitle>
-          </CardHeader>
-        </Card>
+      <motion.div
+        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4"
+        variants={{
+          hidden: { opacity: 0 },
+          show: {
+            opacity: 1,
+            transition: { staggerChildren: 0.1 }
+          }
+        }}
+        initial="hidden"
+        animate="show"
+      >
+        <motion.div
+          variants={{
+            hidden: { opacity: 0, y: 20 },
+            show: { opacity: 1, y: 0 }
+          }}
+        >
+          <StatsCard
+            title="Total de Sessões"
+            value={sessions.length}
+            icon={MessageSquare}
+            color="blue"
+          />
+        </motion.div>
 
-        <Card>
-          <CardHeader className="pb-3">
-            <CardDescription>Assinaturas Ativas</CardDescription>
-            <CardTitle className="text-3xl text-green-600">
-              {sessions.filter(s => 
-                (s.subscription?.status === "active" && !s.subscription?.cancel_at_period_end) || 
-                !s.requires_subscription
-              ).length}
-            </CardTitle>
-          </CardHeader>
-        </Card>
+        <motion.div
+          variants={{
+            hidden: { opacity: 0, y: 20 },
+            show: { opacity: 1, y: 0 }
+          }}
+        >
+          <StatsCard
+            title="Assinaturas Ativas"
+            value={sessions.filter(s => 
+              (s.subscription?.status === "active" && !s.subscription?.cancel_at_period_end) || 
+              !s.requires_subscription
+            ).length}
+            icon={CheckCircle2}
+            subtitle="Sem cancelamento agendado"
+            color="green"
+          />
+        </motion.div>
 
-        <Card>
-          <CardHeader className="pb-3">
-            <CardDescription>Custo Mensal Total</CardDescription>
-            <CardTitle className="text-3xl text-primary">
-              {isLegacy ? "Grátis" : `R$ ${(sessions.filter(s => s.subscription?.status === "active").length * 69.90).toFixed(2)}`}
-            </CardTitle>
-          </CardHeader>
-        </Card>
-      </div>
+        <motion.div
+          variants={{
+            hidden: { opacity: 0, y: 20 },
+            show: { opacity: 1, y: 0 }
+          }}
+        >
+          <StatsCard
+            title="Pendentes"
+            value={sessions.filter(s => 
+              s.requires_subscription && !s.subscription
+            ).length}
+            icon={Clock}
+            subtitle="Aguardando pagamento"
+            color="orange"
+          />
+        </motion.div>
+
+        <motion.div
+          variants={{
+            hidden: { opacity: 0, y: 20 },
+            show: { opacity: 1, y: 0 }
+          }}
+        >
+          <StatsCard
+            title="Custo Mensal"
+            value={isLegacy ? "Grátis" : `R$ ${(sessions.filter(s => s.subscription?.status === "active").length * 69.90).toFixed(2)}`}
+            icon={DollarSign}
+            subtitle={isLegacy ? "Cliente Legacy" : "Total das assinaturas"}
+            color="purple"
+          />
+        </motion.div>
+      </motion.div>
 
       {/* Sessions List */}
-      <div className="space-y-4">
+      <motion.div 
+        className="space-y-4"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.4 }}
+      >
         {sessions.length === 0 ? (
           <Card>
             <CardContent className="py-12 text-center">
@@ -309,7 +364,7 @@ const Subscriptions = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.1 }}
             >
-              <Card className="hover:shadow-md transition-shadow">
+              <Card className="hover:shadow-lg transition-shadow duration-200">
                 <CardHeader>
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
@@ -463,7 +518,7 @@ const Subscriptions = () => {
             </motion.div>
           ))
         )}
-      </div>
+      </motion.div>
 
       {/* Help Section */}
       <Card className="mt-8 border-primary/20 bg-muted/30">
