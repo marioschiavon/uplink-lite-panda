@@ -62,8 +62,12 @@ serve(async (req) => {
             status: 'active',
             stripe_subscription_id: stripeSubscription.id,
             stripe_customer_id: session.customer as string,
-            start_date: new Date(stripeSubscription.current_period_start * 1000).toISOString(),
-            next_payment_date: new Date(stripeSubscription.current_period_end * 1000).toISOString(),
+            start_date: stripeSubscription.current_period_start 
+              ? new Date(stripeSubscription.current_period_start * 1000).toISOString()
+              : null,
+            next_payment_date: stripeSubscription.current_period_end 
+              ? new Date(stripeSubscription.current_period_end * 1000).toISOString()
+              : null,
             payer_email: session.customer_details?.email,
           }).eq('id', existingSub.id);
         } else {
@@ -76,8 +80,12 @@ serve(async (req) => {
             stripe_subscription_id: stripeSubscription.id,
             stripe_customer_id: session.customer as string,
             payment_provider: 'stripe',
-            start_date: new Date(stripeSubscription.current_period_start * 1000).toISOString(),
-            next_payment_date: new Date(stripeSubscription.current_period_end * 1000).toISOString(),
+            start_date: stripeSubscription.current_period_start 
+              ? new Date(stripeSubscription.current_period_start * 1000).toISOString()
+              : null,
+            next_payment_date: stripeSubscription.current_period_end 
+              ? new Date(stripeSubscription.current_period_end * 1000).toISOString()
+              : null,
             payer_email: session.customer_details?.email,
           });
         }
@@ -99,11 +107,17 @@ serve(async (req) => {
                          subscription.status === 'past_due' ? 'past_due' :
                          subscription.status === 'canceled' ? 'cancelled' : 'pending';
 
+        const updateData: any = {
+          status: newStatus,
+        };
+
+        // Só atualizar next_payment_date se existir
+        if (subscription.current_period_end) {
+          updateData.next_payment_date = new Date(subscription.current_period_end * 1000).toISOString();
+        }
+
         await supabaseAdmin.from('subscriptions')
-          .update({
-            status: newStatus,
-            next_payment_date: new Date(subscription.current_period_end * 1000).toISOString(),
-          })
+          .update(updateData)
           .eq('stripe_subscription_id', subscription.id);
 
         console.log('✅ Assinatura atualizada:', subscription.id, '| Novo status:', newStatus);
