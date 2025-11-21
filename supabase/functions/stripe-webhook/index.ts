@@ -225,6 +225,138 @@ serve(async (req) => {
 
         console.log('✅ Assinatura atualizada:', subscription.id, '| Novo status:', newStatus, 
                     '| Cancelamento agendado:', subscription.cancel_at_period_end);
+
+        // Enviar email quando cancelamento é agendado
+        if (subscription.cancel_at_period_end && subscription.status === 'active') {
+          const { data: subData } = await supabaseAdmin
+            .from('subscriptions')
+            .select('session_id, payer_email, amount')
+            .eq('stripe_subscription_id', subscription.id)
+            .single();
+
+          if (subData && (subData as any).payer_email) {
+            try {
+              const { data: sessionData } = await supabaseAdmin
+                .from('sessions')
+                .select('name')
+                .eq('id', (subData as any).session_id)
+                .maybeSingle();
+
+              const sessionName = (sessionData as any)?.name || 'Sua sessão';
+              const amount = (subData as any).amount || 69.90;
+              const periodEndDate = new Date(subscription.current_period_end * 1000);
+              
+              await resend.emails.send({
+                from: 'Uplink <onboarding@resend.dev>',
+                to: [(subData as any).payer_email],
+                subject: '⚠️ Cancelamento Agendado - Continue Usando até o Fim do Período',
+                html: `
+                  <!DOCTYPE html>
+                  <html>
+                  <head>
+                    <meta charset="utf-8">
+                    <style>
+                      body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; }
+                      .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+                      .header { background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: white; padding: 30px; border-radius: 10px 10px 0 0; text-align: center; }
+                      .content { background: #f9fafb; padding: 30px; border-radius: 0 0 10px 10px; }
+                      .card { background: white; padding: 20px; border-radius: 8px; margin: 20px 0; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+                      .warning-badge { display: inline-block; background: #f97316; color: white; padding: 8px 16px; border-radius: 20px; font-size: 14px; font-weight: 600; margin-bottom: 20px; }
+                      .detail-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #e5e7eb; }
+                      .detail-label { color: #6b7280; font-weight: 500; }
+                      .detail-value { color: #111827; font-weight: 600; }
+                      .highlight-date { background: #fef3c7; padding: 4px 8px; border-radius: 4px; color: #92400e; font-weight: 700; }
+                      .button { display: inline-block; background: #667eea; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; font-weight: 600; margin-top: 20px; }
+                      .button-secondary { background: #f97316; }
+                      .footer { text-align: center; color: #6b7280; font-size: 14px; margin-top: 30px; }
+                    </style>
+                  </head>
+                  <body>
+                    <div class="container">
+                      <div class="header">
+                        <h1 style="margin: 0; font-size: 28px;">⚠️ Cancelamento Agendado</h1>
+                      </div>
+                      <div class="content">
+                        <div class="warning-badge">📅 Sua sessão continua ativa</div>
+                        
+                        <p style="font-size: 16px; margin-bottom: 20px;">
+                          Confirmamos o cancelamento da sua assinatura do Uplink. <strong>Mas não se preocupe!</strong> Você pode continuar usando normalmente até o fim do período que já foi pago.
+                        </p>
+                        
+                        <div class="card" style="border-left: 4px solid #f97316;">
+                          <h2 style="margin-top: 0; color: #111827; font-size: 20px;">📋 Detalhes</h2>
+                          
+                          <div class="detail-row">
+                            <span class="detail-label">Sessão:</span>
+                            <span class="detail-value">${sessionName}</span>
+                          </div>
+                          
+                          <div class="detail-row">
+                            <span class="detail-label">Valor Pago:</span>
+                            <span class="detail-value">R$ ${amount.toFixed(2)}/mês</span>
+                          </div>
+                          
+                          <div class="detail-row" style="border: none;">
+                            <span class="detail-label">Sua sessão estará ativa até:</span>
+                            <span class="detail-value">
+                              <span class="highlight-date">${periodEndDate.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })} às ${periodEndDate.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>
+                            </span>
+                          </div>
+                        </div>
+                        
+                        <div style="background: #eff6ff; border-left: 4px solid #3b82f6; padding: 15px; border-radius: 4px; margin: 20px 0;">
+                          <p style="margin: 0; color: #1e40af;">
+                            <strong>✨ Continue usando sem limitações!</strong><br>
+                            Sua sessão permanece conectada e totalmente funcional até a data indicada acima. Você pode enviar mensagens via API normalmente.
+                          </p>
+                        </div>
+                        
+                        <div style="background: #fef2f2; border-left: 4px solid #dc2626; padding: 15px; border-radius: 4px; margin: 20px 0;">
+                          <p style="margin: 0; color: #991b1b;">
+                            <strong>⚠️ O que acontece após essa data:</strong><br>
+                            • Sua sessão será desconectada automaticamente<br>
+                            • Você não poderá mais enviar mensagens via API<br>
+                            • Seus dados permanecerão seguros no sistema
+                          </p>
+                        </div>
+                        
+                        <div style="background: #f0fdf4; border-left: 4px solid #16a34a; padding: 15px; border-radius: 4px; margin: 20px 0;">
+                          <p style="margin: 0; color: #166534;">
+                            <strong>💡 Mudou de ideia?</strong><br>
+                            Você pode reverter o cancelamento a qualquer momento clicando no botão abaixo. Sua assinatura continuará normalmente sem interrupção.
+                          </p>
+                        </div>
+                        
+                        <div style="text-align: center;">
+                          <a href="https://kfsvpbujmetlendgwnrs.lovable.app/subscriptions" class="button button-secondary">
+                            ↩️ Reverter Cancelamento
+                          </a>
+                          <br>
+                          <a href="https://kfsvpbujmetlendgwnrs.lovable.app" class="button" style="margin-top: 10px;">
+                            Acessar Painel
+                          </a>
+                        </div>
+                        
+                        <div class="footer">
+                          <p>Nós entendemos que planos mudam. Se precisar reativar no futuro, será sempre bem-vindo de volta! 💙</p>
+                          <p style="font-size: 12px; color: #9ca3af;">
+                            Dúvidas? Responda este email ou acesse nossa central de suporte.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </body>
+                  </html>
+                `,
+              });
+              
+              console.log('📧 Email de cancelamento agendado enviado para:', (subData as any).payer_email);
+            } catch (emailError) {
+              console.error('❌ Erro ao enviar email de cancelamento agendado:', emailError);
+            }
+          }
+        }
+
         break;
       }
 
