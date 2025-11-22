@@ -1,5 +1,5 @@
 import { useLocation, useNavigate } from "react-router-dom";
-import { LayoutDashboard, MessageSquare, CreditCard, Megaphone, Activity, Settings, LogOut } from "lucide-react";
+import { LayoutDashboard, MessageSquare, CreditCard, BookOpen, Megaphone, Activity, Settings, LogOut } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -27,6 +27,7 @@ const mainItems: NavItem[] = [
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
   { title: "Sessões", url: "/sessions", icon: MessageSquare },
   { title: "Assinaturas", url: "/subscriptions", icon: CreditCard },
+  { title: "Documentação API", url: "/api-docs", icon: BookOpen },
 ];
 
 const adminItems: NavItem[] = [
