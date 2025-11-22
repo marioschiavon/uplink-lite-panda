@@ -15,6 +15,7 @@ import SessionMonitoring from "./pages/SessionMonitoring";
 import Checkout from "./pages/Checkout";
 import Subscriptions from "./pages/Subscriptions";
 import Announcements from "./pages/Announcements";
+import ApiDocs from "./pages/ApiDocs";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -39,6 +40,7 @@ const App = () => (
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/sessions" element={<Sessions />} />
             <Route path="/subscriptions" element={<Subscriptions />} />
+            <Route path="/api-docs" element={<ApiDocs />} />
             <Route path="/announcements" element={<Announcements />} />
             <Route path="/monitoring" element={<SessionMonitoring />} />
           </Route>
