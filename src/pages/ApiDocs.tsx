@@ -4,6 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
 import { EndpointCard } from "@/components/api-docs/EndpointCard";
 import { CodeBlock } from "@/components/api-docs/CodeBlock";
 
@@ -335,19 +336,46 @@ if ($httpCode == 200) {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <ol className="space-y-2 list-decimal list-inside">
-              <li>Acesse o <strong>Dashboard</strong></li>
-              <li>Clique em <strong>"Ferramentas"</strong></li>
-              <li>Clique em <strong>"Ver Bearer Token"</strong></li>
-              <li>Copie o token e use no header <code className="bg-muted px-1.5 py-0.5 rounded">Authorization: Bearer {"{token}"}</code></li>
-            </ol>
-            <Alert variant="destructive">
+            <div className="space-y-3">
+              <h4 className="font-semibold text-sm">📍 Opção 1: Via Dashboard (Rápido)</h4>
+              <ol className="space-y-2 list-decimal list-inside text-sm ml-2">
+                <li>Acesse o <strong>Dashboard</strong></li>
+                <li>Clique em <strong>"Ferramentas"</strong></li>
+                <li>Clique em <strong>"Ver Token da API"</strong></li>
+                <li>Selecione a sessão desejada no dropdown (se houver múltiplas)</li>
+                <li>Copie o token</li>
+              </ol>
+            </div>
+            
+            <Separator />
+            
+            <div className="space-y-3">
+              <h4 className="font-semibold text-sm">📍 Opção 2: Via Detalhes da Sessão</h4>
+              <ol className="space-y-2 list-decimal list-inside text-sm ml-2">
+                <li>Vá para <strong>Sessões → Minhas Sessões</strong></li>
+                <li>Selecione a sessão desejada</li>
+                <li>Clique em <strong>"Ver Detalhes"</strong></li>
+                <li>Na seção <strong>"Credenciais da API"</strong>, copie o <strong>API Token</strong></li>
+              </ol>
+            </div>
+
+            <Alert variant="destructive" className="mt-4">
               <AlertCircle className="h-4 w-4" />
               <AlertTitle>Segurança</AlertTitle>
               <AlertDescription>
-                Nunca compartilhe seu Bearer Token publicamente! Ele dá acesso total à sua sessão WhatsApp.
+                Nunca compartilhe seu Bearer Token publicamente! 
+                Ele dá acesso total à sua sessão WhatsApp.
               </AlertDescription>
             </Alert>
+            
+            <div className="bg-muted p-3 rounded-lg mt-4">
+              <p className="text-xs text-muted-foreground mb-2">
+                💡 <strong>Dica:</strong> Use o header no formato:
+              </p>
+              <code className="block bg-background px-3 py-2 rounded text-xs">
+                Authorization: Bearer seu-token-aqui
+              </code>
+            </div>
           </CardContent>
         </Card>
       </motion.div>

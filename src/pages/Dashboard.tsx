@@ -442,10 +442,16 @@ const Dashboard = () => {
             </CardDescription>
           </CardHeader>
           <CardContent className="flex gap-2">
-            {activeSessions.length > 0 && activeSessions[0].api_token && (
+            {activeSessions.length > 0 && (
               <BearerTokenSheet
-                token={activeSessions[0].api_token}
-                sessionName={activeSessions[0].name}
+                sessions={activeSessions
+                  .filter(s => s.api_token)
+                  .map(s => ({
+                    id: s.id,
+                    name: s.name,
+                    api_token: s.api_token!
+                  }))
+                }
               />
             )}
             

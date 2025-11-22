@@ -10,20 +10,33 @@ import {
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 
 interface BearerTokenSheetProps {
-  token: string;
-  sessionName: string;
+  sessions: Array<{
+    id: string;
+    name: string;
+    api_token: string;
+  }>;
 }
 
-export function BearerTokenSheet({ token, sessionName }: BearerTokenSheetProps) {
+export function BearerTokenSheet({ sessions }: BearerTokenSheetProps) {
   const [copied, setCopied] = useState(false);
+  const [selectedSessionId, setSelectedSessionId] = useState<string>(sessions[0]?.id || "");
+
+  const selectedSession = sessions.find(s => s.id === selectedSessionId);
+  const token = selectedSession?.api_token || "";
 
   const handleCopy = () => {
-    navigator.clipboard.writeText(token);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    if (token) {
+      navigator.clipboard.writeText(token);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
   };
+
+  if (sessions.length === 0) return null;
 
   return (
     <Sheet>
@@ -31,17 +44,45 @@ export function BearerTokenSheet({ token, sessionName }: BearerTokenSheetProps) 
         <Button variant="outline" className="gap-2">
           <Key className="h-4 w-4" />
           Ver Token da API
+          <Badge variant="secondary" className="ml-1">
+            {sessions.length}
+          </Badge>
         </Button>
       </SheetTrigger>
       <SheetContent side="right" className="w-full sm:w-96">
         <SheetHeader>
           <SheetTitle>Bearer Token</SheetTitle>
           <SheetDescription>
-            Token de autenticação para: {sessionName}
+            Token de autenticação da API WhatsApp
           </SheetDescription>
         </SheetHeader>
 
         <div className="space-y-4 mt-6">
+          {sessions.length > 1 && (
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Selecione a sessão:</label>
+              <Select value={selectedSessionId} onValueChange={setSelectedSessionId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Escolha uma sessão" />
+                </SelectTrigger>
+                <SelectContent>
+                  {sessions.map((session) => (
+                    <SelectItem key={session.id} value={session.id}>
+                      {session.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          {sessions.length === 1 && (
+            <div className="space-y-1">
+              <label className="text-sm font-medium">Sessão:</label>
+              <p className="text-sm text-muted-foreground">{selectedSession?.name}</p>
+            </div>
+          )}
+
           <div className="bg-muted p-4 rounded-lg">
             <code className="text-xs break-all font-mono">{token}</code>
           </div>
