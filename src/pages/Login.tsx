@@ -53,11 +53,15 @@ const Login = () => {
       
       <Card className="w-full max-w-md relative backdrop-blur-sm bg-card/90 border-border/50 shadow-elegant animate-fade-in">
         <CardHeader className="space-y-3 text-center">
-          <div className="mx-auto w-16 h-16 bg-gradient-to-br from-primary to-secondary rounded-2xl flex items-center justify-center shadow-glow">
-            <span className="text-3xl font-bold text-primary-foreground">W</span>
+          <div className="mx-auto w-20 h-20 flex items-center justify-center">
+            <img 
+              src="/logo-uplink.png" 
+              alt="Uplink Logo" 
+              className="w-full h-full object-contain drop-shadow-2xl animate-scale-in"
+            />
           </div>
-          <CardTitle className="text-3xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-            Uplink Lite
+          <CardTitle className="text-3xl font-bold">
+            Uplink
           </CardTitle>
           <CardDescription className="text-muted-foreground">
             Faça login para acessar o painel
