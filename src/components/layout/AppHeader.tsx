@@ -9,7 +9,7 @@ export function AppHeader() {
         <img 
           src="/logo-uplink.png" 
           alt="Uplink Logo" 
-          className="h-8 w-8"
+          className="h-8 w-8 rounded-full"
         />
         <h1 className="text-lg font-semibold">Uplink</h1>
       </div>

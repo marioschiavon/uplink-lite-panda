@@ -21,7 +21,7 @@ const Index = () => {
             <img 
               src="/logo-uplink.png" 
               alt="Uplink Logo" 
-              className="h-10 w-10 drop-shadow-lg"
+              className="h-10 w-10 drop-shadow-lg rounded-full"
             />
             <span className="text-2xl font-bold text-foreground">Uplink</span>
           </div>
