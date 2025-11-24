@@ -66,7 +66,7 @@ const Signup = () => {
             <img 
               src="/logo-uplink.png" 
               alt="Uplink Logo" 
-              className="w-full h-full object-contain drop-shadow-2xl animate-scale-in"
+              className="w-full h-full object-contain drop-shadow-2xl animate-scale-in rounded-full"
             />
           </div>
           <CardTitle className="text-3xl font-bold">
