@@ -17,6 +17,7 @@ import Subscriptions from "./pages/Subscriptions";
 import Announcements from "./pages/Announcements";
 import ApiDocs from "./pages/ApiDocs";
 import TermsOfService from "./pages/TermsOfService";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -36,6 +37,7 @@ const App = () => (
           <Route path="/update-password" element={<UpdatePassword />} />
           <Route path="/checkout" element={<Checkout />} />
           <Route path="/terms" element={<TermsOfService />} />
+          <Route path="/privacy" element={<PrivacyPolicy />} />
           
           {/* Protected Routes with Sidebar */}
           <Route element={<ProtectedLayout />}>
