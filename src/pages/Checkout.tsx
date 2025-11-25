@@ -207,7 +207,7 @@ export default function Checkout() {
 
           <div className="text-center text-sm text-muted-foreground">
             Ao assinar, você concorda com nossos{" "}
-            <a href="#" className="text-primary hover:underline">Termos de Serviço</a>
+            <button onClick={() => navigate("/terms")} className="text-primary hover:underline">Termos de Serviço</button>
           </div>
         </CardContent>
       </Card>
