@@ -561,7 +561,7 @@ const Index = () => {
               <h3 className="font-semibold text-foreground mb-4">Legal</h3>
               <ul className="space-y-2 text-sm text-muted-foreground">
                 <li><button onClick={() => navigate("/terms")} className="hover:text-primary transition-colors">Termos de uso</button></li>
-                <li><a href="#" className="hover:text-primary transition-colors">Política de privacidade</a></li>
+                <li><button onClick={() => navigate("/privacy")} className="hover:text-primary transition-colors">Política de privacidade</button></li>
                 <li><button onClick={() => navigate("/login")} className="hover:text-primary transition-colors">Login</button></li>
               </ul>
             </div>
