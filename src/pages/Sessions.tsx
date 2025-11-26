@@ -602,8 +602,30 @@ const Sessions = () => {
     
     try {
       if (session.api_session && session.api_token) {
+        // PASSO 1: Fechar sessão primeiro (close-session)
         try {
-          await fetch(
+          console.log('🔒 Fechando sessão:', session.api_session);
+          const closeResponse = await fetch(
+            `https://wpp.panda42.com.br/api/${session.api_session}/close-session`,
+            {
+              method: 'POST',
+              headers: {
+                'accept': '*/*',
+                'Authorization': `Bearer ${session.api_token}`
+              },
+              body: ''
+            }
+          );
+          const closeResult = await closeResponse.json();
+          console.log('✅ Close session result:', closeResult);
+        } catch (closeError) {
+          console.warn('⚠️ Erro ao fechar sessão (continuando):', closeError);
+        }
+
+        // PASSO 2: Excluir sessão (logout-session)
+        try {
+          console.log('🗑️ Excluindo sessão:', session.api_session);
+          const logoutResponse = await fetch(
             `https://wpp.panda42.com.br/api/${session.api_session}/logout-session`,
             {
               method: 'POST',
@@ -614,8 +636,10 @@ const Sessions = () => {
               body: ''
             }
           );
-        } catch (apiError) {
-          console.warn('Erro ao fazer logout na API externa:', apiError);
+          const logoutResult = await logoutResponse.json();
+          console.log('✅ Logout session result:', logoutResult);
+        } catch (logoutError) {
+          console.warn('⚠️ Erro ao fazer logout (continuando):', logoutError);
         }
       }
       

@@ -59,9 +59,8 @@ const ApiDocs = () => {
 
       {/* Tabs Section */}
       <Tabs defaultValue="messages" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="messages">Enviar Mensagens</TabsTrigger>
-          <TabsTrigger value="status">Verificar Status</TabsTrigger>
           <TabsTrigger value="examples">Exemplos de Código</TabsTrigger>
         </TabsList>
 
@@ -104,93 +103,50 @@ const ApiDocs = () => {
             <EndpointCard
               method="POST"
               endpoint="/api/{session}/send-media"
-              description="Enviar Mídia (Imagem/Vídeo/Documento)"
+              description="Enviar Mídia (Imagem/Áudio/Documento)"
               parameters={[
                 { name: "phone", type: "string", required: true, description: "Número com DDI", example: "5511999999999" },
                 { name: "mediaUrl", type: "string", required: true, description: "URL pública da mídia", example: "https://exemplo.com/imagem.jpg" },
-                { name: "mediaType", type: "string", required: true, description: "Tipo de mídia", example: "image, video, document, audio" },
-                { name: "caption", type: "string", required: false, description: "Legenda da mídia" },
-                { name: "filename", type: "string", required: false, description: "Nome do arquivo (para documentos)" },
+                { name: "mediaType", type: "string", required: true, description: "Tipo: image, audio, document", example: "image" },
+                { name: "caption", type: "string", required: false, description: "Legenda (para imagem)" },
+                { name: "filename", type: "string", required: false, description: "Nome do arquivo (para documento)" },
               ]}
-              requestExample={`curl -X POST "https://wpp.panda42.com.br/api/sua-sessao/send-media" \\
+              requestExample={`# Exemplo 1: Enviar IMAGEM
+curl -X POST "https://wpp.panda42.com.br/api/sua-sessao/send-media" \\
   -H "Authorization: Bearer seu-token-aqui" \\
   -H "Content-Type: application/json" \\
   -d '{
     "phone": "5511999999999",
-    "mediaUrl": "https://exemplo.com/imagem.jpg",
+    "mediaUrl": "https://exemplo.com/foto.jpg",
     "mediaType": "image",
     "caption": "Confira esta imagem!"
+  }'
+
+# Exemplo 2: Enviar ÁUDIO
+curl -X POST "https://wpp.panda42.com.br/api/sua-sessao/send-media" \\
+  -H "Authorization: Bearer seu-token-aqui" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "phone": "5511999999999",
+    "mediaUrl": "https://exemplo.com/audio.mp3",
+    "mediaType": "audio"
+  }'
+
+# Exemplo 3: Enviar DOCUMENTO/ARQUIVO
+curl -X POST "https://wpp.panda42.com.br/api/sua-sessao/send-media" \\
+  -H "Authorization: Bearer seu-token-aqui" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "phone": "5511999999999",
+    "mediaUrl": "https://exemplo.com/relatorio.pdf",
+    "mediaType": "document",
+    "filename": "relatorio.pdf"
   }'`}
               responseExample={`{
   "success": true,
   "message": "Mídia enviada com sucesso",
   "messageId": "WAM987654321"
 }`}
-            />
-
-            {/* Send Buttons */}
-            <EndpointCard
-              method="POST"
-              endpoint="/api/{session}/send-buttons"
-              description="Enviar Mensagem com Botões"
-              parameters={[
-                { name: "phone", type: "string", required: true, description: "Número com DDI", example: "5511999999999" },
-                { name: "message", type: "string", required: true, description: "Texto da mensagem" },
-                { name: "buttons", type: "array", required: true, description: "Array de até 3 botões" },
-                { name: "footer", type: "string", required: false, description: "Rodapé da mensagem" },
-              ]}
-              requestExample={`curl -X POST "https://wpp.panda42.com.br/api/sua-sessao/send-buttons" \\
-  -H "Authorization: Bearer seu-token-aqui" \\
-  -H "Content-Type: application/json" \\
-  -d '{
-    "phone": "5511999999999",
-    "message": "Escolha uma opção:",
-    "buttons": [
-      { "id": "1", "text": "Opção 1" },
-      { "id": "2", "text": "Opção 2" },
-      { "id": "3", "text": "Opção 3" }
-    ],
-    "footer": "Powered by Panda42"
-  }'`}
-              responseExample={`{
-  "success": true,
-  "message": "Botões enviados com sucesso",
-  "messageId": "WAM456789123"
-}`}
-            />
-          </motion.div>
-        </TabsContent>
-
-        {/* Tab: Status */}
-        <TabsContent value="status" className="space-y-6">
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.3 }}
-          >
-            <EndpointCard
-              method="GET"
-              endpoint="/api/{session}/check-connection-session"
-              description="Verificar Status da Sessão"
-              requestExample={`curl -X GET "https://wpp.panda42.com.br/api/sua-sessao/check-connection-session" \\
-  -H "Authorization: Bearer seu-token-aqui"`}
-              responseExample={`// Sessão Conectada
-{
-  "status": true,
-  "message": "CONNECTED",
-  "qrCode": null
-}
-
-// Aguardando QR Code
-{
-  "status": false,
-  "message": "QRCODE",
-  "qrCode": "data:image/png;base64,iVBORw0KG..."
-}`}
-              errorCodes={[
-                { code: "401", message: "Unauthorized", solution: "Verifique seu Bearer Token" },
-                { code: "404", message: "Session not found", solution: "Sessão não existe" },
-              ]}
             />
           </motion.div>
         </TabsContent>

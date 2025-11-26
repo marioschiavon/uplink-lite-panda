@@ -377,17 +377,64 @@ serve(async (req) => {
           })
           .eq('stripe_subscription_id', subscription.id);
 
-        // Bloquear sessão e buscar nome
+        // Bloquear sessão e buscar dados
         if (subData) {
           const { data: sessionData } = await supabaseAdmin
             .from('sessions')
-            .select('name')
+            .select('name, api_session, api_token')
             .eq('id', (subData as any).session_id)
             .single();
 
+          // Desativar sessão na API WPP
+          if (sessionData?.api_session && sessionData?.api_token) {
+            console.log('🔒 Desativando sessão na API WPP:', sessionData.api_session);
+            
+            // PASSO 1: Fechar sessão (close-session)
+            try {
+              const closeResponse = await fetch(
+                `https://wpp.panda42.com.br/api/${sessionData.api_session}/close-session`,
+                {
+                  method: 'POST',
+                  headers: {
+                    'accept': '*/*',
+                    'Authorization': `Bearer ${sessionData.api_token}`
+                  },
+                  body: ''
+                }
+              );
+              const closeResult = await closeResponse.json();
+              console.log('✅ Close session result:', closeResult);
+            } catch (e) {
+              console.error('⚠️ Erro ao fechar sessão (continuando):', e);
+            }
+
+            // PASSO 2: Excluir sessão (logout-session)
+            try {
+              const logoutResponse = await fetch(
+                `https://wpp.panda42.com.br/api/${sessionData.api_session}/logout-session`,
+                {
+                  method: 'POST',
+                  headers: {
+                    'accept': '*/*',
+                    'Authorization': `Bearer ${sessionData.api_token}`
+                  },
+                  body: ''
+                }
+              );
+              const logoutResult = await logoutResponse.json();
+              console.log('✅ Logout session result:', logoutResult);
+            } catch (e) {
+              console.error('⚠️ Erro ao fazer logout (continuando):', e);
+            }
+          }
+
+          // Atualizar sessão no banco E limpar tokens (segurança)
           await supabaseAdmin.from('sessions').update({
             status: 'disconnected',
             requires_subscription: true,
+            api_token: null,       // Limpar token
+            api_token_full: null,  // Limpar token completo
+            qr: null,              // Limpar QR code
           }).eq('id', (subData as any).session_id);
           
           console.log('🔒 Sessão bloqueada:', (subData as any).session_id);
