@@ -171,16 +171,14 @@ const SessionMonitoring = () => {
     toast.success("Sessões atualizadas");
   };
 
-  // Auto-refresh a cada 30 minutos
+  // Auto-refresh a cada 30 minutos para superadmins
   useEffect(() => {
-    if (userEmail === "contato@upevolution.com.br") {
-      const interval = setInterval(() => {
-        fetchSessions();
-      }, 1800000);
+    const interval = setInterval(() => {
+      fetchSessions();
+    }, 1800000);
 
-      return () => clearInterval(interval);
-    }
-  }, [userEmail]);
+    return () => clearInterval(interval);
+  }, []);
 
   const handleCardClick = (session: SessionData) => {
     setSelectedSession(session);

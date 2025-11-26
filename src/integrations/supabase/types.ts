@@ -166,6 +166,13 @@ export type Database = {
             referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "api_logs_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations_safe"
+            referencedColumns: ["id"]
+          },
         ]
       }
       companies: {
@@ -234,6 +241,13 @@ export type Database = {
             referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "contacts_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations_safe"
+            referencedColumns: ["id"]
+          },
         ]
       }
       conversations: {
@@ -281,6 +295,13 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversations_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations_safe"
             referencedColumns: ["id"]
           },
         ]
@@ -428,6 +449,13 @@ export type Database = {
             referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "sessions_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations_safe"
+            referencedColumns: ["id"]
+          },
         ]
       }
       subscriptions: {
@@ -509,10 +537,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "subscriptions_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations_safe"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "subscriptions_session_id_fkey"
             columns: ["session_id"]
             isOneToOne: false
             referencedRelation: "sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subscriptions_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "sessions_safe"
             referencedColumns: ["id"]
           },
         ]
@@ -610,6 +652,13 @@ export type Database = {
             referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "tickets_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations_safe"
+            referencedColumns: ["id"]
+          },
         ]
       }
       users: {
@@ -652,17 +701,123 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "users_org_fk"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations_safe"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "users_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "users_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations_safe"
+            referencedColumns: ["id"]
+          },
         ]
       }
     }
     Views: {
-      [_ in never]: never
+      organizations_safe: {
+        Row: {
+          agent_limit: number | null
+          api_message_limit: number | null
+          api_message_usage: number | null
+          created_at: string | null
+          id: string | null
+          is_legacy: boolean | null
+          name: string | null
+          plan: string | null
+          routing_mode: Database["public"]["Enums"]["routing_mode"] | null
+          session_limit: number | null
+          subscription_expires_at: string | null
+          subscription_status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          agent_limit?: number | null
+          api_message_limit?: number | null
+          api_message_usage?: number | null
+          created_at?: string | null
+          id?: string | null
+          is_legacy?: boolean | null
+          name?: string | null
+          plan?: string | null
+          routing_mode?: Database["public"]["Enums"]["routing_mode"] | null
+          session_limit?: number | null
+          subscription_expires_at?: string | null
+          subscription_status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          agent_limit?: number | null
+          api_message_limit?: number | null
+          api_message_usage?: number | null
+          created_at?: string | null
+          id?: string | null
+          is_legacy?: boolean | null
+          name?: string | null
+          plan?: string | null
+          routing_mode?: Database["public"]["Enums"]["routing_mode"] | null
+          session_limit?: number | null
+          subscription_expires_at?: string | null
+          subscription_status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      sessions_safe: {
+        Row: {
+          created_at: string | null
+          id: string | null
+          name: string | null
+          organization_id: string | null
+          requires_subscription: boolean | null
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string | null
+          name?: string | null
+          organization_id?: string | null
+          requires_subscription?: boolean | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string | null
+          name?: string | null
+          organization_id?: string | null
+          requires_subscription?: boolean | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sessions_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sessions_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations_safe"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       create_org_and_user: {
