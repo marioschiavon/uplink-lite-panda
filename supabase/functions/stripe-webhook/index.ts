@@ -108,9 +108,9 @@ serve(async (req) => {
             const amount = (stripeSubscription.items.data[0].price.unit_amount || 0) / 100;
             
             await resend.emails.send({
-              from: 'Uplink <onboarding@resend.dev>',
+              from: 'Uplink Lite <assinaturas@uplinklite.com>',
               to: [session.customer_details.email],
-              subject: '✅ Assinatura Ativada com Sucesso - Uplink',
+              subject: '✅ Assinatura Ativada com Sucesso - Uplink Lite',
               html: `
                 <!DOCTYPE html>
                 <html>
@@ -247,9 +247,9 @@ serve(async (req) => {
               const periodEndDate = new Date(subscription.current_period_end * 1000);
               
               await resend.emails.send({
-                from: 'Uplink <onboarding@resend.dev>',
+                from: 'Uplink Lite <assinaturas@uplinklite.com>',
                 to: [(subData as any).payer_email],
-                subject: '⚠️ Cancelamento Agendado - Continue Usando até o Fim do Período',
+                subject: '⚠️ Cancelamento Agendado - Uplink Lite',
                 html: `
                   <!DOCTYPE html>
                   <html>
@@ -446,9 +446,9 @@ serve(async (req) => {
               const amount = (subData as any).amount || 0;
               
               await resend.emails.send({
-                from: 'Uplink <onboarding@resend.dev>',
+                from: 'Uplink Lite <assinaturas@uplinklite.com>',
                 to: [(subData as any).payer_email],
-                subject: '⚠️ Assinatura Cancelada - Sessão Desconectada',
+                subject: '⚠️ Assinatura Cancelada - Uplink Lite',
                 html: `
                   <!DOCTYPE html>
                   <html>
