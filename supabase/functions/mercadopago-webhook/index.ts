@@ -91,7 +91,7 @@ async function sendSubscriptionEmail(
 
   try {
     await resend.emails.send({
-      from: 'Uplink Assinaturas <assinaturas@updates.panda42.com.br>',
+      from: 'Uplink Lite <assinaturas@uplinklite.com>',
       to: [data.email],
       subject: template.subject,
       html: template.html,
