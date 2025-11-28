@@ -20,7 +20,7 @@ export default function ResetPassword() {
 
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: 'https://uplink.panda42.com.br/update-password',
+        redirectTo: 'https://uplinklite.com/update-password',
       });
 
       if (error) throw error;

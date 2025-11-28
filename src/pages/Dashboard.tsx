@@ -175,7 +175,7 @@ const Dashboard = () => {
   const fetchSessionStatus = async (sessionId: string, apiSession: string, apiToken: string) => {
     try {
       const response = await fetch(
-        `https://wpp.panda42.com.br/api/${apiSession}/check-connection-session`,
+        `https://api.uplinklite.com/api/${apiSession}/check-connection-session`,
         {
           headers: {
             'accept': '*/*',
@@ -214,7 +214,7 @@ const Dashboard = () => {
     
     try {
       const response = await fetch(
-        `https://wpp.panda42.com.br/api/${session.api_session}/send-message`,
+        `https://api.uplinklite.com/api/${session.api_session}/send-message`,
         {
           method: 'POST',
           headers: {

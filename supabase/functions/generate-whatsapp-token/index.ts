@@ -90,7 +90,7 @@ serve(async (req) => {
     }
 
     // 7. Fazer chamada para API externa usando session_name escolhido pelo usuário
-    const apiUrl = `https://wpp.panda42.com.br/api/${session_name}/${secretKey}/generate-token`;
+    const apiUrl = `https://api.uplinklite.com/api/${session_name}/${secretKey}/generate-token`;
     console.log(`Calling external API with session name: ${session_name}`);
 
     const response = await fetch(apiUrl, {
