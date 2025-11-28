@@ -141,7 +141,7 @@ const Sessions = () => {
   const fetchSessionStatus = async (sessionId: string, apiSession: string, apiToken: string) => {
     try {
       const response = await fetch(
-        `https://wpp.panda42.com.br/api/${apiSession}/check-connection-session`,
+        `https://api.uplinklite.com/api/${apiSession}/check-connection-session`,
         {
           headers: {
             'accept': '*/*',
@@ -174,7 +174,7 @@ const Sessions = () => {
   const checkConnectionStatus = useCallback(async (sessionId: string, apiSession: string, apiToken: string) => {
     try {
       const response = await fetch(
-        `https://wpp.panda42.com.br/api/${apiSession}/check-connection-session`,
+        `https://api.uplinklite.com/api/${apiSession}/check-connection-session`,
         {
           headers: {
             'accept': '*/*',
@@ -258,7 +258,7 @@ const Sessions = () => {
     
     try {
       const startResponse = await fetch(
-        `https://wpp.panda42.com.br/api/${session.api_session}/start-session`,
+        `https://api.uplinklite.com/api/${session.api_session}/start-session`,
         {
           method: 'POST',
           headers: {
@@ -278,7 +278,7 @@ const Sessions = () => {
       await new Promise(resolve => setTimeout(resolve, 10000));
       
       const qrResponse = await fetch(
-        `https://wpp.panda42.com.br/api/${session.api_session}/qrcode-session`,
+        `https://api.uplinklite.com/api/${session.api_session}/qrcode-session`,
         {
           headers: {
             'accept': '*/*',
@@ -325,7 +325,7 @@ const Sessions = () => {
     
     try {
       const response = await fetch(
-        `https://wpp.panda42.com.br/api/${session.api_session}/check-connection-session`,
+        `https://api.uplinklite.com/api/${session.api_session}/check-connection-session`,
         {
           headers: {
             'accept': '*/*',
@@ -395,7 +395,7 @@ const Sessions = () => {
         
         try {
           const qrResponse = await fetch(
-            `https://wpp.panda42.com.br/api/${selectedSession.api_session}/qrcode-session`,
+            `https://api.uplinklite.com/api/${selectedSession.api_session}/qrcode-session`,
             {
               headers: {
                 'accept': '*/*',
@@ -508,7 +508,7 @@ const Sessions = () => {
       toast.info("Buscando QR Code atualizado...");
       
       const qrResponse = await fetch(
-        `https://wpp.panda42.com.br/api/${session.api_session}/qrcode-session`,
+        `https://api.uplinklite.com/api/${session.api_session}/qrcode-session`,
         {
           headers: {
             'accept': '*/*',
@@ -559,7 +559,7 @@ const Sessions = () => {
     
     try {
       const response = await fetch(
-        `https://wpp.panda42.com.br/api/${session.api_session}/close-session`,
+        `https://api.uplinklite.com/api/${session.api_session}/close-session`,
         {
           method: 'POST',
           headers: {
@@ -606,7 +606,7 @@ const Sessions = () => {
         try {
           console.log('🔒 Fechando sessão:', session.api_session);
           const closeResponse = await fetch(
-            `https://wpp.panda42.com.br/api/${session.api_session}/close-session`,
+            `https://api.uplinklite.com/api/${session.api_session}/close-session`,
             {
               method: 'POST',
               headers: {
@@ -626,7 +626,7 @@ const Sessions = () => {
         try {
           console.log('🗑️ Excluindo sessão:', session.api_session);
           const logoutResponse = await fetch(
-            `https://wpp.panda42.com.br/api/${session.api_session}/logout-session`,
+            `https://api.uplinklite.com/api/${session.api_session}/logout-session`,
             {
               method: 'POST',
               headers: {

@@ -392,7 +392,7 @@ serve(async (req) => {
             // PASSO 1: Fechar sessão (close-session)
             try {
               const closeResponse = await fetch(
-                `https://wpp.panda42.com.br/api/${sessionData.api_session}/close-session`,
+                `https://api.uplinklite.com/api/${sessionData.api_session}/close-session`,
                 {
                   method: 'POST',
                   headers: {
@@ -411,7 +411,7 @@ serve(async (req) => {
             // PASSO 2: Excluir sessão (logout-session)
             try {
               const logoutResponse = await fetch(
-                `https://wpp.panda42.com.br/api/${sessionData.api_session}/logout-session`,
+                `https://api.uplinklite.com/api/${sessionData.api_session}/logout-session`,
                 {
                   method: 'POST',
                   headers: {

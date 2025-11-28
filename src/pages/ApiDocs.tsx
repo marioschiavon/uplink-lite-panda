@@ -83,7 +83,7 @@ const ApiDocs = () => {
                 { name: "isGroup", type: "boolean", required: false, description: "Se é grupo (default: false)" },
                 { name: "isNewsletter", type: "boolean", required: false, description: "Se é canal (default: false)" },
               ]}
-              requestExample={`curl -X POST "https://wpp.panda42.com.br/api/sua-sessao/send-message" \\
+              requestExample={`curl -X POST "https://api.uplinklite.com/api/sua-sessao/send-message" \\
   -H "Authorization: Bearer seu-token-aqui" \\
   -H "Content-Type: application/json" \\
   -d '{
@@ -112,7 +112,7 @@ const ApiDocs = () => {
                 { name: "filename", type: "string", required: false, description: "Nome do arquivo (para documento)" },
               ]}
               requestExample={`# Exemplo 1: Enviar IMAGEM
-curl -X POST "https://wpp.panda42.com.br/api/sua-sessao/send-media" \\
+curl -X POST "https://api.uplinklite.com/api/sua-sessao/send-media" \\
   -H "Authorization: Bearer seu-token-aqui" \\
   -H "Content-Type: application/json" \\
   -d '{
@@ -123,7 +123,7 @@ curl -X POST "https://wpp.panda42.com.br/api/sua-sessao/send-media" \\
   }'
 
 # Exemplo 2: Enviar ÁUDIO
-curl -X POST "https://wpp.panda42.com.br/api/sua-sessao/send-media" \\
+curl -X POST "https://api.uplinklite.com/api/sua-sessao/send-media" \\
   -H "Authorization: Bearer seu-token-aqui" \\
   -H "Content-Type: application/json" \\
   -d '{
@@ -133,7 +133,7 @@ curl -X POST "https://wpp.panda42.com.br/api/sua-sessao/send-media" \\
   }'
 
 # Exemplo 3: Enviar DOCUMENTO/ARQUIVO
-curl -X POST "https://wpp.panda42.com.br/api/sua-sessao/send-media" \\
+curl -X POST "https://api.uplinklite.com/api/sua-sessao/send-media" \\
   -H "Authorization: Bearer seu-token-aqui" \\
   -H "Content-Type: application/json" \\
   -d '{
@@ -175,7 +175,7 @@ curl -X POST "https://wpp.panda42.com.br/api/sua-sessao/send-media" \\
 const sendMessage = async () => {
   try {
     const response = await axios.post(
-      'https://wpp.panda42.com.br/api/sua-sessao/send-message',
+      'https://api.uplinklite.com/api/sua-sessao/send-message',
       {
         phone: '5511999999999',
         message: 'Olá! Esta é uma mensagem de teste.',
@@ -213,7 +213,7 @@ sendMessage();`}
                   code={`import requests
 
 def send_message():
-    url = 'https://wpp.panda42.com.br/api/sua-sessao/send-message'
+    url = 'https://api.uplinklite.com/api/sua-sessao/send-message'
     headers = {
         'Authorization': 'Bearer seu-token-aqui',
         'Content-Type': 'application/json'
@@ -247,7 +247,7 @@ send_message()`}
 $curl = curl_init();
 
 curl_setopt_array($curl, array(
-  CURLOPT_URL => 'https://wpp.panda42.com.br/api/sua-sessao/send-message',
+  CURLOPT_URL => 'https://api.uplinklite.com/api/sua-sessao/send-message',
   CURLOPT_RETURNTRANSFER => true,
   CURLOPT_POST => true,
   CURLOPT_HTTPHEADER => array(

@@ -123,7 +123,7 @@ const SessionMonitoring = () => {
 
           try {
             const response = await fetch(
-              `https://wpp.panda42.com.br/api/${session.api_session}/check-connection-session`,
+              `https://api.uplinklite.com/api/${session.api_session}/check-connection-session`,
               {
                 headers: {
                   'accept': '*/*',
