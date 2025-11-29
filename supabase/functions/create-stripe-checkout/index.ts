@@ -121,8 +121,8 @@ serve(async (req) => {
         session_name: sessionData.name,
         organization_id: sessionData.organization_id,
       },
-      success_url: `${req.headers.get('origin') || 'https://kfsvpbujmetlendgwnrs.lovable.app'}/dashboard?payment=success`,
-      cancel_url: `${req.headers.get('origin') || 'https://kfsvpbujmetlendgwnrs.lovable.app'}/checkout?session_name=${sessionData.name}&payment=cancelled`,
+      success_url: `${req.headers.get('origin') || 'https://uplinklite.com'}/dashboard?payment=success`,
+      cancel_url: `${req.headers.get('origin') || 'https://uplinklite.com'}/checkout?session_name=${sessionData.name}&payment=cancelled`,
       locale: 'pt-BR',
       billing_address_collection: 'auto',
     });
