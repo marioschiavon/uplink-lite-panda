@@ -1,574 +1,1045 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
-import { Check, Zap, Shield, Clock, MessageSquare, ShoppingCart, Calendar, Package } from "lucide-react";
+import { 
+  Check, Zap, Shield, Clock, MessageSquare, ShoppingCart, Calendar, Package,
+  Code2, Webhook, QrCode, Layers, Star, TrendingUp, Users, ChevronRight,
+  Play, Copy, CheckCircle2, Sparkles, Timer, Headphones, FileCode
+} from "lucide-react";
+import { motion } from "framer-motion";
+import { useState, useEffect } from "react";
 
 const Index = () => {
   const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState("curl");
+  const [copied, setCopied] = useState(false);
+  const [messageCount, setMessageCount] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setMessageCount(prev => (prev + 1) % 10000);
+    }, 50);
+    return () => clearInterval(interval);
+  }, []);
 
   const scrollToSection = (id: string) => {
     const element = document.getElementById(id);
     element?.scrollIntoView({ behavior: "smooth" });
   };
 
+  const handleCopy = () => {
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const codeExamples = {
+    curl: `curl -X POST https://api.uplinklite.com/send \\
+  -H "Authorization: Bearer SEU_TOKEN" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "phone": "5511999999999",
+    "message": "Olá! Seu pedido foi confirmado."
+  }'`,
+    javascript: `const response = await fetch('https://api.uplinklite.com/send', {
+  method: 'POST',
+  headers: {
+    'Authorization': 'Bearer SEU_TOKEN',
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    phone: '5511999999999',
+    message: 'Olá! Seu pedido foi confirmado.'
+  })
+});`,
+    python: `import requests
+
+response = requests.post(
+  'https://api.uplinklite.com/send',
+  headers={'Authorization': 'Bearer SEU_TOKEN'},
+  json={
+    'phone': '5511999999999',
+    'message': 'Olá! Seu pedido foi confirmado.'
+  }
+)`,
+    php: `<?php
+$ch = curl_init('https://api.uplinklite.com/send');
+curl_setopt($ch, CURLOPT_POST, 1);
+curl_setopt($ch, CURLOPT_HTTPHEADER, [
+  'Authorization: Bearer SEU_TOKEN',
+  'Content-Type: application/json'
+]);
+curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode([
+  'phone' => '5511999999999',
+  'message' => 'Olá! Seu pedido foi confirmado.'
+]));
+$response = curl_exec($ch);
+?>`
+  };
+
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background overflow-hidden">
       {/* Header Fixo */}
-      <header className="fixed top-0 w-full bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 z-50 border-b border-border">
+      <header className="fixed top-0 w-full bg-background/80 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60 z-50 border-b border-border/50">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <img 
-              src="/logo-uplink.png" 
-              alt="Uplink Logo" 
-              className="h-10 w-10 drop-shadow-lg rounded-full"
-            />
-            <span className="text-2xl font-bold text-foreground">Uplink</span>
-          </div>
+          <motion.div 
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="flex items-center gap-3"
+          >
+            <div className="relative">
+              <div className="absolute inset-0 bg-primary/20 rounded-full blur-lg animate-pulse-glow" />
+              <img 
+                src="/logo-uplink.png" 
+                alt="Uplink Logo" 
+                className="h-10 w-10 relative drop-shadow-lg rounded-full"
+              />
+            </div>
+            <span className="text-2xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+              Uplink
+            </span>
+            <Badge variant="secondary" className="text-xs">Lite</Badge>
+          </motion.div>
           
-          <nav className="hidden md:flex items-center gap-6">
-            <button onClick={() => scrollToSection("como-funciona")} className="text-sm font-medium text-foreground hover:text-primary transition-colors">
-              Como funciona
+          <nav className="hidden md:flex items-center gap-8">
+            <button onClick={() => scrollToSection("recursos")} className="text-sm font-medium text-foreground hover:text-primary transition-colors">
+              Recursos
+            </button>
+            <button onClick={() => scrollToSection("integracoes")} className="text-sm font-medium text-foreground hover:text-primary transition-colors">
+              Integrações
             </button>
             <button onClick={() => scrollToSection("precos")} className="text-sm font-medium text-foreground hover:text-primary transition-colors">
               Preços
             </button>
-            <button onClick={() => scrollToSection("faq")} className="text-sm font-medium text-foreground hover:text-primary transition-colors">
-              FAQ
+            <button onClick={() => navigate("/api-docs")} className="text-sm font-medium text-foreground hover:text-primary transition-colors flex items-center gap-1">
+              <FileCode className="h-4 w-4" />
+              Docs
             </button>
           </nav>
 
-          <Button onClick={() => navigate("/login")} variant="outline" className="font-semibold">
-            Login
-          </Button>
+          <div className="flex items-center gap-3">
+            <Button onClick={() => navigate("/login")} variant="ghost" className="font-semibold">
+              Login
+            </Button>
+            <Button onClick={() => navigate("/checkout")} className="font-semibold shadow-lg hover:shadow-xl transition-all animate-pulse-glow">
+              Começar Grátis
+              <ChevronRight className="h-4 w-4 ml-1" />
+            </Button>
+          </div>
         </div>
       </header>
 
-      {/* Hero Section */}
-      <section className="pt-32 pb-20 px-4 bg-gradient-to-br from-background via-muted/20 to-background">
-        <div className="container mx-auto max-w-6xl">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
-            <div className="space-y-6">
-              <h1 className="text-5xl md:text-6xl font-bold leading-tight text-foreground">
-                Automatize o WhatsApp da sua empresa{" "}
-                <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-                  em minutos
+      {/* Hero Section - Modernizado */}
+      <section className="relative pt-32 pb-24 px-4 overflow-hidden">
+        {/* Background Effects */}
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-secondary/5" />
+        <div className="absolute top-20 right-0 w-96 h-96 bg-primary/10 rounded-full blur-3xl" />
+        <div className="absolute bottom-0 left-0 w-96 h-96 bg-secondary/10 rounded-full blur-3xl" />
+        
+        <div className="container mx-auto max-w-7xl relative z-10">
+          <div className="grid lg:grid-cols-2 gap-16 items-center">
+            <motion.div 
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6 }}
+              className="space-y-8"
+            >
+              <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-2 rounded-full text-sm font-medium border border-primary/20">
+                <Sparkles className="h-4 w-4" />
+                <span>A API WhatsApp mais simples do Brasil</span>
+              </div>
+
+              <h1 className="text-5xl md:text-7xl font-bold leading-tight">
+                WhatsApp API
+                <br />
+                <span className="bg-gradient-to-r from-primary via-primary to-secondary bg-clip-text text-transparent">
+                  em 5 minutos
                 </span>
               </h1>
               
-              <p className="text-xl text-muted-foreground">
-                Crie sua sessão, receba os dados da API e comece a enviar mensagens automatizadas para seus clientes.
+              <p className="text-xl text-muted-foreground leading-relaxed">
+                Configure sua API WhatsApp sem burocracia. Suporte em português, pagamento em R$ e documentação completa. Comece agora e envie sua primeira mensagem em minutos.
               </p>
 
-              <div className="flex flex-col sm:flex-row gap-4 pt-4">
+              <div className="flex flex-wrap items-center gap-4 pt-4">
                 <Button 
                   onClick={() => navigate("/checkout")} 
                   size="lg" 
-                  className="text-lg h-14 px-8 shadow-elegant hover:shadow-glow transition-all"
+                  className="text-lg h-14 px-10 shadow-elegant hover:shadow-glow transition-all group"
                 >
-                  Começar agora
+                  Começar Agora
+                  <Play className="h-5 w-5 ml-2 group-hover:translate-x-1 transition-transform" />
                 </Button>
                 <Button 
-                  onClick={() => navigate("/login")} 
+                  onClick={() => scrollToSection("integracoes")} 
                   variant="outline" 
                   size="lg"
-                  className="text-lg h-14 px-8"
+                  className="text-lg h-14 px-10"
                 >
-                  Fazer Login
+                  Ver Integrações
                 </Button>
               </div>
 
-              <div className="flex items-center gap-4 pt-4 text-sm text-muted-foreground">
-                <div className="flex items-center gap-2">
-                  <Check className="h-5 w-5 text-primary" />
-                  <span>Sem burocracia</span>
+              <div className="flex flex-wrap items-center gap-6 pt-6">
+                <div className="flex items-center gap-2 text-sm">
+                  <CheckCircle2 className="h-5 w-5 text-primary" />
+                  <span className="font-medium">Suporte em Português</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Check className="h-5 w-5 text-primary" />
-                  <span>Configuração em minutos</span>
+                <div className="flex items-center gap-2 text-sm">
+                  <CheckCircle2 className="h-5 w-5 text-primary" />
+                  <span className="font-medium">99.9% Uptime</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm">
+                  <CheckCircle2 className="h-5 w-5 text-primary" />
+                  <span className="font-medium">Pagamento em R$</span>
                 </div>
               </div>
-            </div>
+            </motion.div>
 
-            <div className="relative">
-              <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-secondary/20 rounded-3xl blur-3xl" />
-              <Card className="relative border-2 border-primary/20 shadow-elegant">
-                <CardContent className="p-8 space-y-4">
-                  <div className="flex items-center gap-3 text-primary">
-                    <MessageSquare className="h-12 w-12" />
-                    <div>
-                      <p className="font-semibold text-foreground">WhatsApp API</p>
-                      <p className="text-sm text-muted-foreground">Pronta para usar</p>
+            <motion.div 
+              initial={{ opacity: 0, x: 50 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+              className="relative"
+            >
+              <div className="absolute inset-0 bg-gradient-to-br from-primary/30 to-secondary/30 rounded-3xl blur-3xl animate-pulse-glow" />
+              <Card className="relative border-2 border-primary/30 shadow-2xl backdrop-blur-sm bg-card/80">
+                <CardContent className="p-8 space-y-6">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="p-3 bg-primary/10 rounded-lg">
+                        <MessageSquare className="h-8 w-8 text-primary" />
+                      </div>
+                      <div>
+                        <p className="font-bold text-lg">WhatsApp API</p>
+                        <p className="text-sm text-muted-foreground">Status: Ativo</p>
+                      </div>
                     </div>
+                    <Badge className="bg-green-500/10 text-green-600 border-green-500/20">
+                      Online
+                    </Badge>
                   </div>
                   
                   <div className="space-y-3 pt-4">
-                    <div className="flex items-start gap-3 p-3 bg-muted/50 rounded-lg">
-                      <Package className="h-5 w-5 text-primary mt-0.5" />
-                      <div className="text-sm">
-                        <p className="font-medium text-foreground">Seu pedido está a caminho!</p>
-                        <p className="text-muted-foreground">Previsão de entrega: 2 dias</p>
+                    <motion.div 
+                      animate={{ opacity: [0.5, 1, 0.5] }}
+                      transition={{ duration: 2, repeat: Infinity }}
+                      className="flex items-start gap-3 p-4 bg-gradient-to-r from-primary/5 to-transparent rounded-xl border border-primary/10"
+                    >
+                      <Package className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
+                      <div className="text-sm space-y-1">
+                        <p className="font-semibold">✓ Pedido #2847 confirmado</p>
+                        <p className="text-muted-foreground text-xs">Enviado há 2 segundos</p>
                       </div>
-                    </div>
+                    </motion.div>
                     
-                    <div className="flex items-start gap-3 p-3 bg-muted/50 rounded-lg">
-                      <Calendar className="h-5 w-5 text-primary mt-0.5" />
-                      <div className="text-sm">
-                        <p className="font-medium text-foreground">Agendamento confirmado</p>
-                        <p className="text-muted-foreground">Amanhã às 14h00</p>
+                    <motion.div 
+                      animate={{ opacity: [0.5, 1, 0.5] }}
+                      transition={{ duration: 2, delay: 0.5, repeat: Infinity }}
+                      className="flex items-start gap-3 p-4 bg-gradient-to-r from-secondary/5 to-transparent rounded-xl border border-secondary/10"
+                    >
+                      <Calendar className="h-5 w-5 text-secondary mt-0.5 flex-shrink-0" />
+                      <div className="text-sm space-y-1">
+                        <p className="font-semibold">✓ Lembrete de consulta</p>
+                        <p className="text-muted-foreground text-xs">Enviado há 5 segundos</p>
                       </div>
+                    </motion.div>
+
+                    <motion.div 
+                      animate={{ opacity: [0.5, 1, 0.5] }}
+                      transition={{ duration: 2, delay: 1, repeat: Infinity }}
+                      className="flex items-start gap-3 p-4 bg-gradient-to-r from-accent/5 to-transparent rounded-xl border border-accent/10"
+                    >
+                      <ShoppingCart className="h-5 w-5 text-accent mt-0.5 flex-shrink-0" />
+                      <div className="text-sm space-y-1">
+                        <p className="font-semibold">✓ Pagamento aprovado</p>
+                        <p className="text-muted-foreground text-xs">Enviado há 8 segundos</p>
+                      </div>
+                    </motion.div>
+                  </div>
+
+                  <div className="pt-4 border-t border-border/50">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground">Mensagens hoje</span>
+                      <span className="font-bold text-primary text-lg">{messageCount.toString().padStart(4, '0')}</span>
                     </div>
                   </div>
                 </CardContent>
               </Card>
-            </div>
+            </motion.div>
           </div>
         </div>
       </section>
 
-      {/* Benefícios */}
-      <section className="py-20 px-4 bg-muted/30">
+      {/* Métricas/Prova Social */}
+      <section className="py-16 px-4 bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 border-y border-primary/10">
         <div className="container mx-auto max-w-6xl">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-foreground mb-4">Por que escolher o Uplink?</h2>
-            <p className="text-xl text-muted-foreground">Simples, rápido e sem complicação</p>
-          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="text-center space-y-2"
+            >
+              <div className="text-4xl md:text-5xl font-bold text-primary">+10K</div>
+              <div className="text-sm text-muted-foreground">Mensagens Enviadas</div>
+            </motion.div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <Card className="border-2 hover:border-primary/50 transition-all hover:shadow-elegant">
-              <CardHeader>
-                <Zap className="h-12 w-12 text-primary mb-4" />
-                <CardTitle>Configuração Rápida</CardTitle>
-                <CardDescription>API pronta em minutos. Crie sua sessão e comece a usar imediatamente.</CardDescription>
-              </CardHeader>
-            </Card>
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.1 }}
+              className="text-center space-y-2"
+            >
+              <div className="text-4xl md:text-5xl font-bold text-primary">99.9%</div>
+              <div className="text-sm text-muted-foreground">Uptime</div>
+            </motion.div>
 
-            <Card className="border-2 hover:border-primary/50 transition-all hover:shadow-elegant">
-              <CardHeader>
-                <Shield className="h-12 w-12 text-primary mb-4" />
-                <CardTitle>Sem Burocracia</CardTitle>
-                <CardDescription>Não precisa ser BSP do WhatsApp. Acesso direto e simplificado.</CardDescription>
-              </CardHeader>
-            </Card>
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.2 }}
+              className="text-center space-y-2"
+            >
+              <div className="text-4xl md:text-5xl font-bold text-primary">&lt; 5min</div>
+              <div className="text-sm text-muted-foreground">Para Configurar</div>
+            </motion.div>
 
-            <Card className="border-2 hover:border-primary/50 transition-all hover:shadow-elegant">
-              <CardHeader>
-                <Clock className="h-12 w-12 text-primary mb-4" />
-                <CardTitle>Preço Acessível</CardTitle>
-                <CardDescription>Apenas R$ 69,90/mês por sessão. Sem taxas escondidas ou surpresas.</CardDescription>
-              </CardHeader>
-            </Card>
-
-            <Card className="border-2 hover:border-primary/50 transition-all hover:shadow-elegant">
-              <CardHeader>
-                <MessageSquare className="h-12 w-12 text-primary mb-4" />
-                <CardTitle>Notificações Automáticas</CardTitle>
-                <CardDescription>Ideal para avisos de pedidos, confirmações e atualizações de status.</CardDescription>
-              </CardHeader>
-            </Card>
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.3 }}
+              className="text-center space-y-2"
+            >
+              <div className="text-4xl md:text-5xl font-bold text-primary">24/7</div>
+              <div className="text-sm text-muted-foreground">Suporte Disponível</div>
+            </motion.div>
           </div>
         </div>
       </section>
 
-      {/* Como Funciona */}
-      <section id="como-funciona" className="py-20 px-4">
-        <div className="container mx-auto max-w-4xl">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-foreground mb-4">Como funciona?</h2>
-            <p className="text-xl text-muted-foreground">3 passos simples para começar</p>
+      {/* Recursos/Features - Novo Design */}
+      <section id="recursos" className="py-24 px-4">
+        <div className="container mx-auto max-w-6xl">
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center mb-16 space-y-4"
+          >
+            <Badge variant="outline" className="mb-2">Recursos Poderosos</Badge>
+            <h2 className="text-4xl md:text-5xl font-bold">
+              Tudo que você precisa para
+              <br />
+              <span className="text-primary">automatizar o WhatsApp</span>
+            </h2>
+            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+              Uma API completa com todas as funcionalidades que sua empresa precisa
+            </p>
+          </motion.div>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[
+              {
+                icon: MessageSquare,
+                title: "Envio de Mensagens",
+                description: "Envie texto, imagens, áudio, vídeo e documentos com facilidade total",
+                color: "text-blue-500",
+                bg: "bg-blue-500/10",
+                border: "border-blue-500/20"
+              },
+              {
+                icon: Webhook,
+                title: "Webhooks em Tempo Real",
+                description: "Receba notificações instantâneas de status e respostas de mensagens",
+                color: "text-purple-500",
+                bg: "bg-purple-500/10",
+                border: "border-purple-500/20"
+              },
+              {
+                icon: QrCode,
+                title: "QR Code Dinâmico",
+                description: "Conecte o WhatsApp em segundos escaneando o QR Code gerado",
+                color: "text-green-500",
+                bg: "bg-green-500/10",
+                border: "border-green-500/20"
+              },
+              {
+                icon: Code2,
+                title: "API RESTful Completa",
+                description: "Documentação clara com exemplos em múltiplas linguagens",
+                color: "text-orange-500",
+                bg: "bg-orange-500/10",
+                border: "border-orange-500/20"
+              },
+              {
+                icon: Layers,
+                title: "Múltiplas Instâncias",
+                description: "Gerencie várias sessões WhatsApp em uma única conta",
+                color: "text-pink-500",
+                bg: "bg-pink-500/10",
+                border: "border-pink-500/20"
+              },
+              {
+                icon: Shield,
+                title: "Segurança Garantida",
+                description: "Criptografia end-to-end e tokens seguros para suas mensagens",
+                color: "text-red-500",
+                bg: "bg-red-500/10",
+                border: "border-red-500/20"
+              }
+            ].map((feature, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: index * 0.1 }}
+              >
+                <Card className={`group border-2 ${feature.border} hover:shadow-2xl hover:scale-105 transition-all duration-300 cursor-pointer h-full`}>
+                  <CardHeader className="space-y-4">
+                    <div className={`w-14 h-14 ${feature.bg} rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform`}>
+                      <feature.icon className={`h-7 w-7 ${feature.color}`} />
+                    </div>
+                    <CardTitle className="text-xl group-hover:text-primary transition-colors">
+                      {feature.title}
+                    </CardTitle>
+                    <CardDescription className="text-base leading-relaxed">
+                      {feature.description}
+                    </CardDescription>
+                  </CardHeader>
+                </Card>
+              </motion.div>
+            ))}
           </div>
+        </div>
+      </section>
+
+      {/* Seção de Integrações */}
+      <section id="integracoes" className="py-24 px-4 bg-muted/30">
+        <div className="container mx-auto max-w-6xl">
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center mb-16 space-y-4"
+          >
+            <Badge variant="outline" className="mb-2">Integrações</Badge>
+            <h2 className="text-4xl md:text-5xl font-bold">
+              Integre com suas
+              <br />
+              <span className="text-primary">ferramentas favoritas</span>
+            </h2>
+            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+              Compatível com as principais plataformas de automação e linguagens
+            </p>
+          </motion.div>
+
+          {/* Grid de Logos */}
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-16"
+          >
+            {[
+              { name: "n8n", desc: "Automação" },
+              { name: "Make", desc: "Integração" },
+              { name: "Zapier", desc: "Workflows" },
+              { name: "Bubble", desc: "No-Code" },
+              { name: "Python", desc: "Linguagem" },
+              { name: "Node.js", desc: "JavaScript" },
+              { name: "PHP", desc: "Backend" },
+              { name: "Google Sheets", desc: "Planilhas" }
+            ].map((integration, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, scale: 0.8 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                viewport={{ once: true }}
+                transition={{ delay: index * 0.05 }}
+                whileHover={{ scale: 1.05 }}
+                className="relative group"
+              >
+                <Card className="h-full border-2 hover:border-primary/50 transition-all cursor-pointer">
+                  <CardContent className="flex flex-col items-center justify-center p-8 space-y-3">
+                    <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+                      <Code2 className="h-6 w-6 text-primary" />
+                    </div>
+                    <div className="text-center">
+                      <p className="font-bold text-lg">{integration.name}</p>
+                      <p className="text-sm text-muted-foreground">{integration.desc}</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            ))}
+          </motion.div>
+
+          {/* Exemplos de Código */}
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="max-w-4xl mx-auto"
+          >
+            <Card className="border-2 border-primary/20 shadow-2xl overflow-hidden">
+              <CardHeader className="bg-gradient-to-r from-primary/10 to-secondary/10 border-b">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-xl">Exemplo de Código</CardTitle>
+                  <div className="flex items-center gap-2">
+                    {["curl", "javascript", "python", "php"].map((lang) => (
+                      <button
+                        key={lang}
+                        onClick={() => setActiveTab(lang)}
+                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                          activeTab === lang
+                            ? "bg-primary text-primary-foreground shadow-lg"
+                            : "bg-background/50 hover:bg-background text-muted-foreground"
+                        }`}
+                      >
+                        {lang === "curl" ? "cURL" : lang.charAt(0).toUpperCase() + lang.slice(1)}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="p-0">
+                <div className="relative">
+                  <pre className="p-6 overflow-x-auto bg-muted/50 text-sm">
+                    <code className="text-foreground">{codeExamples[activeTab as keyof typeof codeExamples]}</code>
+                  </pre>
+                  <Button
+                    onClick={handleCopy}
+                    size="sm"
+                    variant="secondary"
+                    className="absolute top-4 right-4"
+                  >
+                    {copied ? <CheckCircle2 className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                    {copied ? "Copiado!" : "Copiar"}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* Como Funciona - Redesenhado */}
+      <section id="como-funciona" className="py-24 px-4">
+        <div className="container mx-auto max-w-5xl">
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center mb-16 space-y-4"
+          >
+            <Badge variant="outline" className="mb-2">Simples e Rápido</Badge>
+            <h2 className="text-4xl md:text-5xl font-bold">
+              Comece em <span className="text-primary">3 passos</span>
+            </h2>
+          </motion.div>
 
           <div className="space-y-8">
-            <div className="flex gap-6 items-start">
-              <div className="flex-shrink-0 w-16 h-16 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-2xl font-bold">
-                1
-              </div>
-              <div className="flex-1">
-                <h3 className="text-2xl font-bold text-foreground mb-2">Crie sua conta e faça login</h3>
-                <p className="text-muted-foreground text-lg">Cadastro rápido em menos de 1 minuto. Acesse o painel de controle.</p>
-              </div>
-            </div>
-
-            <div className="flex gap-6 items-start">
-              <div className="flex-shrink-0 w-16 h-16 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-2xl font-bold">
-                2
-              </div>
-              <div className="flex-1">
-                <h3 className="text-2xl font-bold text-foreground mb-2">Crie sua sessão</h3>
-                <p className="text-muted-foreground text-lg">Dentro do painel, crie uma nova sessão de API com um clique.</p>
-              </div>
-            </div>
-
-            <div className="flex gap-6 items-start">
-              <div className="flex-shrink-0 w-16 h-16 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-2xl font-bold">
-                3
-              </div>
-              <div className="flex-1">
-                <h3 className="text-2xl font-bold text-foreground mb-2">Use os dados da API</h3>
-                <p className="text-muted-foreground text-lg">Copie as credenciais e integre com seu sistema, chatbot ou automação.</p>
-              </div>
-            </div>
+            {[
+              {
+                number: "1",
+                title: "Crie sua conta",
+                description: "Cadastro rápido em menos de 1 minuto. Acesse o painel de controle.",
+                icon: Users,
+                color: "from-blue-500 to-blue-600"
+              },
+              {
+                number: "2",
+                title: "Configure sua sessão",
+                description: "Dentro do painel, crie uma nova sessão de API com um clique.",
+                icon: QrCode,
+                color: "from-purple-500 to-purple-600"
+              },
+              {
+                number: "3",
+                title: "Comece a enviar",
+                description: "Copie as credenciais e integre com seu sistema, chatbot ou automação.",
+                icon: Zap,
+                color: "from-green-500 to-green-600"
+              }
+            ].map((step, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, x: -50 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: index * 0.2 }}
+                className="relative"
+              >
+                {index < 2 && (
+                  <div className="hidden md:block absolute left-8 top-20 w-0.5 h-16 bg-gradient-to-b from-primary to-transparent" />
+                )}
+                <Card className="border-2 hover:border-primary/50 hover:shadow-2xl transition-all group">
+                  <CardContent className="flex gap-6 items-start p-8">
+                    <div className={`relative flex-shrink-0 w-16 h-16 rounded-2xl bg-gradient-to-br ${step.color} flex items-center justify-center text-white text-2xl font-bold shadow-lg group-hover:scale-110 transition-transform`}>
+                      {step.number}
+                      <div className="absolute inset-0 rounded-2xl bg-white/20 group-hover:animate-pulse" />
+                    </div>
+                    <div className="flex-1 space-y-3">
+                      <div className="flex items-center gap-3">
+                        <step.icon className="h-6 w-6 text-primary" />
+                        <h3 className="text-2xl font-bold">{step.title}</h3>
+                      </div>
+                      <p className="text-muted-foreground text-lg leading-relaxed">
+                        {step.description}
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* Preços */}
-      <section id="precos" className="py-20 px-4 bg-muted/30">
-        <div className="container mx-auto max-w-4xl">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-foreground mb-4">Plano simples e transparente</h2>
-            <p className="text-xl text-muted-foreground">Sem complicação, sem taxas escondidas</p>
-          </div>
+      {/* Preços - Modernizado */}
+      <section id="precos" className="py-24 px-4 bg-gradient-to-br from-primary/5 via-background to-secondary/5">
+        <div className="container mx-auto max-w-5xl">
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center mb-16 space-y-4"
+          >
+            <Badge variant="outline" className="mb-2">Preços Transparentes</Badge>
+            <h2 className="text-4xl md:text-5xl font-bold">
+              Plano simples,
+              <br />
+              <span className="text-primary">sem surpresas</span>
+            </h2>
+            <p className="text-xl text-muted-foreground">
+              Sem taxas escondidas, sem burocracia
+            </p>
+          </motion.div>
 
-          <Card className="max-w-lg mx-auto border-2 border-primary shadow-elegant">
-            <CardHeader className="text-center pb-8">
-              <CardTitle className="text-3xl">Sessão API WhatsApp</CardTitle>
-              <div className="mt-4">
-                <span className="text-5xl font-bold text-primary">R$ 69,90</span>
-                <span className="text-muted-foreground text-xl">/mês</span>
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true }}
+          >
+            <Card className="max-w-lg mx-auto border-2 border-primary shadow-2xl relative overflow-hidden">
+              <div className="absolute top-0 right-0 bg-gradient-to-br from-primary to-secondary text-white px-6 py-2 rounded-bl-2xl font-bold text-sm">
+                MAIS POPULAR
               </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-3">
-                <div className="flex items-center gap-3">
-                  <Check className="h-5 w-5 text-primary" />
-                  <span className="text-foreground">1 sessão de API WhatsApp</span>
+              
+              <CardHeader className="text-center pb-8 pt-12 space-y-6">
+                <div className="mx-auto w-20 h-20 bg-gradient-to-br from-primary to-secondary rounded-2xl flex items-center justify-center shadow-lg">
+                  <Zap className="h-10 w-10 text-white" />
                 </div>
-                <div className="flex items-center gap-3">
-                  <Check className="h-5 w-5 text-primary" />
-                  <span className="text-foreground">Configuração em minutos</span>
+                <CardTitle className="text-3xl">Sessão API WhatsApp</CardTitle>
+                <div className="space-y-2">
+                  <div className="flex items-baseline justify-center gap-2">
+                    <span className="text-5xl font-bold text-primary">R$ 69,90</span>
+                    <span className="text-muted-foreground text-xl">/mês</span>
+                  </div>
+                  <p className="text-sm text-muted-foreground">Por sessão ativa</p>
                 </div>
-                <div className="flex items-center gap-3">
-                  <Check className="h-5 w-5 text-primary" />
-                  <span className="text-foreground">Documentação completa</span>
+              </CardHeader>
+              
+              <CardContent className="space-y-6 px-8 pb-8">
+                <div className="space-y-4">
+                  {[
+                    "1 sessão de API WhatsApp",
+                    "Configuração em minutos",
+                    "Mensagens ilimitadas",
+                    "Webhooks em tempo real",
+                    "Documentação completa",
+                    "Suporte técnico 24/7",
+                    "Sem taxa de adesão",
+                    "Cancele quando quiser"
+                  ].map((feature, index) => (
+                    <motion.div
+                      key={index}
+                      initial={{ opacity: 0, x: -20 }}
+                      whileInView={{ opacity: 1, x: 0 }}
+                      viewport={{ once: true }}
+                      transition={{ delay: index * 0.05 }}
+                      className="flex items-center gap-3"
+                    >
+                      <div className="flex-shrink-0 w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center">
+                        <Check className="h-4 w-4 text-primary" />
+                      </div>
+                      <span className="text-foreground">{feature}</span>
+                    </motion.div>
+                  ))}
                 </div>
-                <div className="flex items-center gap-3">
-                  <Check className="h-5 w-5 text-primary" />
-                  <span className="text-foreground">Suporte técnico</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <Check className="h-5 w-5 text-primary" />
-                  <span className="text-foreground">Sem taxa de adesão</span>
-                </div>
-              </div>
 
-              <Button 
-                onClick={() => navigate("/checkout")} 
-                className="w-full h-14 text-lg mt-6 shadow-elegant hover:shadow-glow transition-all"
-              >
-                Contratar agora
-              </Button>
-              <p className="text-center text-sm text-muted-foreground">
-                Cancele quando quiser, sem multa
-              </p>
-            </CardContent>
-          </Card>
+                <Button 
+                  onClick={() => navigate("/checkout")} 
+                  className="w-full h-14 text-lg mt-6 shadow-elegant hover:shadow-glow transition-all group"
+                  size="lg"
+                >
+                  Contratar Agora
+                  <ChevronRight className="h-5 w-5 ml-2 group-hover:translate-x-1 transition-transform" />
+                </Button>
+                
+                <p className="text-center text-sm text-muted-foreground">
+                  ✓ Teste grátis por 7 dias • Cancele a qualquer momento
+                </p>
+              </CardContent>
+            </Card>
+          </motion.div>
         </div>
       </section>
 
       {/* Casos de Uso */}
-      <section className="py-20 px-4">
+      <section className="py-24 px-4">
         <div className="container mx-auto max-w-6xl">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-foreground mb-4">Casos de uso reais</h2>
-            <p className="text-xl text-muted-foreground">Veja como sua empresa pode usar o Uplink</p>
-          </div>
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center mb-16 space-y-4"
+          >
+            <Badge variant="outline" className="mb-2">Casos de Uso</Badge>
+            <h2 className="text-4xl md:text-5xl font-bold">
+              Perfeito para
+              <br />
+              <span className="text-primary">qualquer negócio</span>
+            </h2>
+          </motion.div>
 
           <div className="grid md:grid-cols-2 gap-8">
-            <Card className="border-2 hover:border-primary/50 transition-all">
-              <CardHeader>
-                <div className="flex items-center gap-3 mb-4">
-                  <ShoppingCart className="h-8 w-8 text-primary" />
-                  <CardTitle>E-commerce</CardTitle>
-                </div>
-                <CardDescription className="text-base space-y-2">
-                  <p>✓ "Seu pedido foi confirmado!"</p>
-                  <p>✓ "Pagamento aprovado"</p>
-                  <p>✓ "Seu produto está a caminho"</p>
-                  <p>✓ "Entrega realizada com sucesso"</p>
-                </CardDescription>
-              </CardHeader>
-            </Card>
-
-            <Card className="border-2 hover:border-primary/50 transition-all">
-              <CardHeader>
-                <div className="flex items-center gap-3 mb-4">
-                  <Calendar className="h-8 w-8 text-primary" />
-                  <CardTitle>Agendamentos</CardTitle>
-                </div>
-                <CardDescription className="text-base space-y-2">
-                  <p>✓ "Seu agendamento foi confirmado"</p>
-                  <p>✓ "Lembrete: consulta amanhã"</p>
-                  <p>✓ "Horário disponível para reagendamento"</p>
-                  <p>✓ "Obrigado pela visita!"</p>
-                </CardDescription>
-              </CardHeader>
-            </Card>
-
-            <Card className="border-2 hover:border-primary/50 transition-all">
-              <CardHeader>
-                <div className="flex items-center gap-3 mb-4">
-                  <Package className="h-8 w-8 text-primary" />
-                  <CardTitle>Logística</CardTitle>
-                </div>
-                <CardDescription className="text-base space-y-2">
-                  <p>✓ "Pacote saiu para entrega"</p>
-                  <p>✓ "Chegou no centro de distribuição"</p>
-                  <p>✓ "Tentativa de entrega realizada"</p>
-                  <p>✓ "Disponível para retirada"</p>
-                </CardDescription>
-              </CardHeader>
-            </Card>
-
-            <Card className="border-2 hover:border-primary/50 transition-all">
-              <CardHeader>
-                <div className="flex items-center gap-3 mb-4">
-                  <MessageSquare className="h-8 w-8 text-primary" />
-                  <CardTitle>Automações</CardTitle>
-                </div>
-                <CardDescription className="text-base space-y-2">
-                  <p>✓ Integração com CRM e sistemas</p>
-                  <p>✓ Notificações de eventos importantes</p>
-                  <p>✓ Alertas de pagamento e cobranças</p>
-                  <p>✓ Confirmações automáticas</p>
-                </CardDescription>
-              </CardHeader>
-            </Card>
+            {[
+              {
+                icon: ShoppingCart,
+                title: "E-commerce",
+                items: [
+                  "Confirmação de pedidos",
+                  "Status de pagamento",
+                  "Rastreamento de entrega",
+                  "Pós-venda automatizado"
+                ],
+                color: "text-blue-500",
+                bg: "bg-blue-500/10"
+              },
+              {
+                icon: Calendar,
+                title: "Agendamentos",
+                items: [
+                  "Confirmação de consultas",
+                  "Lembretes automáticos",
+                  "Reagendamentos",
+                  "Pesquisa de satisfação"
+                ],
+                color: "text-purple-500",
+                bg: "bg-purple-500/10"
+              },
+              {
+                icon: Package,
+                title: "Logística",
+                items: [
+                  "Status de envio",
+                  "Atualização de localização",
+                  "Tentativas de entrega",
+                  "Confirmação de recebimento"
+                ],
+                color: "text-green-500",
+                bg: "bg-green-500/10"
+              },
+              {
+                icon: MessageSquare,
+                title: "Automações",
+                items: [
+                  "Integração com CRM",
+                  "Notificações de eventos",
+                  "Alertas de pagamento",
+                  "Confirmações automáticas"
+                ],
+                color: "text-orange-500",
+                bg: "bg-orange-500/10"
+              }
+            ].map((useCase, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: index * 0.1 }}
+              >
+                <Card className="border-2 hover:border-primary/50 hover:shadow-2xl transition-all group h-full">
+                  <CardHeader className="space-y-4">
+                    <div className="flex items-center gap-4">
+                      <div className={`w-14 h-14 ${useCase.bg} rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform`}>
+                        <useCase.icon className={`h-7 w-7 ${useCase.color}`} />
+                      </div>
+                      <CardTitle className="text-2xl">{useCase.title}</CardTitle>
+                    </div>
+                    <div className="space-y-3 pt-4">
+                      {useCase.items.map((item, i) => (
+                        <div key={i} className="flex items-start gap-3">
+                          <Check className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
+                          <span className="text-muted-foreground">{item}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </CardHeader>
+                </Card>
+              </motion.div>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* Depoimentos */}
-      <section className="py-20 px-4 bg-muted/30">
-        <div className="container mx-auto max-w-4xl">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-foreground mb-4">O que dizem nossos clientes</h2>
-            <p className="text-xl text-muted-foreground">Empresas que já automatizaram sua comunicação</p>
-          </div>
+      {/* Depoimentos Melhorados */}
+      <section className="py-24 px-4 bg-muted/30">
+        <div className="container mx-auto max-w-6xl">
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center mb-16 space-y-4"
+          >
+            <Badge variant="outline" className="mb-2">Depoimentos</Badge>
+            <h2 className="text-4xl md:text-5xl font-bold">
+              Empresas que já
+              <br />
+              <span className="text-primary">automatizaram</span>
+            </h2>
+          </motion.div>
 
           <div className="grid md:grid-cols-3 gap-6">
-            {/* Depoimento 1 - E-commerce */}
-            <Card className="border-2 hover:shadow-lg transition-all">
-              <CardContent className="pt-6">
-                <div className="flex gap-1 mb-4">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <span key={star} className="text-primary text-xl">★</span>
-                  ))}
-                </div>
-                <p className="text-muted-foreground italic mb-4 text-sm leading-relaxed">
-                  "Integramos a Uplink em nosso sistema de pedidos e reduzimos em 70% o tempo de resposta aos clientes. A configuração foi surpreendentemente simples e o suporte foi impecável."
-                </p>
-                <div className="border-t pt-4">
-                  <p className="text-sm font-semibold text-foreground">Ricardo Mendes</p>
-                  <p className="text-xs text-muted-foreground">CEO - ShopFast E-commerce</p>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Depoimento 2 - Clínica */}
-            <Card className="border-2 hover:shadow-lg transition-all">
-              <CardContent className="pt-6">
-                <div className="flex gap-1 mb-4">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <span key={star} className="text-primary text-xl">★</span>
-                  ))}
-                </div>
-                <p className="text-muted-foreground italic mb-4 text-sm leading-relaxed">
-                  "Os lembretes automáticos de consulta diminuíram 85% das faltas. Nossos pacientes adoram receber confirmações pelo WhatsApp. Vale cada centavo!"
-                </p>
-                <div className="border-t pt-4">
-                  <p className="text-sm font-semibold text-foreground">Dra. Amanda Silva</p>
-                  <p className="text-xs text-muted-foreground">Coordenadora - Clínica Vida Saudável</p>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Depoimento 3 - Logística */}
-            <Card className="border-2 hover:shadow-lg transition-all">
-              <CardContent className="pt-6">
-                <div className="flex gap-1 mb-4">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <span key={star} className="text-primary text-xl">★</span>
-                  ))}
-                </div>
-                <p className="text-muted-foreground italic mb-4 text-sm leading-relaxed">
-                  "Automatizamos todas as notificações de rastreamento. Nossos clientes agora recebem atualizações em tempo real, o que melhorou drasticamente nossa avaliação no Reclame Aqui."
-                </p>
-                <div className="border-t pt-4">
-                  <p className="text-sm font-semibold text-foreground">Paulo Santos</p>
-                  <p className="text-xs text-muted-foreground">Diretor - LogExpress Transportes</p>
-                </div>
-              </CardContent>
-            </Card>
+            {[
+              {
+                name: "Ricardo Mendes",
+                role: "CEO - ShopFast E-commerce",
+                text: "Integramos a Uplink em nosso sistema de pedidos e reduzimos em 70% o tempo de resposta aos clientes. A configuração foi surpreendentemente simples.",
+                rating: 5
+              },
+              {
+                name: "Dra. Paula Santos",
+                role: "Diretora - Clínica MedSaúde",
+                text: "Automatizamos todos os lembretes de consulta. Taxa de comparecimento aumentou 40%. O suporte é excepcional e sempre em português.",
+                rating: 5
+              },
+              {
+                name: "Carlos Oliveira",
+                role: "CTO - LogFast Entregas",
+                text: "API estável e confiável. Enviamos milhares de mensagens por dia sem problemas. O custo-benefício é imbatível.",
+                rating: 5
+              }
+            ].map((testimonial, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: index * 0.1 }}
+              >
+                <Card className="border-2 hover:shadow-2xl transition-all h-full">
+                  <CardContent className="pt-6 space-y-6">
+                    <div className="flex gap-1">
+                      {[...Array(testimonial.rating)].map((_, i) => (
+                        <Star key={i} className="h-5 w-5 fill-primary text-primary" />
+                      ))}
+                    </div>
+                    <p className="text-muted-foreground italic leading-relaxed">
+                      "{testimonial.text}"
+                    </p>
+                    <div className="border-t pt-4 space-y-1">
+                      <p className="font-semibold">{testimonial.name}</p>
+                      <p className="text-sm text-muted-foreground">{testimonial.role}</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            ))}
           </div>
         </div>
       </section>
 
       {/* FAQ */}
-      <section id="faq" className="py-20 px-4">
+      <section id="faq" className="py-24 px-4">
         <div className="container mx-auto max-w-3xl">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-foreground mb-4">Perguntas frequentes</h2>
-            <p className="text-xl text-muted-foreground">Tire suas dúvidas sobre o Uplink</p>
-          </div>
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center mb-16 space-y-4"
+          >
+            <Badge variant="outline" className="mb-2">FAQ</Badge>
+            <h2 className="text-4xl md:text-5xl font-bold">
+              Dúvidas <span className="text-primary">frequentes</span>
+            </h2>
+          </motion.div>
 
           <Accordion type="single" collapsible className="space-y-4">
-            <AccordionItem value="item-1" className="border-2 rounded-lg px-6">
-              <AccordionTrigger className="text-lg font-semibold text-foreground hover:text-primary">
-                Preciso ser BSP do WhatsApp?
-              </AccordionTrigger>
-              <AccordionContent className="text-muted-foreground">
-                Não! O Uplink oferece acesso direto à API sem necessidade de aprovação como Business Solution Provider. Você cria sua sessão e já pode começar a usar.
-              </AccordionContent>
-            </AccordionItem>
-
-            <AccordionItem value="item-2" className="border-2 rounded-lg px-6">
-              <AccordionTrigger className="text-lg font-semibold text-foreground hover:text-primary">
-                Posso integrar com automações e sistemas?
-              </AccordionTrigger>
-              <AccordionContent className="text-muted-foreground">
-                Sim! Nossa API é compatível com qualquer sistema que faça requisições HTTP. Você pode integrar com CRMs, chatbots, plataformas de e-commerce, sistemas personalizados e muito mais.
-              </AccordionContent>
-            </AccordionItem>
-
-            <AccordionItem value="item-3" className="border-2 rounded-lg px-6">
-              <AccordionTrigger className="text-lg font-semibold text-foreground hover:text-primary">
-                Há limite de mensagens?
-              </AccordionTrigger>
-              <AccordionContent className="text-muted-foreground">
-                O plano mensal de R$ 69,90 inclui uso normal da sessão. Para volumes muito grandes, entre em contato para planos personalizados.
-              </AccordionContent>
-            </AccordionItem>
-
-            <AccordionItem value="item-4" className="border-2 rounded-lg px-6">
-              <AccordionTrigger className="text-lg font-semibold text-foreground hover:text-primary">
-                Quanto tempo leva para configurar?
-              </AccordionTrigger>
-              <AccordionContent className="text-muted-foreground">
-                A configuração é extremamente rápida! Após criar sua conta, você cria a sessão em 1 clique e recebe os dados da API imediatamente. Em poucos minutos você já está enviando mensagens.
-              </AccordionContent>
-            </AccordionItem>
-
-            <AccordionItem value="item-5" className="border-2 rounded-lg px-6">
-              <AccordionTrigger className="text-lg font-semibold text-foreground hover:text-primary">
-                Posso cancelar quando quiser?
-              </AccordionTrigger>
-              <AccordionContent className="text-muted-foreground">
-                Sim! Não há fidelidade nem multa por cancelamento. Você pode cancelar sua assinatura a qualquer momento direto no painel.
-              </AccordionContent>
-            </AccordionItem>
-
-            <AccordionItem value="item-6" className="border-2 rounded-lg px-6">
-              <AccordionTrigger className="text-lg font-semibold text-foreground hover:text-primary">
-                Vocês oferecem suporte?
-              </AccordionTrigger>
-              <AccordionContent className="text-muted-foreground">
-                Sim! Oferecemos suporte técnico via e-mail e documentação completa para ajudar você a integrar a API com seu sistema.
-              </AccordionContent>
-            </AccordionItem>
+            {[
+              {
+                question: "Preciso ser BSP do WhatsApp?",
+                answer: "Não! Nossa solução funciona de forma independente. Você não precisa ser Business Service Provider do WhatsApp."
+              },
+              {
+                question: "Quanto tempo leva para configurar?",
+                answer: "Menos de 5 minutos! Crie sua conta, configure a sessão escaneando o QR Code e comece a enviar mensagens imediatamente."
+              },
+              {
+                question: "Existe limite de mensagens?",
+                answer: "Não há limite de mensagens no plano. Você pode enviar quantas mensagens precisar para seus clientes."
+              },
+              {
+                question: "Posso cancelar a qualquer momento?",
+                answer: "Sim! Não há fidelidade. Você pode cancelar sua assinatura quando quiser, sem multas ou taxas adicionais."
+              },
+              {
+                question: "Vocês oferecem suporte técnico?",
+                answer: "Sim! Oferecemos suporte técnico 24/7 em português. Nossa equipe está sempre pronta para ajudar."
+              },
+              {
+                question: "Como funciona o pagamento?",
+                answer: "Aceitamos cartão de crédito via Stripe. O pagamento é mensal e recorrente. Você pode gerenciar sua assinatura no painel."
+              }
+            ].map((faq, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 10 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: index * 0.05 }}
+              >
+                <AccordionItem value={`item-${index}`} className="border-2 rounded-lg px-6 hover:border-primary/50 transition-colors">
+                  <AccordionTrigger className="text-left font-semibold hover:no-underline">
+                    {faq.question}
+                  </AccordionTrigger>
+                  <AccordionContent className="text-muted-foreground leading-relaxed">
+                    {faq.answer}
+                  </AccordionContent>
+                </AccordionItem>
+              </motion.div>
+            ))}
           </Accordion>
         </div>
       </section>
 
       {/* CTA Final */}
-      <section className="py-20 px-4 bg-gradient-to-br from-primary via-primary to-secondary text-primary-foreground">
-        <div className="container mx-auto max-w-4xl text-center">
-          <h2 className="text-4xl md:text-5xl font-bold mb-6">
-            Pronto para automatizar o WhatsApp?
-          </h2>
-          <p className="text-xl mb-8 opacity-90">
-            Comece hoje mesmo e transforme a comunicação da sua empresa
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button 
-              onClick={() => navigate("/checkout")}
-              size="lg"
-              variant="secondary"
-              className="text-lg h-14 px-8 shadow-xl hover:shadow-2xl transition-all"
-            >
-              Começar agora
-            </Button>
-            <Button 
-              onClick={() => scrollToSection("precos")}
-              size="lg"
-              variant="outline"
-              className="text-lg h-14 px-8 bg-transparent border-2 border-primary-foreground text-primary-foreground hover:bg-primary-foreground hover:text-primary"
-            >
-              Ver preços
-            </Button>
-          </div>
+      <section className="py-24 px-4 bg-gradient-to-r from-primary to-secondary relative overflow-hidden">
+        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImdyaWQiIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTSAxMCAwIEwgMCAwIDAgMTAiIGZpbGw9Im5vbmUiIHN0cm9rZT0id2hpdGUiIHN0cm9rZS1vcGFjaXR5PSIwLjEiIHN0cm9rZS13aWR0aD0iMSIvPjwvcGF0dGVybj48L2RlZnM+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0idXJsKCNncmlkKSIvPjwvc3ZnPg==')] opacity-20" />
+        
+        <div className="container mx-auto max-w-4xl relative z-10">
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center space-y-8 text-white"
+          >
+            <h2 className="text-4xl md:text-6xl font-bold">
+              Pronto para automatizar
+              <br />
+              seu WhatsApp?
+            </h2>
+            <p className="text-xl md:text-2xl opacity-90 max-w-2xl mx-auto">
+              Configure em minutos e comece a enviar mensagens automáticas hoje mesmo
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center pt-6">
+              <Button 
+                onClick={() => navigate("/checkout")}
+                size="lg"
+                variant="secondary"
+                className="text-lg h-16 px-12 shadow-2xl hover:scale-105 transition-all"
+              >
+                Começar Agora - R$ 69,90/mês
+                <ChevronRight className="h-5 w-5 ml-2" />
+              </Button>
+              <Button 
+                onClick={() => navigate("/api-docs")}
+                size="lg"
+                variant="outline"
+                className="text-lg h-16 px-12 bg-white/10 backdrop-blur-sm border-white/30 text-white hover:bg-white/20 hover:text-white"
+              >
+                Ver Documentação
+              </Button>
+            </div>
+            <p className="text-sm opacity-75 pt-4">
+              ✓ Teste grátis por 7 dias • Sem cartão de crédito • Cancele quando quiser
+            </p>
+          </motion.div>
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="py-12 px-4 bg-card border-t border-border">
+      {/* Footer Expandido */}
+      <footer className="bg-background border-t border-border py-16 px-4">
         <div className="container mx-auto max-w-6xl">
-          <div className="grid md:grid-cols-4 gap-8">
+          <div className="grid md:grid-cols-4 gap-12 mb-12">
             <div className="space-y-4">
-              <div className="flex items-center gap-2">
-                <MessageSquare className="h-6 w-6 text-primary" />
-                <span className="text-xl font-bold text-foreground">Uplink</span>
+              <div className="flex items-center gap-3">
+                <img 
+                  src="/logo-uplink.png" 
+                  alt="Uplink Logo" 
+                  className="h-10 w-10 rounded-full"
+                />
+                <span className="text-xl font-bold">Uplink</span>
               </div>
-              <p className="text-sm text-muted-foreground">
-                API WhatsApp simplificada para sua empresa
+              <p className="text-muted-foreground text-sm leading-relaxed">
+                A API WhatsApp mais simples do Brasil. Automatize a comunicação da sua empresa em minutos.
               </p>
             </div>
 
             <div>
-              <h3 className="font-semibold text-foreground mb-4">Produto</h3>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><button onClick={() => scrollToSection("como-funciona")} className="hover:text-primary transition-colors">Como funciona</button></li>
-                <li><button onClick={() => scrollToSection("precos")} className="hover:text-primary transition-colors">Preços</button></li>
-                <li><button onClick={() => scrollToSection("faq")} className="hover:text-primary transition-colors">FAQ</button></li>
-              </ul>
+              <h3 className="font-semibold mb-4">Produto</h3>
+              <div className="space-y-3 text-sm">
+                <button onClick={() => scrollToSection("recursos")} className="block text-muted-foreground hover:text-primary transition-colors">
+                  Recursos
+                </button>
+                <button onClick={() => scrollToSection("precos")} className="block text-muted-foreground hover:text-primary transition-colors">
+                  Preços
+                </button>
+                <button onClick={() => navigate("/api-docs")} className="block text-muted-foreground hover:text-primary transition-colors">
+                  Documentação
+                </button>
+              </div>
             </div>
 
             <div>
-              <h3 className="font-semibold text-foreground mb-4">Contato</h3>
-              <ul className="space-y-3 text-sm">
-                <li>
-                  <a 
-                    href="https://wa.me/5541995472941?text=Olá!%20Vim%20pelo%20site%20da%20Uplink%20e%20gostaria%20de%20saber%20mais." 
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors group"
-                  >
-                    <MessageSquare className="h-4 w-4 group-hover:scale-110 transition-transform" />
-                    <span>(41) 99547-2941</span>
-                  </a>
-                </li>
-                <li>
-                  <a 
-                    href="mailto:contato@upevolution.com.br"
-                    className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors group"
-                  >
-                    <svg className="h-4 w-4 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                    </svg>
-                    <span className="break-all">contato@upevolution.com.br</span>
-                  </a>
-                </li>
-                <li>
-                  <p className="text-xs text-muted-foreground italic pt-2">
-                    Horário de atendimento:<br/>
-                    Seg-Sex: 9h às 18h
-                  </p>
-                </li>
-              </ul>
+              <h3 className="font-semibold mb-4">Empresa</h3>
+              <div className="space-y-3 text-sm">
+                <button onClick={() => navigate("/terms")} className="block text-muted-foreground hover:text-primary transition-colors">
+                  Termos de Uso
+                </button>
+                <button onClick={() => navigate("/privacy")} className="block text-muted-foreground hover:text-primary transition-colors">
+                  Política de Privacidade
+                </button>
+              </div>
             </div>
 
             <div>
-              <h3 className="font-semibold text-foreground mb-4">Legal</h3>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><button onClick={() => navigate("/terms")} className="hover:text-primary transition-colors">Termos de uso</button></li>
-                <li><button onClick={() => navigate("/privacy")} className="hover:text-primary transition-colors">Política de privacidade</button></li>
-                <li><button onClick={() => navigate("/login")} className="hover:text-primary transition-colors">Login</button></li>
-              </ul>
+              <h3 className="font-semibold mb-4">Suporte</h3>
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Headphones className="h-4 w-4 text-primary" />
+                  <span>Suporte 24/7</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <CheckCircle2 className="h-4 w-4 text-primary" />
+                  <span>Em Português</span>
+                </div>
+              </div>
             </div>
           </div>
 
-          <div className="border-t border-border mt-8 pt-8 text-center text-sm text-muted-foreground">
-            <p>© 2024 Uplink - Upevolution / Panda INC. Todos os direitos reservados.</p>
+          <div className="pt-8 border-t border-border flex flex-col md:flex-row items-center justify-between gap-4">
+            <p className="text-sm text-muted-foreground">
+              © 2025 Uplink Lite. Todos os direitos reservados.
+            </p>
+            <div className="flex items-center gap-4 text-muted-foreground">
+              <Badge variant="outline" className="gap-2">
+                <Shield className="h-3 w-3" />
+                SSL Seguro
+              </Badge>
+              <Badge variant="outline" className="gap-2">
+                <CheckCircle2 className="h-3 w-3" />
+                99.9% Uptime
+              </Badge>
+            </div>
           </div>
         </div>
       </footer>
