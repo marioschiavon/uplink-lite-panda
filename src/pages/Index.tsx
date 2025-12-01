@@ -123,7 +123,7 @@ $response = curl_exec($ch);
               Login
             </Button>
             <Button onClick={() => navigate("/checkout")} className="font-semibold shadow-lg hover:shadow-xl transition-all animate-pulse-glow">
-              Começar Grátis
+              Começar Agora
               <ChevronRight className="h-4 w-4 ml-1" />
             </Button>
           </div>
@@ -683,9 +683,9 @@ $response = curl_exec($ch);
                   <ChevronRight className="h-5 w-5 ml-2 group-hover:translate-x-1 transition-transform" />
                 </Button>
                 
-                <p className="text-center text-sm text-muted-foreground">
-                  ✓ Teste grátis por 7 dias • Cancele a qualquer momento
-                </p>
+              <p className="text-center text-sm text-muted-foreground">
+                ✓ Cancele a qualquer momento • Sem fidelidade
+              </p>
               </CardContent>
             </Card>
           </motion.div>
@@ -959,9 +959,9 @@ $response = curl_exec($ch);
                 Ver Documentação
               </Button>
             </div>
-            <p className="text-sm opacity-75 pt-4">
-              ✓ Teste grátis por 7 dias • Sem cartão de crédito • Cancele quando quiser
-            </p>
+              <p className="text-sm opacity-75 pt-4">
+                ✓ Configuração em minutos • Suporte em português • Cancele quando quiser
+              </p>
           </motion.div>
         </div>
       </section>
