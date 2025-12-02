@@ -28,7 +28,7 @@ export default function TermsOfService() {
           {/* Introdução */}
           <div className="space-y-4 leading-relaxed">
             <p>
-              Bem-vindo à <strong>Uplink</strong>, uma plataforma desenvolvida e operada por <strong>Panda42</strong>, 
+              Bem-vindo à <strong>Uplink</strong>, uma plataforma desenvolvida e operada por <strong>S7</strong>, 
               controladora empresarial do titular Mario R Schiavon, inscrito no CNPJ 46.214.207/0001-60, 
               com endereço na Rua Alexandre Foggiatto, Brasil.
             </p>
@@ -82,7 +82,7 @@ export default function TermsOfService() {
               <li>Sem período gratuito</li>
               <li>Sem reembolso</li>
               <li>Até 5 sessões por usuário; acima disso requer aprovação</li>
-              <li>Cobranças podem aparecer como Panda42</li>
+              <li>Cobranças podem aparecer como S7</li>
             </ul>
           </section>
 
@@ -184,7 +184,7 @@ export default function TermsOfService() {
               Responsável: Mario R Schiavon
             </p>
             <p className="leading-relaxed">
-              Holding: Panda42
+              Holding: S7
             </p>
           </section>
         </div>
@@ -212,7 +212,7 @@ export default function TermsOfService() {
         {/* Rodapé */}
         <footer className="mt-16 pt-8 border-t border-border text-center">
           <p className="text-sm text-muted-foreground">
-            © {new Date().getFullYear()} Uplink – Panda42
+            © {new Date().getFullYear()} Uplink – Powered by S7
           </p>
         </footer>
       </div>

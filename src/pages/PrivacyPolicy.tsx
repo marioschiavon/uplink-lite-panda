@@ -28,7 +28,7 @@ export default function PrivacyPolicy() {
           {/* Introdução */}
           <div className="space-y-4 leading-relaxed">
             <p>
-              A <strong>Uplink</strong>, operada pela <strong>Panda42</strong>, controladora empresarial do titular 
+              A <strong>Uplink</strong>, operada pela <strong>S7</strong>, controladora empresarial do titular 
               Mario R Schiavon (CNPJ 46.214.207/0001-60), está comprometida com a proteção da privacidade dos 
               seus usuários e com a transparência no tratamento de dados pessoais.
             </p>
@@ -219,7 +219,7 @@ export default function PrivacyPolicy() {
               <strong>Controlador de Dados:</strong>
             </p>
             <ul className="space-y-2 leading-relaxed ml-4">
-              <li>Razão Social: Panda42</li>
+              <li>Razão Social: S7</li>
               <li>Titular: Mario R Schiavon</li>
               <li>CNPJ: 46.214.207/0001-60</li>
               <li>Endereço: Rua Alexandre Foggiatto, Brasil</li>
@@ -282,7 +282,7 @@ export default function PrivacyPolicy() {
         {/* Rodapé */}
         <footer className="mt-16 pt-8 border-t border-border text-center">
           <p className="text-sm text-muted-foreground">
-            © {new Date().getFullYear()} Uplink – Panda42
+            © {new Date().getFullYear()} Uplink – Powered by S7
           </p>
         </footer>
       </div>

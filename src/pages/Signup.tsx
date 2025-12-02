@@ -146,7 +146,7 @@ const Signup = () => {
                 </Link>
               </div>
               <div className="mt-4 text-center text-xs text-muted-foreground/60">
-                Desenvolvido por <span className="font-medium">Panda42</span>
+                Powered by <span className="font-medium">S7</span>
               </div>
         </CardContent>
       </Card>
