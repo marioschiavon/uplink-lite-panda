@@ -442,7 +442,7 @@ $response = curl_exec($ch);
               { name: "n8n", desc: "Automação", logo: "https://cdn.simpleicons.org/n8n/FF6D5A" },
               { name: "Make", desc: "Integração", logo: "https://cdn.simpleicons.org/make/6D00CC" },
               { name: "Zapier", desc: "Workflows", logo: "https://cdn.simpleicons.org/zapier/FF4A00" },
-              { name: "Bubble", desc: "No-Code", logo: "https://cdn.simpleicons.org/bubble/0040FF" },
+              { name: "Bubble", desc: "No-Code", logo: "https://images.seeklogo.com/logo-png/44/1/bubble-icon-logo-png_seeklogo-448116.png" },
               { name: "Python", desc: "Linguagem", logo: "https://cdn.simpleicons.org/python/3776AB" },
               { name: "Node.js", desc: "JavaScript", logo: "https://cdn.simpleicons.org/nodedotjs/339933" },
               { name: "PHP", desc: "Backend", logo: "https://cdn.simpleicons.org/php/777BB4" },
