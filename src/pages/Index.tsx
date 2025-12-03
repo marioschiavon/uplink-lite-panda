@@ -439,14 +439,14 @@ $response = curl_exec($ch);
             className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-16"
           >
             {[
-              { name: "n8n", desc: "Automação" },
-              { name: "Make", desc: "Integração" },
-              { name: "Zapier", desc: "Workflows" },
-              { name: "Bubble", desc: "No-Code" },
-              { name: "Python", desc: "Linguagem" },
-              { name: "Node.js", desc: "JavaScript" },
-              { name: "PHP", desc: "Backend" },
-              { name: "Google Sheets", desc: "Planilhas" }
+              { name: "n8n", desc: "Automação", logo: "https://cdn.simpleicons.org/n8n/FF6D5A" },
+              { name: "Make", desc: "Integração", logo: "https://cdn.simpleicons.org/make/6D00CC" },
+              { name: "Zapier", desc: "Workflows", logo: "https://cdn.simpleicons.org/zapier/FF4A00" },
+              { name: "Bubble", desc: "No-Code", logo: "https://cdn.simpleicons.org/bubble/0040FF" },
+              { name: "Python", desc: "Linguagem", logo: "https://cdn.simpleicons.org/python/3776AB" },
+              { name: "Node.js", desc: "JavaScript", logo: "https://cdn.simpleicons.org/nodedotjs/339933" },
+              { name: "PHP", desc: "Backend", logo: "https://cdn.simpleicons.org/php/777BB4" },
+              { name: "Google Sheets", desc: "Planilhas", logo: "https://cdn.simpleicons.org/googlesheets/34A853" }
             ].map((integration, index) => (
               <motion.div
                 key={index}
@@ -459,8 +459,8 @@ $response = curl_exec($ch);
               >
                 <Card className="h-full border-2 hover:border-primary/50 transition-all cursor-pointer">
                   <CardContent className="flex flex-col items-center justify-center p-8 space-y-3">
-                    <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
-                      <Code2 className="h-6 w-6 text-primary" />
+                    <div className="w-12 h-12 rounded-lg bg-background flex items-center justify-center">
+                      <img src={integration.logo} alt={integration.name} className="h-8 w-8 object-contain" />
                     </div>
                     <div className="text-center">
                       <p className="font-bold text-lg">{integration.name}</p>
