@@ -9,20 +9,12 @@ import {
   Play, Copy, CheckCircle2, Sparkles, Timer, Headphones, FileCode
 } from "lucide-react";
 import { motion } from "framer-motion";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 
 const Index = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("curl");
   const [copied, setCopied] = useState(false);
-  const [messageCount, setMessageCount] = useState(0);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setMessageCount(prev => (prev + 1) % 10000);
-    }, 50);
-    return () => clearInterval(interval);
-  }, []);
 
   const scrollToSection = (id: string) => {
     const element = document.getElementById(id);
@@ -261,8 +253,8 @@ $response = curl_exec($ch);
 
                   <div className="pt-4 border-t border-border/50">
                     <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">Mensagens hoje</span>
-                      <span className="font-bold text-primary text-lg">{messageCount.toString().padStart(4, '0')}</span>
+                      <span className="text-muted-foreground">Taxa de entrega</span>
+                      <span className="font-bold text-green-600 text-lg">99.8%</span>
                     </div>
                   </div>
                 </CardContent>
