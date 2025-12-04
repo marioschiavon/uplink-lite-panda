@@ -6,68 +6,16 @@ import { useNavigate } from "react-router-dom";
 import { 
   Check, Zap, Shield, Clock, MessageSquare, ShoppingCart, Calendar, Package,
   Code2, Webhook, QrCode, Layers, Star, TrendingUp, Users, ChevronRight,
-  Play, Copy, CheckCircle2, Sparkles, Timer, Headphones, FileCode
+  Play, CheckCircle2, Sparkles, Timer, Headphones, FileCode
 } from "lucide-react";
 import { motion } from "framer-motion";
-import { useState } from "react";
 
 const Index = () => {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState("curl");
-  const [copied, setCopied] = useState(false);
 
   const scrollToSection = (id: string) => {
     const element = document.getElementById(id);
     element?.scrollIntoView({ behavior: "smooth" });
-  };
-
-  const handleCopy = () => {
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
-  const codeExamples = {
-    curl: `curl -X POST https://api.uplinklite.com/send \\
-  -H "Authorization: Bearer SEU_TOKEN" \\
-  -H "Content-Type: application/json" \\
-  -d '{
-    "phone": "5511999999999",
-    "message": "Olá! Seu pedido foi confirmado."
-  }'`,
-    javascript: `const response = await fetch('https://api.uplinklite.com/send', {
-  method: 'POST',
-  headers: {
-    'Authorization': 'Bearer SEU_TOKEN',
-    'Content-Type': 'application/json'
-  },
-  body: JSON.stringify({
-    phone: '5511999999999',
-    message: 'Olá! Seu pedido foi confirmado.'
-  })
-});`,
-    python: `import requests
-
-response = requests.post(
-  'https://api.uplinklite.com/send',
-  headers={'Authorization': 'Bearer SEU_TOKEN'},
-  json={
-    'phone': '5511999999999',
-    'message': 'Olá! Seu pedido foi confirmado.'
-  }
-)`,
-    php: `<?php
-$ch = curl_init('https://api.uplinklite.com/send');
-curl_setopt($ch, CURLOPT_POST, 1);
-curl_setopt($ch, CURLOPT_HTTPHEADER, [
-  'Authorization: Bearer SEU_TOKEN',
-  'Content-Type: application/json'
-]);
-curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode([
-  'phone' => '5511999999999',
-  'message' => 'Olá! Seu pedido foi confirmado.'
-]));
-$response = curl_exec($ch);
-?>`
   };
 
   return (
@@ -472,52 +420,6 @@ $response = curl_exec($ch);
             ))}
           </motion.div>
 
-          {/* Exemplos de Código */}
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="max-w-4xl mx-auto"
-          >
-            <Card className="border-2 border-primary/20 shadow-2xl overflow-hidden">
-              <CardHeader className="bg-gradient-to-r from-primary/10 to-secondary/10 border-b">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-xl">Exemplo de Código</CardTitle>
-                  <div className="flex items-center gap-2">
-                    {["curl", "javascript", "python", "php"].map((lang) => (
-                      <button
-                        key={lang}
-                        onClick={() => setActiveTab(lang)}
-                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                          activeTab === lang
-                            ? "bg-primary text-primary-foreground shadow-lg"
-                            : "bg-background/50 hover:bg-background text-muted-foreground"
-                        }`}
-                      >
-                        {lang === "curl" ? "cURL" : lang.charAt(0).toUpperCase() + lang.slice(1)}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent className="p-0">
-                <div className="relative">
-                  <pre className="p-6 overflow-x-auto bg-muted/50 text-sm">
-                    <code className="text-foreground">{codeExamples[activeTab as keyof typeof codeExamples]}</code>
-                  </pre>
-                  <Button
-                    onClick={handleCopy}
-                    size="sm"
-                    variant="secondary"
-                    className="absolute top-4 right-4"
-                  >
-                    {copied ? <CheckCircle2 className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                    {copied ? "Copiado!" : "Copiar"}
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
         </div>
       </section>
 
