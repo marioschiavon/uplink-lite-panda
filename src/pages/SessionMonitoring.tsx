@@ -3,13 +3,16 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
-import { RefreshCw, Activity, Zap, AlertCircle, QrCode } from "lucide-react";
-import SessionCard from "@/components/SessionCard";
+import { RefreshCw, Activity, Zap, AlertCircle, QrCode, Eye } from "lucide-react";
 import SessionDetailsModal from "@/components/SessionDetailsModal";
 import { StatsCard } from "@/components/dashboard/StatsCard";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { formatDistanceToNow } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 interface SessionData {
   id: string;
@@ -324,36 +327,82 @@ const SessionMonitoring = () => {
         </motion.div>
       </motion.div>
 
-      {/* Grid de Cards */}
-      {loading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {[1, 2, 3, 4, 5, 6].map((i) => (
-            <Card key={i} className="animate-pulse">
-              <CardContent className="p-6">
-                <div className="h-32 bg-muted rounded" />
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filteredSessions.map((session) => (
-            <SessionCard
-              key={session.id}
-              session={session}
-              onClick={() => handleCardClick(session)}
-            />
-          ))}
-        </div>
-      )}
+      {/* Tabela de Sessões */}
+      <Card>
+        <CardContent className="p-0">
+          {loading ? (
+            <div className="p-6 space-y-4">
+              {[1, 2, 3, 4, 5].map((i) => (
+                <div key={i} className="h-12 bg-muted rounded animate-pulse" />
+              ))}
+            </div>
+          ) : filteredSessions.length === 0 ? (
+            <div className="p-12 text-center text-muted-foreground">
+              Nenhuma sessão encontrada com este filtro
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Nome</TableHead>
+                  <TableHead>API Session</TableHead>
+                  <TableHead>Plano</TableHead>
+                  <TableHead>Última Ação</TableHead>
+                  <TableHead className="text-right">Ações</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredSessions.map((session) => {
+                  const getStatusBadge = () => {
+                    switch (session.status) {
+                      case 'online':
+                        return <Badge className="bg-green-500/10 text-green-600 border-green-500/20">🟢 Online</Badge>;
+                      case 'qrcode':
+                        return <Badge className="bg-yellow-500/10 text-yellow-600 border-yellow-500/20">🟡 QR Code</Badge>;
+                      case 'offline':
+                        return <Badge className="bg-red-500/10 text-red-600 border-red-500/20">🔴 Offline</Badge>;
+                      case 'no-session':
+                        return <Badge className="bg-gray-500/10 text-gray-600 border-gray-500/20">⚪ Sem Sessão</Badge>;
+                      default:
+                        return <Badge variant="secondary">⚫ Carregando...</Badge>;
+                    }
+                  };
 
-      {!loading && filteredSessions.length === 0 && (
-        <Card>
-          <CardContent className="p-12 text-center text-muted-foreground">
-            Nenhuma sessão encontrada com este filtro
-          </CardContent>
-        </Card>
-      )}
+                  return (
+                    <TableRow key={session.id} className="hover:bg-muted/50">
+                      <TableCell>{getStatusBadge()}</TableCell>
+                      <TableCell className="font-medium">{session.name || 'Sem nome'}</TableCell>
+                      <TableCell className="font-mono text-sm text-muted-foreground">
+                        {session.api_session || 'N/A'}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline">{session.plan || 'N/A'}</Badge>
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {formatDistanceToNow(new Date(session.updated_at), {
+                          addSuffix: true,
+                          locale: ptBR
+                        })}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleCardClick(session)}
+                        >
+                          <Eye className="h-4 w-4 mr-1" />
+                          Ver Detalhes
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Modal de Detalhes */}
       <SessionDetailsModal
