@@ -294,7 +294,7 @@ const Sessions = () => {
       const blob = await qrResponse.blob();
       const reader = new FileReader();
       
-      reader.onloadend = () => {
+      reader.onloadend = async () => {
         setSessionsStatus(prev => ({
           ...prev,
           [session.id]: {
@@ -306,6 +306,12 @@ const Sessions = () => {
         setQrCodeKey(Date.now().toString());
         setGeneratingQrCode(false);
         toast.success("QR Code gerado! Escaneie para conectar.");
+        
+        // Atualizar timestamp da última ação
+        await supabase
+          .from('sessions')
+          .update({ updated_at: new Date().toISOString() })
+          .eq('id', session.id);
       };
       
       reader.readAsDataURL(blob);
@@ -524,7 +530,7 @@ const Sessions = () => {
       const blob = await qrResponse.blob();
       const reader = new FileReader();
       
-      reader.onloadend = () => {
+      reader.onloadend = async () => {
         setSessionsStatus(prev => ({
           ...prev,
           [session.id]: {
@@ -536,6 +542,12 @@ const Sessions = () => {
         setQrCodeKey(Date.now().toString());
         setGeneratingQrCode(false);
         toast.success("QR Code atualizado!");
+        
+        // Atualizar timestamp da última ação
+        await supabase
+          .from('sessions')
+          .update({ updated_at: new Date().toISOString() })
+          .eq('id', session.id);
       };
       
       reader.readAsDataURL(blob);
