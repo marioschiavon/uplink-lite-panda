@@ -1,3 +1,5 @@
+# Robots.txt for Uplink - API WhatsApp
+
 User-agent: Googlebot
 Allow: /
 
@@ -12,3 +14,15 @@ Allow: /
 
 User-agent: *
 Allow: /
+
+# Sitemap
+Sitemap: https://uplinklite.com/sitemap.xml
+
+# Disallow protected routes
+Disallow: /dashboard
+Disallow: /sessions
+Disallow: /subscriptions
+Disallow: /monitoring
+Disallow: /announcements
+Disallow: /reset-password
+Disallow: /update-password

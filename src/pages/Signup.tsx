@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { Loader2, Mail, Lock, User } from "lucide-react";
+import { SEO } from "@/components/SEO";
 
 const Signup = () => {
   const navigate = useNavigate();
@@ -57,100 +58,110 @@ const Signup = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/10 via-background to-purple-700/10 pointer-events-none" />
-      
-      <Card className="w-full max-w-md relative backdrop-blur-sm bg-card/90 border-border/50 shadow-elegant animate-fade-in">
-        <CardHeader className="space-y-3 text-center">
-          <div className="mx-auto w-20 h-20 flex items-center justify-center">
-            <img 
-              src="/logo-uplink.png" 
-              alt="Uplink Logo" 
-              className="w-full h-full object-contain drop-shadow-2xl animate-scale-in rounded-full"
-            />
-          </div>
-          <CardTitle className="text-3xl font-bold">
-            Uplink
-          </CardTitle>
-          <CardDescription className="text-muted-foreground">
-            Crie sua conta e comece agora
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSignup} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="name">Nome</Label>
-              <div className="relative">
-                <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="name"
-                  type="text"
-                  placeholder="Seu nome completo"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  required
-                  className="bg-muted/50 border-border/50 pl-10"
-                />
-              </div>
+    <>
+      <SEO 
+        title="Criar Conta | API WhatsApp Uplink"
+        description="Crie sua conta grátis na Uplink e comece a usar a API WhatsApp em minutos. Configure sua sessão e envie mensagens automatizadas por R$ 69,90/mês."
+        canonical="https://uplinklite.com/signup"
+      />
+      <div className="min-h-screen flex items-center justify-center bg-background p-4">
+        <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/10 via-background to-purple-700/10 pointer-events-none" />
+        
+        <Card className="w-full max-w-md relative backdrop-blur-sm bg-card/90 border-border/50 shadow-elegant animate-fade-in">
+          <CardHeader className="space-y-3 text-center">
+            <div className="mx-auto w-20 h-20 flex items-center justify-center">
+              <img 
+                src="/logo-uplink.png" 
+                alt="Uplink - API WhatsApp para automações empresariais"
+                loading="lazy"
+                width="80"
+                height="80"
+                className="w-full h-full object-contain drop-shadow-2xl animate-scale-in rounded-full"
+              />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="seu@email.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  className="bg-muted/50 border-border/50 pl-10"
-                />
+            <CardTitle className="text-3xl font-bold">
+              Uplink
+            </CardTitle>
+            <CardDescription className="text-muted-foreground">
+              Crie sua conta e comece a automatizar o WhatsApp
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSignup} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="name">Nome</Label>
+                <div className="relative">
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="name"
+                    type="text"
+                    placeholder="Seu nome completo"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    required
+                    className="bg-muted/50 border-border/50 pl-10"
+                  />
+                </div>
               </div>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Senha</Label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  minLength={6}
-                  className="bg-muted/50 border-border/50 pl-10"
-                />
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="seu@email.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    className="bg-muted/50 border-border/50 pl-10"
+                  />
+                </div>
               </div>
-            </div>
-            <Button 
-              type="submit" 
-              className="w-full bg-gradient-to-r from-secondary to-primary hover:opacity-90 transition-opacity" 
-              disabled={loading}
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Criando conta...
-                </>
-              ) : (
-                "Criar conta"
-              )}
-            </Button>
-          </form>
-              <div className="mt-6 text-center text-sm text-muted-foreground">
-                Já tem conta?{" "}
-                <Link to="/login" className="text-primary hover:text-primary/80 font-medium transition-colors">
-                  Entrar
-                </Link>
+              <div className="space-y-2">
+                <Label htmlFor="password">Senha</Label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="password"
+                    type="password"
+                    placeholder="••••••••"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    minLength={6}
+                    className="bg-muted/50 border-border/50 pl-10"
+                  />
+                </div>
               </div>
-              <div className="mt-4 text-center text-xs text-muted-foreground/60">
-                Powered by <span className="font-medium">S7</span>
-              </div>
-        </CardContent>
-      </Card>
-    </div>
+              <Button 
+                type="submit" 
+                className="w-full bg-gradient-to-r from-secondary to-primary hover:opacity-90 transition-opacity" 
+                disabled={loading}
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Criando conta...
+                  </>
+                ) : (
+                  "Criar conta"
+                )}
+              </Button>
+            </form>
+                <div className="mt-6 text-center text-sm text-muted-foreground">
+                  Já tem conta?{" "}
+                  <Link to="/login" className="text-primary hover:text-primary/80 font-medium transition-colors">
+                    Entrar
+                  </Link>
+                </div>
+                <div className="mt-4 text-center text-xs text-muted-foreground/60">
+                  Powered by <span className="font-medium">S7</span>
+                </div>
+          </CardContent>
+        </Card>
+      </div>
+    </>
   );
 };
 
