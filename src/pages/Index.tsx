@@ -2,13 +2,15 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { 
   Check, Zap, Shield, Clock, MessageSquare, ShoppingCart, Calendar, Package,
   Code2, Webhook, QrCode, Layers, Star, TrendingUp, Users, ChevronRight,
   Play, CheckCircle2, Sparkles, Timer, Headphones, FileCode
 } from "lucide-react";
 import { motion } from "framer-motion";
+import { SEO } from "@/components/SEO";
+import { Helmet } from "react-helmet-async";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -19,8 +21,44 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background overflow-hidden">
-      {/* Header Fixo */}
+    <>
+      <SEO 
+        title="API WhatsApp para Automações | Uplink - R$ 69,90/mês"
+        description="API WhatsApp para automações empresariais. Configure em 5 minutos, envie mensagens ilimitadas por R$ 69,90/mês. Suporte em português 24/7. A melhor alternativa de WhatsApp API do Brasil."
+        canonical="https://uplinklite.com/"
+      />
+      <Helmet>
+        <script type="application/ld+json">
+          {JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "SoftwareApplication",
+            "name": "Uplink - API WhatsApp",
+            "applicationCategory": "BusinessApplication",
+            "operatingSystem": "Web",
+            "description": "API WhatsApp para automações empresariais. Configure em 5 minutos, envie mensagens ilimitadas.",
+            "url": "https://uplinklite.com",
+            "offers": {
+              "@type": "Offer",
+              "price": "69.90",
+              "priceCurrency": "BRL",
+              "priceValidUntil": "2025-12-31"
+            },
+            "aggregateRating": {
+              "@type": "AggregateRating",
+              "ratingValue": "5",
+              "reviewCount": "3",
+              "bestRating": "5"
+            },
+            "provider": {
+              "@type": "Organization",
+              "name": "S7",
+              "url": "https://uplinklite.com"
+            }
+          })}
+        </script>
+      </Helmet>
+      <div className="min-h-screen bg-background overflow-hidden">
+        {/* Header Fixo */}
       <header className="fixed top-0 w-full bg-background/80 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60 z-50 border-b border-border/50">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <motion.div 
@@ -32,7 +70,9 @@ const Index = () => {
               <div className="absolute inset-0 bg-primary/20 rounded-full blur-lg animate-pulse-glow" />
               <img 
                 src="/logo-uplink.png" 
-                alt="Uplink Logo" 
+                alt="Uplink - API WhatsApp para automações empresariais" 
+                width="40"
+                height="40"
                 className="h-10 w-10 relative drop-shadow-lg rounded-full"
               />
             </div>
@@ -408,7 +448,15 @@ const Index = () => {
                 <Card className="h-full border-2 hover:border-primary/50 transition-all cursor-pointer">
                   <CardContent className="flex flex-col items-center justify-center p-8 space-y-3">
                     <div className="w-12 h-12 rounded-lg bg-background flex items-center justify-center">
-                      <img src={integration.logo} alt={integration.name} className="h-8 w-8 object-contain" />
+                      <img 
+                        src={integration.logo} 
+                        alt={`Integração da API WhatsApp Uplink com ${integration.name} para ${integration.desc}`}
+                        loading="lazy"
+                        decoding="async"
+                        width="32"
+                        height="32"
+                        className="h-8 w-8 object-contain" 
+                      />
                     </div>
                     <div className="text-center">
                       <p className="font-bold text-lg">{integration.name}</p>
@@ -866,9 +914,12 @@ const Index = () => {
           <div className="grid md:grid-cols-4 gap-12 mb-12">
             <div className="space-y-4">
               <div className="flex items-center gap-3">
-                <img 
+              <img 
                   src="/logo-uplink.png" 
-                  alt="Uplink Logo" 
+                  alt="Uplink - API WhatsApp para automações empresariais"
+                  loading="lazy"
+                  width="40"
+                  height="40"
                   className="h-10 w-10 rounded-full"
                 />
                 <span className="text-xl font-bold">Uplink</span>
@@ -937,7 +988,8 @@ const Index = () => {
           </div>
         </div>
       </footer>
-    </div>
+      </div>
+    </>
   );
 };
 
