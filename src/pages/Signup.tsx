@@ -31,7 +31,7 @@ const Signup = () => {
     setLoading(true);
 
     try {
-      const redirectUrl = `${window.location.origin}/dashboard`;
+      const redirectUrl = `${window.location.origin}/welcome`;
       
       const { data, error } = await supabase.auth.signUp({
         email,
@@ -48,7 +48,7 @@ const Signup = () => {
 
       if (data.user) {
         toast.success("Conta criada! Redirecionando...");
-        navigate("/dashboard");
+        navigate("/welcome");
       }
     } catch (error: any) {
       toast.error(error.message || "Erro ao criar conta");
