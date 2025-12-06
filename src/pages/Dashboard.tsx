@@ -89,15 +89,28 @@ const Dashboard = () => {
           .single();
 
         if (createError) throw createError;
-        setUserData(newUser);
-        setShowOrgModal(true);
+        // Novo usuário - redirecionar para onboarding
+        navigate("/welcome");
         return;
       }
 
       setUserData(userRecord);
 
       if (!userRecord.organization_id) {
-        setShowOrgModal(true);
+        // Sem organização - redirecionar para onboarding
+        navigate("/welcome");
+        return;
+      }
+      
+      // Verificar se tem sessões
+      const { count: sessionCount } = await supabase
+        .from("sessions")
+        .select("*", { count: "exact", head: true })
+        .eq("organization_id", userRecord.organization_id);
+
+      if (!sessionCount || sessionCount === 0) {
+        // Tem org mas não tem sessões - ir para step 2 do onboarding
+        navigate("/welcome?step=2");
         return;
       }
 
