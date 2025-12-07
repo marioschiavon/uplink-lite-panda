@@ -173,23 +173,31 @@ export function OnboardingWizard({ initialStep = 0, existingOrgId = null }: Onbo
 
         {/* Conteúdo do Step */}
         <AnimatePresence mode="wait">
-          <motion.div
-            key={currentStep}
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            transition={{ duration: 0.2 }}
-          >
-            {currentStep === 0 && (
+          {currentStep === 0 && (
+            <motion.div
+              key="org-step"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              transition={{ duration: 0.2 }}
+            >
               <OrganizationStep
                 orgName={orgName}
                 setOrgName={setOrgName}
                 onNext={handleCreateOrg}
                 isLoading={isLoading}
               />
-            )}
+            </motion.div>
+          )}
 
-            {currentStep === 1 && (
+          {currentStep === 1 && (
+            <motion.div
+              key="session-step"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              transition={{ duration: 0.2 }}
+            >
               <SessionStep
                 sessionName={sessionName}
                 setSessionName={setSessionName}
@@ -198,9 +206,17 @@ export function OnboardingWizard({ initialStep = 0, existingOrgId = null }: Onbo
                 isLoading={isLoading}
                 showBack={!existingOrgId}
               />
-            )}
+            </motion.div>
+          )}
 
-            {currentStep === 2 && (
+          {currentStep === 2 && (
+            <motion.div
+              key="payment-step"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              transition={{ duration: 0.2 }}
+            >
               <PaymentStep
                 orgName={orgName || "Sua organização"}
                 sessionName={sessionName}
@@ -208,8 +224,8 @@ export function OnboardingWizard({ initialStep = 0, existingOrgId = null }: Onbo
                 onBack={handleBack}
                 isLoading={isLoading}
               />
-            )}
-          </motion.div>
+            </motion.div>
+          )}
         </AnimatePresence>
 
         {/* Tempo estimado */}
