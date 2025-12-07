@@ -403,6 +403,8 @@ export type Database = {
       }
       sessions: {
         Row: {
+          api_message_limit: number | null
+          api_message_usage: number | null
           api_session: string | null
           api_token: string | null
           api_token_full: string | null
@@ -416,6 +418,8 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          api_message_limit?: number | null
+          api_message_usage?: number | null
           api_session?: string | null
           api_token?: string | null
           api_token_full?: string | null
@@ -429,6 +433,8 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          api_message_limit?: number | null
+          api_message_usage?: number | null
           api_session?: string | null
           api_token?: string | null
           api_token_full?: string | null
@@ -832,6 +838,10 @@ export type Database = {
         Returns: Database["public"]["Enums"]["user_role"]
       }
       increment_api_usage: { Args: { org: string }; Returns: undefined }
+      increment_session_api_usage: {
+        Args: { session_uuid: string }
+        Returns: undefined
+      }
       is_superadmin: { Args: never; Returns: boolean }
       rotate_org_api_token: { Args: { org_id: string }; Returns: string }
     }

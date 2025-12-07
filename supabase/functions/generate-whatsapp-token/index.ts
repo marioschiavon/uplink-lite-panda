@@ -156,7 +156,9 @@ serve(async (req) => {
           api_token: data.token,
           api_token_full: data.full,
           status: 'configured',
-          requires_subscription: false
+          requires_subscription: false,
+          api_message_limit: 3000,
+          api_message_usage: 0
         })
         .select()
         .single();

@@ -80,7 +80,7 @@ const SessionMonitoring = () => {
     try {
       setLoading(true);
 
-      // Buscar sessões com JOIN em organizations
+      // Buscar sessões com JOIN em organizations (apenas para plan e limites da org)
       const { data: sessionsData, error } = await supabase
         .from('sessions')
         .select(`
@@ -88,8 +88,6 @@ const SessionMonitoring = () => {
           organizations (
             name,
             plan,
-            api_message_usage,
-            api_message_limit,
             session_limit,
             agent_limit
           )
@@ -108,8 +106,9 @@ const SessionMonitoring = () => {
           plan: session.organizations?.plan || null,
           created_at: session.created_at,
           updated_at: session.updated_at,
-          api_message_usage: session.organizations?.api_message_usage || 0,
-          api_message_limit: session.organizations?.api_message_limit || 0,
+          // Usar campos diretamente da sessão
+          api_message_usage: session.api_message_usage || 0,
+          api_message_limit: session.api_message_limit || 3000,
           session_limit: session.organizations?.session_limit || 0,
           agent_limit: session.organizations?.agent_limit || 0,
           status: 'loading' as const,
