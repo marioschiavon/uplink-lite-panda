@@ -80,7 +80,6 @@ export default function Welcome() {
         noindex
       />
       <div className="min-h-screen bg-background">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-background to-secondary/5 pointer-events-none" />
         
         <OnboardingWizard 
           initialStep={initialStep}

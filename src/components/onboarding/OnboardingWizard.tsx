@@ -144,13 +144,17 @@ export function OnboardingWizard({ initialStep = 0, existingOrgId = null }: Onbo
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-4">
-      <div className="w-full max-w-lg">
+    <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-background relative">
+      {/* Background gradient */}
+      <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-background to-primary/10 pointer-events-none" />
+      
+      <div className="w-full max-w-lg relative z-10">
         {/* Logo e Título */}
         <motion.div 
           className="text-center mb-8"
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, ease: "easeOut" }}
         >
           <img 
             src="/logo-uplink.png" 
@@ -176,10 +180,10 @@ export function OnboardingWizard({ initialStep = 0, existingOrgId = null }: Onbo
           {currentStep === 0 && (
             <motion.div
               key="org-step"
-              initial={{ opacity: 0, x: 20 }}
+              initial={{ opacity: 0, x: 30 }}
               animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              transition={{ duration: 0.2 }}
+              exit={{ opacity: 0, x: -30 }}
+              transition={{ duration: 0.3, ease: "easeOut" }}
             >
               <OrganizationStep
                 orgName={orgName}
@@ -193,10 +197,10 @@ export function OnboardingWizard({ initialStep = 0, existingOrgId = null }: Onbo
           {currentStep === 1 && (
             <motion.div
               key="session-step"
-              initial={{ opacity: 0, x: 20 }}
+              initial={{ opacity: 0, x: 30 }}
               animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              transition={{ duration: 0.2 }}
+              exit={{ opacity: 0, x: -30 }}
+              transition={{ duration: 0.3, ease: "easeOut" }}
             >
               <SessionStep
                 sessionName={sessionName}
@@ -212,10 +216,10 @@ export function OnboardingWizard({ initialStep = 0, existingOrgId = null }: Onbo
           {currentStep === 2 && (
             <motion.div
               key="payment-step"
-              initial={{ opacity: 0, x: 20 }}
+              initial={{ opacity: 0, x: 30 }}
               animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              transition={{ duration: 0.2 }}
+              exit={{ opacity: 0, x: -30 }}
+              transition={{ duration: 0.3, ease: "easeOut" }}
             >
               <PaymentStep
                 orgName={orgName || "Sua organização"}

@@ -27,7 +27,7 @@ export function SessionStep({
   };
 
   return (
-    <Card className="border-2 border-border/50 shadow-lg">
+    <Card className="bg-card border border-border shadow-xl">
       <CardHeader className="text-center pb-4">
         <div className="mx-auto w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-3">
           <MessageSquare className="h-6 w-6 text-primary" />

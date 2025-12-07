@@ -57,9 +57,9 @@ const Login = () => {
         noindex={true}
       />
       <div className="min-h-screen flex items-center justify-center bg-background p-4">
-        <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/10 via-background to-purple-700/10 pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-background to-primary/10 pointer-events-none" />
         
-        <Card className="w-full max-w-md relative backdrop-blur-sm bg-card/90 border-border/50 shadow-elegant animate-fade-in">
+        <Card className="w-full max-w-md relative bg-card border-border shadow-xl animate-fade-in">
           <CardHeader className="space-y-3 text-center">
             <div className="mx-auto w-20 h-20 flex items-center justify-center">
               <img 
