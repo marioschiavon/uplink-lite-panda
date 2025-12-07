@@ -12,7 +12,7 @@ interface PaymentStepProps {
 
 export function PaymentStep({ orgName, sessionName, onConfirm, onBack, isLoading }: PaymentStepProps) {
   return (
-    <Card className="border-2 border-primary/20 shadow-lg">
+    <Card className="bg-card border border-primary/30 shadow-xl">
       <CardHeader className="text-center pb-4">
         <div className="mx-auto w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-3">
           <CreditCard className="h-6 w-6 text-primary" />
