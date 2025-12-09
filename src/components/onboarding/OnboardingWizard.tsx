@@ -19,6 +19,7 @@ export function OnboardingWizard({ initialStep = 0, existingOrgId = null }: Onbo
   const [orgName, setOrgName] = useState("");
   const [orgId, setOrgId] = useState<string | null>(existingOrgId);
   const [sessionName, setSessionName] = useState("");
+  const [notificationPhone, setNotificationPhone] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
   const steps = [
@@ -104,7 +105,8 @@ export function OnboardingWizard({ initialStep = 0, existingOrgId = null }: Onbo
           name: sessionName.trim(),
           organization_id: orgId,
           requires_subscription: true,
-          status: "pending_payment"
+          status: "pending_payment",
+          notification_phone: notificationPhone || null
         })
         .select()
         .single();
@@ -202,9 +204,11 @@ export function OnboardingWizard({ initialStep = 0, existingOrgId = null }: Onbo
               exit={{ opacity: 0, x: -30 }}
               transition={{ duration: 0.3, ease: "easeOut" }}
             >
-              <SessionStep
+            <SessionStep
                 sessionName={sessionName}
                 setSessionName={setSessionName}
+                notificationPhone={notificationPhone}
+                setNotificationPhone={setNotificationPhone}
                 onNext={handleSessionStep}
                 onBack={handleBack}
                 isLoading={isLoading}

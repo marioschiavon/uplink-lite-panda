@@ -19,8 +19,8 @@ serve(async (req) => {
       throw new Error('Missing authorization header');
     }
 
-    // 1.5. Receber e validar session_name do body
-    const { session_name } = await req.json();
+    // 1.5. Receber e validar session_name e notification_phone do body
+    const { session_name, notification_phone } = await req.json();
     
     if (!session_name || typeof session_name !== 'string') {
       throw new Error('session_name is required');
@@ -36,7 +36,7 @@ serve(async (req) => {
       throw new Error('Session name must be between 3 and 50 characters');
     }
 
-    console.log(`Received session_name: ${session_name}`);
+    console.log(`Received session_name: ${session_name}, notification_phone: ${notification_phone || 'not provided'}`);
 
     // 2. Criar cliente Supabase
     const supabase = createClient(
@@ -158,7 +158,8 @@ serve(async (req) => {
           status: 'configured',
           requires_subscription: false,
           api_message_limit: 3000,
-          api_message_usage: 0
+          api_message_usage: 0,
+          notification_phone: notification_phone || null
         })
         .select()
         .single();

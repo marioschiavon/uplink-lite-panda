@@ -411,6 +411,7 @@ export type Database = {
           created_at: string | null
           id: string
           name: string | null
+          notification_phone: string | null
           organization_id: string | null
           qr: string | null
           requires_subscription: boolean | null
@@ -426,6 +427,7 @@ export type Database = {
           created_at?: string | null
           id?: string
           name?: string | null
+          notification_phone?: string | null
           organization_id?: string | null
           qr?: string | null
           requires_subscription?: boolean | null
@@ -441,6 +443,7 @@ export type Database = {
           created_at?: string | null
           id?: string
           name?: string | null
+          notification_phone?: string | null
           organization_id?: string | null
           qr?: string | null
           requires_subscription?: boolean | null

@@ -7,6 +7,8 @@ import { MessageSquare, Loader2, ArrowRight, ArrowLeft } from "lucide-react";
 interface SessionStepProps {
   sessionName: string;
   setSessionName: (name: string) => void;
+  notificationPhone: string;
+  setNotificationPhone: (phone: string) => void;
   onNext: () => void;
   onBack: () => void;
   isLoading: boolean;
@@ -15,7 +17,9 @@ interface SessionStepProps {
 
 export function SessionStep({ 
   sessionName, 
-  setSessionName, 
+  setSessionName,
+  notificationPhone,
+  setNotificationPhone,
   onNext, 
   onBack, 
   isLoading,
@@ -52,6 +56,21 @@ export function SessionStep({
             />
             <p className="text-xs text-muted-foreground">
               Use apenas letras minúsculas, números e hífen. Ex: vendas-loja1
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="notificationPhone">Telefone para Notificações (opcional)</Label>
+            <Input
+              id="notificationPhone"
+              placeholder="5511999999999"
+              value={notificationPhone}
+              onChange={(e) => setNotificationPhone(e.target.value.replace(/\D/g, ''))}
+              className="h-12 text-lg font-mono"
+              disabled={isLoading}
+            />
+            <p className="text-xs text-muted-foreground">
+              Receba alertas neste número caso a sessão seja desconectada.
             </p>
           </div>
 
