@@ -25,6 +25,7 @@ interface SessionData {
   api_message_limit: number | null;
   session_limit: number | null;
   agent_limit: number | null;
+  notification_phone?: string | null;
   status?: 'online' | 'offline' | 'qrcode' | 'loading' | 'no-session';
   statusMessage?: string;
 }
@@ -140,6 +141,12 @@ const SessionDetailsModal = ({ session, open, onClose }: SessionDetailsModalProp
                   {format(new Date(session.updated_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
                 </span>
               </div>
+              {session.notification_phone && (
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">📱 Tel. Notificação:</span>
+                  <span className="font-mono">{session.notification_phone}</span>
+                </div>
+              )}
             </div>
           </div>
 

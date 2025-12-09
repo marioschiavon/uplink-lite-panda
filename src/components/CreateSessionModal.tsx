@@ -3,18 +3,19 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2, Info } from "lucide-react";
+import { Loader2, Info, Phone } from "lucide-react";
 import { toast } from "sonner";
 
 interface CreateSessionModalProps {
   open: boolean;
-  onSessionCreated: (sessionName: string) => void;
+  onSessionCreated: (sessionName: string, notificationPhone?: string) => void;
   onClose: () => void;
   isCreating?: boolean;
 }
 
 const CreateSessionModal = ({ open, onSessionCreated, onClose, isCreating = false }: CreateSessionModalProps) => {
   const [sessionName, setSessionName] = useState("");
+  const [notificationPhone, setNotificationPhone] = useState("");
 
   const validateSessionName = (name: string): string | null => {
     if (!name || name.trim().length === 0) {
@@ -37,21 +38,39 @@ const CreateSessionModal = ({ open, onSessionCreated, onClose, isCreating = fals
     return null;
   };
 
+  const validatePhone = (phone: string): string | null => {
+    if (!phone) return null; // Opcional
+    
+    const cleanPhone = phone.replace(/\D/g, '');
+    if (cleanPhone.length < 10 || cleanPhone.length > 15) {
+      return "Telefone inválido. Use formato internacional (ex: 5511999999999)";
+    }
+    
+    return null;
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    const error = validateSessionName(sessionName);
-    if (error) {
-      toast.error(error);
+    const nameError = validateSessionName(sessionName);
+    if (nameError) {
+      toast.error(nameError);
       return;
     }
     
-    onSessionCreated(sessionName);
+    const phoneError = validatePhone(notificationPhone);
+    if (phoneError) {
+      toast.error(phoneError);
+      return;
+    }
+    
+    onSessionCreated(sessionName, notificationPhone || undefined);
   };
 
   const handleClose = () => {
     if (!isCreating) {
       setSessionName("");
+      setNotificationPhone("");
       onClose();
     }
   };
@@ -80,6 +99,24 @@ const CreateSessionModal = ({ open, onSessionCreated, onClose, isCreating = fals
               className="font-mono"
               autoFocus
             />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="notificationPhone" className="flex items-center gap-2">
+              <Phone className="w-4 h-4" />
+              Telefone para Notificações (opcional)
+            </Label>
+            <Input
+              id="notificationPhone"
+              placeholder="5511999999999"
+              value={notificationPhone}
+              onChange={(e) => setNotificationPhone(e.target.value.replace(/\D/g, ''))}
+              disabled={isCreating}
+              className="font-mono"
+            />
+            <p className="text-xs text-muted-foreground">
+              Receba alertas neste número caso a sessão seja desconectada.
+            </p>
           </div>
 
           <div className="bg-muted/50 rounded-lg p-4 space-y-2">
