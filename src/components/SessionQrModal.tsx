@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { Copy, RefreshCw, XCircle, Trash2, Loader2, Server, Settings, ChevronDown, AlertTriangle } from "lucide-react";
+import { Copy, RefreshCw, XCircle, Trash2, Loader2, Server, Settings, ChevronDown, AlertTriangle, Link } from "lucide-react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { useState } from "react";
@@ -17,6 +17,7 @@ interface SessionData {
   status: string | null;
   qr: string | null;
   organization_id: string;
+  pairing_code?: string | null;
 }
 
 interface SessionStatus {
@@ -63,6 +64,13 @@ const SessionQrModal = ({
     if (session.api_token) {
       navigator.clipboard.writeText(session.api_token);
       toast.success("Token copiado!");
+    }
+  };
+
+  const handleCopyPairingCode = () => {
+    if (session.pairing_code) {
+      navigator.clipboard.writeText(session.pairing_code);
+      toast.success("Código de pareamento copiado!");
     }
   };
 
@@ -132,6 +140,30 @@ const SessionQrModal = ({
               <p className="text-sm text-muted-foreground text-center">
                 Escaneie o QR Code com seu WhatsApp para conectar
               </p>
+
+              {/* Pairing Code como alternativa */}
+              {session.pairing_code && (
+                <div className="w-full bg-muted/50 rounded-lg p-3 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-medium flex items-center gap-1.5">
+                      <Link className="w-3 h-3" />
+                      Código de Pareamento (alternativa)
+                    </span>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleCopyPairingCode}
+                      className="h-7 gap-1.5 text-xs"
+                    >
+                      <Copy className="w-3 h-3" />
+                      Copiar
+                    </Button>
+                  </div>
+                  <code className="text-xs bg-background px-2 py-1.5 rounded block overflow-x-auto break-all">
+                    {session.pairing_code}
+                  </code>
+                </div>
+              )}
 
               <Button
                 onClick={onRefreshQr}
