@@ -23,6 +23,7 @@ interface SessionData {
   created_at?: string;
   updated_at?: string;
   requires_subscription?: boolean;
+  pairing_code?: string | null;
 }
 
 interface SessionStatus {
@@ -117,7 +118,8 @@ const Sessions = () => {
           organization_id: s.organization_id,
           created_at: s.created_at,
           updated_at: s.updated_at,
-          requires_subscription: s.requires_subscription
+          requires_subscription: s.requires_subscription,
+          pairing_code: s.pairing_code
         }));
         
         setSessions(typedSessions);
@@ -271,6 +273,23 @@ const Sessions = () => {
       
       if (!startResponse.ok) {
         throw new Error(`Erro ao iniciar sessão: ${startResponse.status}`);
+      }
+      
+      // Tentar capturar o pairing_code da resposta
+      try {
+        const startData = await startResponse.json();
+        const pairingCode = startData?.pairingCode || startData?.code || startData?.link;
+        
+        if (pairingCode) {
+          await supabase
+            .from('sessions')
+            .update({ pairing_code: pairingCode } as any)
+            .eq('id', session.id);
+          console.log('Pairing code salvo:', pairingCode);
+        }
+      } catch (jsonError) {
+        // Resposta pode não ser JSON, ignorar
+        console.log('Resposta start-session não é JSON ou não contém pairing_code');
       }
       
       toast.info("Gerando QR Code, aguarde 10 segundos...");
