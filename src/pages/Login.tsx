@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
-import { Loader2, Mail, Lock } from "lucide-react";
+import { Loader2, Mail, Lock, ArrowLeft } from "lucide-react";
 import { SEO } from "@/components/SEO";
 
 const Login = () => {
@@ -58,6 +58,15 @@ const Login = () => {
       />
       <div className="min-h-screen flex items-center justify-center bg-background p-4">
         <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-background to-primary/10 pointer-events-none" />
+        
+        {/* Botão Voltar */}
+        <Link 
+          to="/" 
+          className="absolute top-4 left-4 flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors z-10"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Voltar
+        </Link>
         
         <Card className="w-full max-w-md relative bg-card border-border shadow-xl animate-fade-in">
           <CardHeader className="space-y-3 text-center">
