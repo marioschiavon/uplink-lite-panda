@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,9 +9,10 @@ import { StatsCard } from "@/components/dashboard/StatsCard";
 import { OrganizationBanner } from "@/components/dashboard/OrganizationBanner";
 import { BearerTokenSheet } from "@/components/dashboard/BearerTokenSheet";
 import { SendTestMessageDialog } from "@/components/dashboard/SendTestMessageDialog";
+import { ConnectionHelpCard } from "@/components/dashboard/ConnectionHelpCard";
 import { toast } from "sonner";
-import { Zap, MessageSquare, CreditCard, ArrowRight, Plus, DollarSign, Settings, Megaphone } from "lucide-react";
-import { motion } from "framer-motion";
+import { Zap, MessageSquare, CreditCard, ArrowRight, Plus, DollarSign, Settings, Megaphone, HelpCircle } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { formatDistanceToNow } from "date-fns";
@@ -51,6 +52,7 @@ interface SessionStatus {
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [loading, setLoading] = useState(true);
   const [userData, setUserData] = useState<UserData | null>(null);
   const [orgData, setOrgData] = useState<OrgData | null>(null);
@@ -59,6 +61,8 @@ const Dashboard = () => {
   const [sessionsStatus, setSessionsStatus] = useState<Record<string, SessionStatus>>({});
   const [activeSubscriptionsCount, setActiveSubscriptionsCount] = useState(0);
   const [monthlyTotal, setMonthlyTotal] = useState(0);
+  const [showConnectionHelp, setShowConnectionHelp] = useState(false);
+  const [newSessionName, setNewSessionName] = useState<string | undefined>();
 
   const fetchUserData = async () => {
     try {
@@ -271,6 +275,34 @@ const Dashboard = () => {
     return () => subscription.unsubscribe();
   }, [navigate]);
 
+  // Detectar payment=success para mostrar ajuda
+  useEffect(() => {
+    const paymentSuccess = searchParams.get('payment') === 'success';
+    const sessionName = searchParams.get('session');
+    
+    if (paymentSuccess) {
+      const helpDismissed = localStorage.getItem('connectionHelpDismissed');
+      if (!helpDismissed) {
+        setShowConnectionHelp(true);
+        if (sessionName) {
+          setNewSessionName(sessionName);
+        }
+      }
+      // Limpar parâmetros da URL
+      window.history.replaceState({}, '', '/dashboard');
+    }
+  }, [searchParams]);
+
+  const handleDismissHelp = () => {
+    setShowConnectionHelp(false);
+    localStorage.setItem('connectionHelpDismissed', 'true');
+  };
+
+  const handleShowHelp = () => {
+    localStorage.removeItem('connectionHelpDismissed');
+    setShowConnectionHelp(true);
+  };
+
   if (loading) {
     return (
       <div className="container mx-auto p-6 space-y-6">
@@ -311,6 +343,16 @@ const Dashboard = () => {
 
       {/* Announcement Banner */}
       <AnnouncementBanner />
+
+      {/* Connection Help Card */}
+      <AnimatePresence>
+        {showConnectionHelp && (
+          <ConnectionHelpCard 
+            onDismiss={handleDismissHelp}
+            sessionName={newSessionName}
+          />
+        )}
+      </AnimatePresence>
 
       {/* Stats Cards */}
       <motion.div
@@ -392,12 +434,26 @@ const Dashboard = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.1 }}
+          className="flex items-center gap-4"
         >
-          <OrganizationBanner
-            name={orgData.name}
-            isLegacy={orgData.is_legacy}
-            sessionCount={sessions.length}
-          />
+          <div className="flex-1">
+            <OrganizationBanner
+              name={orgData.name}
+              isLegacy={orgData.is_legacy}
+              sessionCount={sessions.length}
+            />
+          </div>
+          {!showConnectionHelp && (
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={handleShowHelp}
+              className="shrink-0 gap-1.5"
+            >
+              <HelpCircle className="h-4 w-4" />
+              <span className="hidden sm:inline">Como conectar?</span>
+            </Button>
+          )}
         </motion.div>
       )}
 

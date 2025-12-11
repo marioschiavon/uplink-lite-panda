@@ -7,6 +7,8 @@ import { OrganizationStep } from "./OrganizationStep";
 import { SessionStep } from "./SessionStep";
 import { PaymentStep } from "./PaymentStep";
 import { motion, AnimatePresence } from "framer-motion";
+import { Button } from "@/components/ui/button";
+import { X } from "lucide-react";
 
 interface OnboardingWizardProps {
   initialStep?: number;
@@ -145,10 +147,26 @@ export function OnboardingWizard({ initialStep = 0, existingOrgId = null }: Onbo
     }
   };
 
+  const handleExit = async () => {
+    await supabase.auth.signOut();
+    navigate("/");
+  };
+
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-background relative">
       {/* Background gradient */}
       <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-background to-primary/10 pointer-events-none" />
+      
+      {/* Botão de Sair */}
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={handleExit}
+        className="absolute top-4 right-4 text-muted-foreground hover:text-foreground z-20 gap-1.5"
+      >
+        <X className="h-4 w-4" />
+        Sair
+      </Button>
       
       <div className="w-full max-w-lg relative z-10">
         {/* Logo e Título */}
