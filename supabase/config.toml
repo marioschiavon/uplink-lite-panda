@@ -24,3 +24,8 @@ verify_jwt = true
 [functions.test-email]
 verify_jwt = false
 
+[functions.send-onboarding-reminders]
+verify_jwt = false
+
+[functions.unsubscribe-reminders]
+verify_jwt = false

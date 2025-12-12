@@ -341,6 +341,30 @@ export type Database = {
           },
         ]
       }
+      onboarding_reminders: {
+        Row: {
+          email_sent_to: string
+          id: string
+          reminder_type: string
+          sent_at: string | null
+          user_id: string
+        }
+        Insert: {
+          email_sent_to: string
+          id?: string
+          reminder_type: string
+          sent_at?: string | null
+          user_id: string
+        }
+        Update: {
+          email_sent_to?: string
+          id?: string
+          reminder_type?: string
+          sent_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       organizations: {
         Row: {
           agent_limit: number | null
@@ -679,6 +703,7 @@ export type Database = {
           name: string | null
           organization_id: string | null
           role: Database["public"]["Enums"]["user_role"] | null
+          unsubscribed_from_reminders: boolean | null
           updated_at: string | null
         }
         Insert: {
@@ -689,6 +714,7 @@ export type Database = {
           name?: string | null
           organization_id?: string | null
           role?: Database["public"]["Enums"]["user_role"] | null
+          unsubscribed_from_reminders?: boolean | null
           updated_at?: string | null
         }
         Update: {
@@ -699,6 +725,7 @@ export type Database = {
           name?: string | null
           organization_id?: string | null
           role?: Database["public"]["Enums"]["user_role"] | null
+          unsubscribed_from_reminders?: boolean | null
           updated_at?: string | null
         }
         Relationships: [
