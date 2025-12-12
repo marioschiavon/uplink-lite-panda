@@ -20,6 +20,7 @@ import TermsOfService from "./pages/TermsOfService";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import NotFound from "./pages/NotFound";
 import Welcome from "./pages/Welcome";
+import Unsubscribe from "./pages/Unsubscribe";
 
 const queryClient = new QueryClient();
 
@@ -40,6 +41,7 @@ const App = () => (
           <Route path="/checkout" element={<Checkout />} />
           <Route path="/terms" element={<TermsOfService />} />
           <Route path="/privacy" element={<PrivacyPolicy />} />
+          <Route path="/unsubscribe" element={<Unsubscribe />} />
           
           {/* Protected Routes with Sidebar */}
           <Route element={<ProtectedLayout />}>
