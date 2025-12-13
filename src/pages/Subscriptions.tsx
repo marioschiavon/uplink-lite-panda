@@ -461,12 +461,27 @@ const Subscriptions = () => {
                       )}
 
                       {session.subscription.status === "pending" && (
-                        <Alert className="border-yellow-200 bg-yellow-50">
-                          <Clock className="h-4 w-4 text-yellow-600" />
-                          <AlertDescription className="text-yellow-800">
-                            Aguardando confirmação de pagamento. Isso pode levar alguns minutos.
-                          </AlertDescription>
-                        </Alert>
+                        <div className="space-y-3">
+                          <Alert className="border-yellow-200 bg-yellow-50">
+                            <Clock className="h-4 w-4 text-yellow-600" />
+                            <AlertDescription className="text-yellow-800">
+                              Aguardando confirmação de pagamento. Isso pode levar alguns minutos.
+                            </AlertDescription>
+                          </Alert>
+                          {(session.subscription?.stripe_customer_id || session.subscription?.payment_provider === 'mercadopago') && (
+                            <Button
+                              variant="outline"
+                              onClick={() => handleManageSubscription(
+                                session.subscription?.stripe_customer_id,
+                                session.subscription?.payment_provider
+                              )}
+                              className="w-full"
+                            >
+                              <ExternalLink className="h-4 w-4 mr-2" />
+                              Gerenciar no Portal
+                            </Button>
+                          )}
+                        </div>
                       )}
 
                       {(session.subscription.status === "cancelled" || session.subscription.status === "paused") && (
@@ -475,14 +490,29 @@ const Subscriptions = () => {
                             <XCircle className="h-4 w-4 text-red-600" />
                             <AlertDescription className="text-red-800">
                               <p className="mb-3">Esta assinatura foi cancelada. A sessão não pode ser utilizada.</p>
-                              <Button
-                                size="sm"
-                                onClick={() => navigate(`/checkout?session_id=${session.id}&session_name=${encodeURIComponent(session.name)}`)}
-                                className="bg-green-600 hover:bg-green-700"
-                              >
-                                <CheckCircle2 className="h-4 w-4 mr-2" />
-                                Reativar Assinatura
-                              </Button>
+                              <div className="flex flex-wrap gap-2">
+                                <Button
+                                  size="sm"
+                                  onClick={() => navigate(`/checkout?session_id=${session.id}&session_name=${encodeURIComponent(session.name)}`)}
+                                  className="bg-green-600 hover:bg-green-700"
+                                >
+                                  <CheckCircle2 className="h-4 w-4 mr-2" />
+                                  Reativar Assinatura
+                                </Button>
+                                {(session.subscription?.stripe_customer_id || session.subscription?.payment_provider === 'mercadopago') && (
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => handleManageSubscription(
+                                      session.subscription?.stripe_customer_id,
+                                      session.subscription?.payment_provider
+                                    )}
+                                  >
+                                    <ExternalLink className="h-4 w-4 mr-2" />
+                                    Gerenciar no Portal
+                                  </Button>
+                                )}
+                              </div>
                             </AlertDescription>
                           </Alert>
                         </div>
