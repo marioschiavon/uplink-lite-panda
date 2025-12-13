@@ -190,28 +190,29 @@ serve(async (req: Request): Promise<Response> => {
     for (const user of usersWithoutSub || []) {
       if (!user.email) continue;
 
-      // Check if user has an organization with active subscription
+      // Check if user has active subscriptions (new model: subscriptions linked to sessions)
       let hasActiveSubscription = false;
       let hasConnectedSession = false;
 
       if (user.organization_id) {
-        const { data: org } = await supabase
-          .from("organizations")
-          .select("subscription_status")
-          .eq("id", user.organization_id)
-          .single();
+        // Check for active subscriptions in the subscriptions table
+        const { data: activeSubscriptions } = await supabase
+          .from("subscriptions")
+          .select("id, session_id, status")
+          .eq("organization_id", user.organization_id)
+          .eq("status", "active");
 
-        if (org?.subscription_status === "active") {
-          hasActiveSubscription = true;
+        hasActiveSubscription = (activeSubscriptions?.length || 0) > 0;
 
+        if (hasActiveSubscription) {
           // Check for connected sessions
-          const { data: sessions } = await supabase
+          const { data: connectedSessions } = await supabase
             .from("sessions")
             .select("id, status")
             .eq("organization_id", user.organization_id)
             .eq("status", "connected");
 
-          hasConnectedSession = (sessions?.length || 0) > 0;
+          hasConnectedSession = (connectedSessions?.length || 0) > 0;
         }
       }
 
