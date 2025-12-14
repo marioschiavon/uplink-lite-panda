@@ -510,7 +510,7 @@ const Dashboard = () => {
               Teste mensagens e veja tokens de API
             </CardDescription>
           </CardHeader>
-          <CardContent className="flex gap-2">
+          <CardContent className="flex flex-col sm:flex-row gap-2">
             {activeSessions.length > 0 && (
               <BearerTokenSheet
                 sessions={activeSessions

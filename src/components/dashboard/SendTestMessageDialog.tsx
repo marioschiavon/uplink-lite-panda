@@ -56,7 +56,7 @@ export function SendTestMessageDialog({ sessions, onSend }: SendTestMessageDialo
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button size="lg" variant="outline" className="gap-2">
+        <Button variant="outline" className="gap-2 w-full sm:w-auto justify-center">
           <Send className="h-4 w-4" />
           Enviar Mensagem Teste
         </Button>

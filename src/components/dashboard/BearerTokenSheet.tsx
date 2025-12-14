@@ -41,7 +41,7 @@ export function BearerTokenSheet({ sessions }: BearerTokenSheetProps) {
   return (
     <Sheet>
       <SheetTrigger asChild>
-        <Button variant="outline" className="gap-2">
+        <Button variant="outline" className="gap-2 w-full sm:w-auto justify-center">
           <Key className="h-4 w-4" />
           Ver Token da API
           <Badge variant="secondary" className="ml-1">
