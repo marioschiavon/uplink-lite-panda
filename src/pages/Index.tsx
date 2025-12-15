@@ -11,6 +11,7 @@ import {
 import { motion } from "framer-motion";
 import { SEO } from "@/components/SEO";
 import { Helmet } from "react-helmet-async";
+import WhatsAppMockup from "@/components/landing/WhatsAppMockup";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -184,70 +185,8 @@ const Index = () => {
               transition={{ duration: 0.6, delay: 0.2 }}
               className="relative"
             >
-              <div className="absolute inset-0 bg-gradient-to-br from-primary/30 to-secondary/30 rounded-3xl blur-3xl animate-pulse-glow" />
-              <Card className="relative border-2 border-primary/30 shadow-2xl backdrop-blur-sm bg-card/80">
-                <CardContent className="p-8 space-y-6">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="p-3 bg-primary/10 rounded-lg">
-                        <MessageSquare className="h-8 w-8 text-primary" />
-                      </div>
-                      <div>
-                        <p className="font-bold text-lg">WhatsApp API</p>
-                        <p className="text-sm text-muted-foreground">Status: Ativo</p>
-                      </div>
-                    </div>
-                    <Badge className="bg-green-500/10 text-green-600 border-green-500/20">
-                      Online
-                    </Badge>
-                  </div>
-                  
-                  <div className="space-y-3 pt-4">
-                    <motion.div 
-                      animate={{ opacity: [0.5, 1, 0.5] }}
-                      transition={{ duration: 2, repeat: Infinity }}
-                      className="flex items-start gap-3 p-4 bg-gradient-to-r from-primary/5 to-transparent rounded-xl border border-primary/10"
-                    >
-                      <Package className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
-                      <div className="text-sm space-y-1">
-                        <p className="font-semibold">✓ Pedido #2847 confirmado</p>
-                        <p className="text-muted-foreground text-xs">Enviado há 2 segundos</p>
-                      </div>
-                    </motion.div>
-                    
-                    <motion.div 
-                      animate={{ opacity: [0.5, 1, 0.5] }}
-                      transition={{ duration: 2, delay: 0.5, repeat: Infinity }}
-                      className="flex items-start gap-3 p-4 bg-gradient-to-r from-secondary/5 to-transparent rounded-xl border border-secondary/10"
-                    >
-                      <Calendar className="h-5 w-5 text-secondary mt-0.5 flex-shrink-0" />
-                      <div className="text-sm space-y-1">
-                        <p className="font-semibold">✓ Lembrete de consulta</p>
-                        <p className="text-muted-foreground text-xs">Enviado há 5 segundos</p>
-                      </div>
-                    </motion.div>
-
-                    <motion.div 
-                      animate={{ opacity: [0.5, 1, 0.5] }}
-                      transition={{ duration: 2, delay: 1, repeat: Infinity }}
-                      className="flex items-start gap-3 p-4 bg-gradient-to-r from-accent/5 to-transparent rounded-xl border border-accent/10"
-                    >
-                      <ShoppingCart className="h-5 w-5 text-accent mt-0.5 flex-shrink-0" />
-                      <div className="text-sm space-y-1">
-                        <p className="font-semibold">✓ Pagamento aprovado</p>
-                        <p className="text-muted-foreground text-xs">Enviado há 8 segundos</p>
-                      </div>
-                    </motion.div>
-                  </div>
-
-                  <div className="pt-4 border-t border-border/50">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">Taxa de entrega</span>
-                      <span className="font-bold text-green-600 text-lg">99.8%</span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+              <div className="absolute inset-0 bg-gradient-to-br from-primary/30 to-secondary/30 rounded-[3rem] blur-3xl animate-pulse-glow" />
+              <WhatsAppMockup />
             </motion.div>
           </div>
         </div>
