@@ -98,12 +98,13 @@ const Index = () => {
             </button>
           </nav>
 
-          <div className="flex items-center gap-3">
-            <Button onClick={() => navigate("/login")} variant="ghost" className="font-semibold">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <Button onClick={() => navigate("/login")} variant="ghost" size="sm" className="font-semibold hidden sm:inline-flex">
               Login
             </Button>
-            <Button onClick={() => navigate("/checkout")} className="font-semibold shadow-lg hover:shadow-xl transition-all animate-pulse-glow">
-              Começar Agora
+            <Button onClick={() => navigate("/checkout")} size="sm" className="font-semibold shadow-lg hover:shadow-xl transition-all animate-pulse-glow text-xs sm:text-sm">
+              <span className="hidden xs:inline">Começar Agora</span>
+              <span className="xs:hidden">Começar</span>
               <ChevronRight className="h-4 w-4 ml-1" />
             </Button>
           </div>
@@ -522,17 +523,17 @@ const Index = () => {
                   <div className="hidden md:block absolute left-8 top-20 w-0.5 h-16 bg-gradient-to-b from-primary to-transparent" />
                 )}
                 <Card className="border-2 hover:border-primary/50 hover:shadow-2xl transition-all group">
-                  <CardContent className="flex gap-6 items-start p-8">
-                    <div className={`relative flex-shrink-0 w-16 h-16 rounded-2xl bg-gradient-to-br ${step.color} flex items-center justify-center text-white text-2xl font-bold shadow-lg group-hover:scale-110 transition-transform`}>
+                  <CardContent className="flex flex-col sm:flex-row gap-4 sm:gap-6 items-center sm:items-start p-6 sm:p-8">
+                    <div className={`relative flex-shrink-0 w-12 h-12 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl bg-gradient-to-br ${step.color} flex items-center justify-center text-white text-xl sm:text-2xl font-bold shadow-lg group-hover:scale-110 transition-transform`}>
                       {step.number}
-                      <div className="absolute inset-0 rounded-2xl bg-white/20 group-hover:animate-pulse" />
+                      <div className="absolute inset-0 rounded-xl sm:rounded-2xl bg-white/20 group-hover:animate-pulse" />
                     </div>
-                    <div className="flex-1 space-y-3">
-                      <div className="flex items-center gap-3">
-                        <step.icon className="h-6 w-6 text-primary" />
-                        <h3 className="text-2xl font-bold">{step.title}</h3>
+                    <div className="flex-1 space-y-2 sm:space-y-3 text-center sm:text-left">
+                      <div className="flex items-center justify-center sm:justify-start gap-2 sm:gap-3">
+                        <step.icon className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
+                        <h3 className="text-xl sm:text-2xl font-bold">{step.title}</h3>
                       </div>
-                      <p className="text-muted-foreground text-lg leading-relaxed">
+                      <p className="text-muted-foreground text-base sm:text-lg leading-relaxed">
                         {step.description}
                       </p>
                     </div>

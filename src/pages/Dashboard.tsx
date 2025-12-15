@@ -434,7 +434,7 @@ const Dashboard = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.1 }}
-          className="flex items-center gap-4"
+          className="flex flex-col sm:flex-row gap-4"
         >
           <div className="flex-1">
             <OrganizationBanner
@@ -448,10 +448,10 @@ const Dashboard = () => {
               variant="outline" 
               size="sm" 
               onClick={handleShowHelp}
-              className="shrink-0 gap-1.5"
+              className="shrink-0 gap-1.5 w-full sm:w-auto justify-center"
             >
               <HelpCircle className="h-4 w-4" />
-              <span className="hidden sm:inline">Como conectar?</span>
+              <span className="hidden xs:inline">Como conectar?</span>
             </Button>
           )}
         </motion.div>
@@ -563,14 +563,14 @@ const Dashboard = () => {
                 {sessions.slice(0, 3).map((session) => (
                   <div
                     key={session.id}
-                    className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
+                    className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 border rounded-lg hover:bg-muted/50 transition-colors"
                   >
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-1">
-                        <h4 className="font-semibold">{session.name}</h4>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-3 mb-1 flex-wrap">
+                        <h4 className="font-semibold truncate">{session.name}</h4>
                         {getStatusBadge(session.id)}
                       </div>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-sm text-muted-foreground truncate">
                         {session.api_session || 'Sem sessão configurada'}
                       </p>
                       {session.updated_at && (
@@ -579,7 +579,7 @@ const Dashboard = () => {
                         </p>
                       )}
                     </div>
-                    <Button variant="ghost" size="sm" onClick={() => navigate("/sessions")}>
+                    <Button variant="ghost" size="sm" className="w-full sm:w-auto" onClick={() => navigate("/sessions")}>
                       Ver Detalhes
                     </Button>
                   </div>

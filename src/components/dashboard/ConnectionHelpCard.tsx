@@ -60,31 +60,33 @@ export function ConnectionHelpCard({ onDismiss, sessionName }: ConnectionHelpCar
       transition={{ duration: 0.3 }}
     >
       <Card className="border-primary/30 bg-gradient-to-r from-primary/5 to-primary/10">
-        <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-3">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-primary/20 rounded-lg">
-              <HelpCircle className="h-5 w-5 text-primary" />
+        <CardHeader className="pb-3">
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex items-start sm:items-center gap-3 flex-1 min-w-0">
+              <div className="p-2 bg-primary/20 rounded-lg shrink-0">
+                <HelpCircle className="h-5 w-5 text-primary" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <CardTitle className="text-base sm:text-lg leading-tight">
+                  {sessionName 
+                    ? `🎉 Sessão "${sessionName}" criada!` 
+                    : "Precisa de ajuda para conectar?"
+                  }
+                </CardTitle>
+                <CardDescription className="text-xs sm:text-sm">
+                  Siga os passos abaixo para conectar seu WhatsApp
+                </CardDescription>
+              </div>
             </div>
-            <div>
-              <CardTitle className="text-lg">
-                {sessionName 
-                  ? `🎉 Sessão "${sessionName}" criada!` 
-                  : "Precisa de ajuda para conectar?"
-                }
-              </CardTitle>
-              <CardDescription>
-                Siga os passos abaixo para conectar seu WhatsApp
-              </CardDescription>
-            </div>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={onDismiss}
+              className="h-8 w-8 text-muted-foreground hover:text-foreground shrink-0"
+            >
+              <X className="h-4 w-4" />
+            </Button>
           </div>
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            onClick={onDismiss}
-            className="h-8 w-8 text-muted-foreground hover:text-foreground"
-          >
-            <X className="h-4 w-4" />
-          </Button>
         </CardHeader>
         <CardContent className="space-y-3">
           {steps.map((step) => (
