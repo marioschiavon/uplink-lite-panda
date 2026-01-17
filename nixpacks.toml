@@ -1,5 +1,5 @@
 [phases.setup]
-nixPkgs = ['nodejs_21.1.0']
+nixPkgs = ['nodejs_21']
 
 [phases.install]
 cmds = ['export PATH="$PATH:./node_modules/.bin" && npm install']
