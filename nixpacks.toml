@@ -9,13 +9,3 @@ cmds = ['npm run build']
 
 [start]
 cmd = 'npm run start'
-```
-
-**Nota:** É `nodejs_20` (com underscore único), não `nodejs-20_x`!
-
-### **2. Crie o arquivo `.nixpacksignore` (opcional mas recomendado):**
-```
-supabase/
-.git/
-node_modules/
-.next/
