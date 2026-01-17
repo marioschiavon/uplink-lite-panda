@@ -2,10 +2,10 @@
 nixPkgs = ['nodejs_20']
 
 [phases.install]
-cmds = ['export PATH="$PATH:./node_modules/.bin" && npm install']
+cmds = ['NODE_ENV=development npm ci']
 
 [phases.build]
-cmds = ['export PATH="$PATH:./node_modules/.bin" && npm run build']
+cmds = ['npx vite build']
 
 [start]
 cmd = 'npm run start'
