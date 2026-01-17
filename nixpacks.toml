@@ -1,6 +1,3 @@
-[providers]
-node = true
-
 [phases.setup]
 nixPkgs = ['nodejs_20']
 
