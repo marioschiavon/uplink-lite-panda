@@ -1,0 +1,4 @@
+supabase/
+.git/
+node_modules/
+.next/
