@@ -1,11 +1,11 @@
 [phases.setup]
-nixPkgs = ['nodejs']
+nixPkgs = ['nodejs_21']
 
 [phases.install]
-cmds = ['npm ci --include=dev']
+cmds = ['export PATH="$PATH:./node_modules/.bin" && npm install']
 
 [phases.build]
-cmds = ['npx vite build']
+cmds = ['export PATH="$PATH:./node_modules/.bin" && npm run build']
 
 [start]
 cmd = 'npm run start'
