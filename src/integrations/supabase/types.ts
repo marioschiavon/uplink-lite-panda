@@ -696,6 +696,7 @@ export type Database = {
       }
       users: {
         Row: {
+          auth_user_id: string | null
           availability: string | null
           created_at: string | null
           email: string | null
@@ -707,6 +708,7 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          auth_user_id?: string | null
           availability?: string | null
           created_at?: string | null
           email?: string | null
@@ -718,6 +720,7 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          auth_user_id?: string | null
           availability?: string | null
           created_at?: string | null
           email?: string | null
