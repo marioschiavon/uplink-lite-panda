@@ -10,6 +10,7 @@ import { StatsCard } from "@/components/dashboard/StatsCard";
 import { toast } from "sonner";
 import { MessageSquare, Zap, Clock, AlertTriangle, Plus } from "lucide-react";
 import { motion } from "framer-motion";
+import { evolutionApi, NormalizedConnectionStatus } from "@/services/evolutionApi";
 
 interface SessionData {
   id: string;
@@ -30,6 +31,7 @@ interface SessionStatus {
   status: boolean;
   message?: string;
   qrCode?: string;
+  pairingCode?: string;
 }
 
 interface OrgData {
@@ -142,28 +144,11 @@ const Sessions = () => {
 
   const fetchSessionStatus = async (sessionId: string, apiSession: string, apiToken: string) => {
     try {
-      const response = await fetch(
-        `https://api.uplinklite.com/api/${apiSession}/check-connection-session`,
-        {
-          headers: {
-            'accept': '*/*',
-            'Authorization': `Bearer ${apiToken}`
-          }
-        }
-      );
-      
-      if (response.ok) {
-        const data = await response.json();
-        setSessionsStatus(prev => ({
-          ...prev,
-          [sessionId]: data
-        }));
-      } else {
-        setSessionsStatus(prev => ({
-          ...prev,
-          [sessionId]: { status: false, message: 'Offline' }
-        }));
-      }
+      const result = await evolutionApi.checkConnection(apiSession, apiToken);
+      setSessionsStatus(prev => ({
+        ...prev,
+        [sessionId]: result
+      }));
     } catch (error) {
       console.error(`Error fetching session status for ${sessionId}:`, error);
       setSessionsStatus(prev => ({
@@ -175,30 +160,18 @@ const Sessions = () => {
 
   const checkConnectionStatus = useCallback(async (sessionId: string, apiSession: string, apiToken: string) => {
     try {
-      const response = await fetch(
-        `https://api.uplinklite.com/api/${apiSession}/check-connection-session`,
-        {
-          headers: {
-            'accept': '*/*',
-            'Authorization': `Bearer ${apiToken}`
-          }
-        }
-      );
+      const result = await evolutionApi.checkConnection(apiSession, apiToken);
       
-      if (response.ok) {
-        const data = await response.json();
-        
-        setSessionsStatus(currentStatus => {
-          const current = currentStatus[sessionId];
-          if (data.status === true) {
-            return { ...currentStatus, [sessionId]: data };
-          }
-          if (!current?.qrCode) {
-            return { ...currentStatus, [sessionId]: data };
-          }
-          return currentStatus;
-        });
-      }
+      setSessionsStatus(currentStatus => {
+        const current = currentStatus[sessionId];
+        if (result.status === true) {
+          return { ...currentStatus, [sessionId]: result };
+        }
+        if (!current?.qrCode) {
+          return { ...currentStatus, [sessionId]: result };
+        }
+        return currentStatus;
+      });
     } catch (error) {
       console.error('Erro ao verificar conexão:', error);
     }
@@ -259,81 +232,67 @@ const Sessions = () => {
     setShowSessionModal(true);
     
     try {
-      const startResponse = await fetch(
-        `https://api.uplinklite.com/api/${session.api_session}/start-session`,
-        {
-          method: 'POST',
-          headers: {
-            'accept': '*/*',
-            'Authorization': `Bearer ${session.api_token}`
-          },
-          body: ''
-        }
-      );
+      toast.info("Conectando à Evolution API, aguarde...");
       
-      if (!startResponse.ok) {
-        throw new Error(`Erro ao iniciar sessão: ${startResponse.status}`);
-      }
+      // Usar Evolution API para conectar e obter QR Code
+      const qrData = await evolutionApi.connectInstance(session.api_session, session.api_token);
       
-      // Tentar capturar o pairing_code da resposta
-      try {
-        const startData = await startResponse.json();
-        const pairingCode = startData?.pairingCode || startData?.code || startData?.link;
-        
-        if (pairingCode) {
+      if (qrData) {
+        // Salvar pairing code se disponível
+        if (qrData.pairingCode) {
           await supabase
             .from('sessions')
-            .update({ pairing_code: pairingCode } as any)
+            .update({ pairing_code: qrData.pairingCode } as any)
             .eq('id', session.id);
-          console.log('Pairing code salvo:', pairingCode);
+          console.log('Pairing code salvo:', qrData.pairingCode);
         }
-      } catch (jsonError) {
-        // Resposta pode não ser JSON, ignorar
-        console.log('Resposta start-session não é JSON ou não contém pairing_code');
-      }
-      
-      toast.info("Gerando QR Code, aguarde 10 segundos...");
-      
-      await new Promise(resolve => setTimeout(resolve, 10000));
-      
-      const qrResponse = await fetch(
-        `https://api.uplinklite.com/api/${session.api_session}/qrcode-session`,
-        {
-          headers: {
-            'accept': '*/*',
-            'Authorization': `Bearer ${session.api_token}`
+
+        // QR Code vem em base64 diretamente da Evolution API
+        if (qrData.base64) {
+          setSessionsStatus(prev => ({
+            ...prev,
+            [session.id]: {
+              status: false,
+              message: 'qrcode',
+              qrCode: qrData.base64,
+              pairingCode: qrData.pairingCode
+            }
+          }));
+          setQrCodeKey(Date.now().toString());
+          setGeneratingQrCode(false);
+          toast.success("QR Code gerado! Escaneie para conectar.");
+          
+          // Atualizar timestamp da última ação
+          await supabase
+            .from('sessions')
+            .update({ updated_at: new Date().toISOString() })
+            .eq('id', session.id);
+        } else {
+          // Se não veio QR, aguardar um pouco e buscar novamente
+          toast.info("Aguardando QR Code...");
+          await new Promise(resolve => setTimeout(resolve, 3000));
+          
+          const retryQr = await evolutionApi.fetchQRCode(session.api_session, session.api_token);
+          if (retryQr?.base64) {
+            setSessionsStatus(prev => ({
+              ...prev,
+              [session.id]: {
+                status: false,
+                message: 'qrcode',
+                qrCode: retryQr.base64,
+                pairingCode: retryQr.pairingCode
+              }
+            }));
+            setQrCodeKey(Date.now().toString());
+            setGeneratingQrCode(false);
+            toast.success("QR Code gerado! Escaneie para conectar.");
+          } else {
+            throw new Error("QR Code não disponível. Tente novamente.");
           }
         }
-      );
-      
-      if (!qrResponse.ok) {
-        throw new Error(`Erro ao buscar QR Code: ${qrResponse.status}`);
+      } else {
+        throw new Error("Falha ao conectar com a Evolution API");
       }
-      
-      const blob = await qrResponse.blob();
-      const reader = new FileReader();
-      
-      reader.onloadend = async () => {
-        setSessionsStatus(prev => ({
-          ...prev,
-          [session.id]: {
-            status: false,
-            message: 'qrcode',
-            qrCode: reader.result as string
-          }
-        }));
-        setQrCodeKey(Date.now().toString());
-        setGeneratingQrCode(false);
-        toast.success("QR Code gerado! Escaneie para conectar.");
-        
-        // Atualizar timestamp da última ação
-        await supabase
-          .from('sessions')
-          .update({ updated_at: new Date().toISOString() })
-          .eq('id', session.id);
-      };
-      
-      reader.readAsDataURL(blob);
       
     } catch (error: any) {
       console.error('Erro ao iniciar sessão:', error);
@@ -343,48 +302,36 @@ const Sessions = () => {
     } finally {
       setStartingSession(false);
     }
-  }, []);
+  }, [navigate]);
 
   const handleQrExpiration = async (session: SessionData) => {
     if (!session.api_session || !session.api_token) return;
     
     try {
-      const response = await fetch(
-        `https://api.uplinklite.com/api/${session.api_session}/check-connection-session`,
-        {
-          headers: {
-            'accept': '*/*',
-            'Authorization': `Bearer ${session.api_token}`
-          }
-        }
-      );
+      const result = await evolutionApi.checkConnection(session.api_session, session.api_token);
       
-      if (response.ok) {
-        const data = await response.json();
+      if (result.status === false) {
+        setSessionsStatus(prev => ({
+          ...prev,
+          [session.id]: {
+            status: false,
+            message: 'Disconnected'
+          }
+        }));
         
-        if (data.status === false) {
-          setSessionsStatus(prev => ({
-            ...prev,
-            [session.id]: {
-              status: false,
-              message: 'Disconnected'
-            }
-          }));
-          
-          setShowSessionModal(false);
-          setSelectedSession(null);
-          
-          toast.info(
-            "QR Code expirou e a sessão ainda está desconectada. Clique em 'Iniciar Sessão' para tentar novamente.",
-            { duration: 5000 }
-          );
-        } else if (data.status === true) {
-          setSessionsStatus(prev => ({
-            ...prev,
-            [session.id]: data
-          }));
-          toast.success("Sessão conectada com sucesso! ✓");
-        }
+        setShowSessionModal(false);
+        setSelectedSession(null);
+        
+        toast.info(
+          "QR Code expirou e a sessão ainda está desconectada. Clique em 'Iniciar Sessão' para tentar novamente.",
+          { duration: 5000 }
+        );
+      } else if (result.status === true) {
+        setSessionsStatus(prev => ({
+          ...prev,
+          [session.id]: result
+        }));
+        toast.success("Sessão conectada com sucesso! ✓");
       }
     } catch (error) {
       console.error('Erro ao verificar status na expiração:', error);
@@ -419,33 +366,19 @@ const Sessions = () => {
         if (!selectedSession.api_session || !selectedSession.api_token) return;
         
         try {
-          const qrResponse = await fetch(
-            `https://api.uplinklite.com/api/${selectedSession.api_session}/qrcode-session`,
-            {
-              headers: {
-                'accept': '*/*',
-                'Authorization': `Bearer ${selectedSession.api_token}`
-              }
-            }
-          );
+          const qrData = await evolutionApi.fetchQRCode(selectedSession.api_session, selectedSession.api_token);
           
-          if (qrResponse.ok) {
-            const blob = await qrResponse.blob();
-            const reader = new FileReader();
-            
-            reader.onloadend = () => {
-              setSessionsStatus(prev => ({
-                ...prev,
-                [selectedSession.id]: {
-                  status: false,
-                  message: 'qrcode',
-                  qrCode: reader.result as string
-                }
-              }));
-              setGeneratingQrCode(false);
-            };
-            
-            reader.readAsDataURL(blob);
+          if (qrData?.base64) {
+            setSessionsStatus(prev => ({
+              ...prev,
+              [selectedSession.id]: {
+                status: false,
+                message: 'qrcode',
+                qrCode: qrData.base64,
+                pairingCode: qrData.pairingCode
+              }
+            }));
+            setGeneratingQrCode(false);
           }
         } catch (error) {
           console.error('Erro no polling de QR Code:', error);
@@ -532,30 +465,16 @@ const Sessions = () => {
     try {
       toast.info("Buscando QR Code atualizado...");
       
-      const qrResponse = await fetch(
-        `https://api.uplinklite.com/api/${session.api_session}/qrcode-session`,
-        {
-          headers: {
-            'accept': '*/*',
-            'Authorization': `Bearer ${session.api_token}`
-          }
-        }
-      );
+      const qrData = await evolutionApi.fetchQRCode(session.api_session, session.api_token);
       
-      if (!qrResponse.ok) {
-        throw new Error(`Erro ao buscar QR Code: ${qrResponse.status}`);
-      }
-      
-      const blob = await qrResponse.blob();
-      const reader = new FileReader();
-      
-      reader.onloadend = async () => {
+      if (qrData?.base64) {
         setSessionsStatus(prev => ({
           ...prev,
           [session.id]: {
             status: false,
             message: 'qrcode',
-            qrCode: reader.result as string
+            qrCode: qrData.base64,
+            pairingCode: qrData.pairingCode
           }
         }));
         setQrCodeKey(Date.now().toString());
@@ -567,9 +486,9 @@ const Sessions = () => {
           .from('sessions')
           .update({ updated_at: new Date().toISOString() })
           .eq('id', session.id);
-      };
-      
-      reader.readAsDataURL(blob);
+      } else {
+        throw new Error("QR Code não disponível");
+      }
       
     } catch (error: any) {
       console.error('Erro ao atualizar QR Code:', error);
@@ -589,30 +508,19 @@ const Sessions = () => {
     setClosingSession(true);
     
     try {
-      const response = await fetch(
-        `https://api.uplinklite.com/api/${session.api_session}/close-session`,
-        {
-          method: 'POST',
-          headers: {
-            'accept': '*/*',
-            'Authorization': `Bearer ${session.api_token}`
-          },
-          body: ''
-        }
-      );
+      const success = await evolutionApi.logoutInstance(session.api_session, session.api_token);
       
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Erro ${response.status}: ${errorText}`);
+      if (success) {
+        setSessionsStatus(prev => ({
+          ...prev,
+          [session.id]: { status: false, message: 'offline' }
+        }));
+        
+        toast.success("Sessão desconectada com sucesso!");
+        await fetchSessions();
+      } else {
+        throw new Error("Falha ao desconectar sessão");
       }
-      
-      setSessionsStatus(prev => ({
-        ...prev,
-        [session.id]: { status: false, message: 'offline' }
-      }));
-      
-      toast.success("Sessão fechada com sucesso!");
-      await fetchSessions();
     } catch (error: any) {
       console.error('Erro ao fechar sessão:', error);
       toast.error(error.message || "Erro ao fechar sessão");
@@ -633,44 +541,22 @@ const Sessions = () => {
     
     try {
       if (session.api_session && session.api_token) {
-        // PASSO 1: Fechar sessão primeiro (close-session)
+        // PASSO 1: Logout da instância
         try {
-          console.log('🔒 Fechando sessão:', session.api_session);
-          const closeResponse = await fetch(
-            `https://api.uplinklite.com/api/${session.api_session}/close-session`,
-            {
-              method: 'POST',
-              headers: {
-                'accept': '*/*',
-                'Authorization': `Bearer ${session.api_token}`
-              },
-              body: ''
-            }
-          );
-          const closeResult = await closeResponse.json();
-          console.log('✅ Close session result:', closeResult);
-        } catch (closeError) {
-          console.warn('⚠️ Erro ao fechar sessão (continuando):', closeError);
-        }
-
-        // PASSO 2: Excluir sessão (logout-session)
-        try {
-          console.log('🗑️ Excluindo sessão:', session.api_session);
-          const logoutResponse = await fetch(
-            `https://api.uplinklite.com/api/${session.api_session}/logout-session`,
-            {
-              method: 'POST',
-              headers: {
-                'accept': '*/*',
-                'Authorization': `Bearer ${session.api_token}`
-              },
-              body: ''
-            }
-          );
-          const logoutResult = await logoutResponse.json();
-          console.log('✅ Logout session result:', logoutResult);
+          console.log('🔒 Fazendo logout da instância:', session.api_session);
+          await evolutionApi.logoutInstance(session.api_session, session.api_token);
+          console.log('✅ Logout realizado');
         } catch (logoutError) {
           console.warn('⚠️ Erro ao fazer logout (continuando):', logoutError);
+        }
+
+        // PASSO 2: Deletar instância
+        try {
+          console.log('🗑️ Deletando instância:', session.api_session);
+          await evolutionApi.deleteInstance(session.api_session, session.api_token);
+          console.log('✅ Instância deletada');
+        } catch (deleteError) {
+          console.warn('⚠️ Erro ao deletar instância (continuando):', deleteError);
         }
       }
       

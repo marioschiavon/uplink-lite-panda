@@ -83,29 +83,59 @@ serve(async (req) => {
     const organizationName = orgData.name;
     console.log(`Generating token for organization: ${organizationName} (session: ${session_name})`);
 
-    // 6. Buscar secret key
-    const secretKey = Deno.env.get('WPP_SECRET_KEY');
-    if (!secretKey) {
-      throw new Error('WPP_SECRET_KEY not configured');
+    // 6. Buscar Evolution API credentials
+    const evolutionApiUrl = Deno.env.get('EVOLUTION_API_URL');
+    const evolutionApiKey = Deno.env.get('EVOLUTION_API_KEY');
+
+    if (!evolutionApiUrl || !evolutionApiKey) {
+      console.error('Evolution API credentials not configured');
+      throw new Error('Evolution API not configured');
     }
 
-    // 7. Fazer chamada para API externa usando session_name escolhido pelo usuário
-    const apiUrl = `https://api.uplinklite.com/api/${session_name}/${secretKey}/generate-token`;
-    console.log(`Calling external API with session name: ${session_name}`);
-
-    const response = await fetch(apiUrl, {
+    // 7. Criar instância na Evolution API
+    console.log(`Creating instance in Evolution API: ${session_name}`);
+    
+    const createResponse = await fetch(`${evolutionApiUrl}/instance/create`, {
       method: 'POST',
-      headers: { 'accept': '*/*' }
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': evolutionApiKey
+      },
+      body: JSON.stringify({
+        instanceName: session_name,
+        qrcode: false,
+        integration: 'WHATSAPP-BAILEYS'
+      })
     });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`External API error: ${response.status} - ${errorText}`);
-      throw new Error(`External API error: ${response.status} - ${errorText}`);
+    if (!createResponse.ok) {
+      const errorText = await createResponse.text();
+      console.error(`Evolution API error: ${createResponse.status} - ${errorText}`);
+      
+      // Se a instância já existe, tentar buscar os dados
+      if (createResponse.status === 400 || createResponse.status === 409) {
+        console.log('Instance may already exist, proceeding with existing data...');
+      } else {
+        throw new Error(`Evolution API error: ${createResponse.status} - ${errorText}`);
+      }
     }
 
-    const data = await response.json();
-    console.log(`Token generated successfully for organization`);
+    let instanceApiKey = evolutionApiKey; // Fallback to global key
+    let instanceData: any = null;
+
+    try {
+      instanceData = await createResponse.json();
+      console.log('Evolution API response:', JSON.stringify(instanceData));
+      
+      // Tentar extrair o apikey específico da instância
+      if (instanceData?.hash?.apikey) {
+        instanceApiKey = instanceData.hash.apikey;
+      }
+    } catch (parseError) {
+      console.log('Could not parse Evolution API response, using global key');
+    }
+
+    console.log(`Instance created/found: ${session_name}`);
 
     // 8. Criar ou atualizar registro na tabela sessions usando service_role
     const supabaseAdmin = createClient(
@@ -124,13 +154,13 @@ serve(async (req) => {
     let sessionData;
 
     if (existingSession) {
-      // UPDATE: adicionar tokens gerados
+      // UPDATE: atualizar tokens
       const { data: updatedSession, error: updateError } = await supabaseAdmin
         .from('sessions')
         .update({
           api_session: session_name,
-          api_token: data.token,
-          api_token_full: data.full,
+          api_token: instanceApiKey,
+          api_token_full: instanceApiKey,
           status: 'configured',
           updated_at: new Date().toISOString()
         })
@@ -146,15 +176,15 @@ serve(async (req) => {
       sessionData = updatedSession;
       console.log('Session updated:', sessionData.id);
     } else {
-      // INSERT: criar nova sessão (clientes legacy)
+      // INSERT: criar nova sessão
       const { data: newSession, error: insertError } = await supabaseAdmin
         .from('sessions')
         .insert({
           organization_id: userData.organization_id,
           name: session_name,
           api_session: session_name,
-          api_token: data.token,
-          api_token_full: data.full,
+          api_token: instanceApiKey,
+          api_token_full: instanceApiKey,
           status: 'configured',
           requires_subscription: false,
           api_message_limit: 3000,
@@ -178,8 +208,8 @@ serve(async (req) => {
       .from('organizations')
       .update({ 
         api_session: session_name,
-        api_token: data.token,
-        api_token_full: data.full
+        api_token: instanceApiKey,
+        api_token_full: instanceApiKey
       })
       .eq('id', userData.organization_id);
 
@@ -187,10 +217,10 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({
         success: true,
-        session: data.session,
-        token: data.token,
-        token_full: data.full,
-        session_id: sessionData.id,  // ID do registro em sessions
+        session: session_name,
+        token: instanceApiKey,
+        token_full: instanceApiKey,
+        session_id: sessionData.id,
         session_name: session_name,
         organization_name: organizationName
       }),

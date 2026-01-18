@@ -11,17 +11,17 @@ import { SEO } from "@/components/SEO";
 
 const ApiDocs = () => {
   const commonErrors = [
-    { code: "401", message: "Unauthorized", solution: "Verifique se o Bearer Token está correto" },
-    { code: "404", message: "Session not found", solution: "Sessão não existe ou foi deletada" },
+    { code: "401", message: "Unauthorized", solution: "Verifique se o apikey está correto no header" },
+    { code: "404", message: "Instance not found", solution: "Instância não existe ou foi deletada" },
     { code: "400", message: "Invalid phone number", solution: "Formato do número está incorreto (use DDI)" },
-    { code: "503", message: "Session not connected", solution: "Sessão está offline, conecte novamente" },
+    { code: "503", message: "Instance not connected", solution: "Instância está offline, conecte novamente" },
   ];
 
   return (
     <>
       <SEO 
         title="Documentação da API WhatsApp | Uplink"
-        description="Documentação completa da API WhatsApp Uplink. Aprenda a enviar mensagens, mídias e integrar com n8n, Make, Zapier. Exemplos em JavaScript, Python e PHP."
+        description="Documentação completa da API WhatsApp Uplink com Evolution API. Aprenda a enviar mensagens, mídias e integrar com n8n, Make, Zapier. Exemplos em JavaScript, Python e PHP."
         canonical="https://uplinklite.com/api-docs"
       />
       <div className="container mx-auto p-6 space-y-6">
@@ -36,11 +36,11 @@ const ApiDocs = () => {
             <div>
               <h1 className="text-3xl font-bold">Documentação da API WhatsApp Uplink</h1>
               <p className="text-muted-foreground">
-                Integre o WhatsApp nas suas aplicações com nossa API REST completa
+                Integre o WhatsApp nas suas aplicações com nossa API REST (Evolution API v2)
               </p>
             </div>
             <Badge variant="outline" className="ml-auto">
-              v1.0
+              v2.0
             </Badge>
           </div>
 
@@ -50,15 +50,15 @@ const ApiDocs = () => {
             <AlertTitle className="font-semibold">Autenticação da API WhatsApp</AlertTitle>
             <AlertDescription className="space-y-2">
               <p>
-                Todas as requisições requerem autenticação via <strong>Bearer Token</strong>. 
-                Obtenha seu token no Dashboard → Ferramentas → Ver Bearer Token.
+                Todas as requisições requerem autenticação via <strong>apikey</strong> no header. 
+                Obtenha sua apikey no Dashboard → Ferramentas → Ver Bearer Token.
               </p>
               <code className="block bg-muted px-3 py-2 rounded text-sm mt-2">
-                Authorization: Bearer seu-token-aqui
+                apikey: sua-apikey-aqui
               </code>
               <p className="text-xs text-muted-foreground mt-2">
-                ⚠️ <strong>IMPORTANTE:</strong> Nunca compartilhe seu Bearer Token publicamente! 
-                Ele dá acesso total à sua sessão WhatsApp.
+                ⚠️ <strong>IMPORTANTE:</strong> Nunca compartilhe sua apikey publicamente! 
+                Ela dá acesso total à sua instância WhatsApp.
               </p>
             </AlertDescription>
           </Alert>
@@ -85,26 +85,29 @@ const ApiDocs = () => {
               {/* Send Text Message */}
               <EndpointCard
                 method="POST"
-                endpoint="/api/{session}/send-message"
+                endpoint="/message/sendText/{instance}"
                 description="Enviar Mensagem de Texto via API WhatsApp"
                 parameters={[
-                  { name: "phone", type: "string", required: true, description: "Número com DDI", example: "5511999999999" },
-                  { name: "message", type: "string", required: true, description: "Texto da mensagem", example: "Olá, tudo bem?" },
-                  { name: "isGroup", type: "boolean", required: false, description: "Se é grupo (default: false)" },
-                  { name: "isNewsletter", type: "boolean", required: false, description: "Se é canal (default: false)" },
+                  { name: "number", type: "string", required: true, description: "Número com DDI", example: "5511999999999" },
+                  { name: "text", type: "string", required: true, description: "Texto da mensagem", example: "Olá, tudo bem?" },
                 ]}
-                requestExample={`curl -X POST "https://api.uplinklite.com/api/sua-sessao/send-message" \\
-  -H "Authorization: Bearer seu-token-aqui" \\
+                requestExample={`curl -X POST "https://api.uplinklite.com/message/sendText/sua-instancia" \\
+  -H "apikey: sua-apikey-aqui" \\
   -H "Content-Type: application/json" \\
   -d '{
-    "phone": "5511999999999",
-    "message": "Olá! Esta é uma mensagem de teste.",
-    "isGroup": false
+    "number": "5511999999999",
+    "text": "Olá! Esta é uma mensagem de teste."
   }'`}
                 responseExample={`{
-  "success": true,
-  "message": "Mensagem enviada com sucesso",
-  "messageId": "WAM123456789"
+  "key": {
+    "remoteJid": "5511999999999@s.whatsapp.net",
+    "fromMe": true,
+    "id": "BAE5A1234567890"
+  },
+  "message": {
+    "conversation": "Olá! Esta é uma mensagem de teste."
+  },
+  "messageTimestamp": "1234567890"
 }`}
                 errorCodes={commonErrors}
               />
@@ -112,50 +115,53 @@ const ApiDocs = () => {
               {/* Send Media */}
               <EndpointCard
                 method="POST"
-                endpoint="/api/{session}/send-media"
+                endpoint="/message/sendMedia/{instance}"
                 description="Enviar Mídia (Imagem/Áudio/Documento) via API WhatsApp"
                 parameters={[
-                  { name: "phone", type: "string", required: true, description: "Número com DDI", example: "5511999999999" },
-                  { name: "mediaUrl", type: "string", required: true, description: "URL pública da mídia", example: "https://exemplo.com/imagem.jpg" },
-                  { name: "mediaType", type: "string", required: true, description: "Tipo: image, audio, document", example: "image" },
+                  { name: "number", type: "string", required: true, description: "Número com DDI", example: "5511999999999" },
+                  { name: "media", type: "string", required: true, description: "URL pública da mídia", example: "https://exemplo.com/imagem.jpg" },
+                  { name: "mediatype", type: "string", required: true, description: "Tipo: image, audio, document", example: "image" },
                   { name: "caption", type: "string", required: false, description: "Legenda (para imagem)" },
-                  { name: "filename", type: "string", required: false, description: "Nome do arquivo (para documento)" },
+                  { name: "fileName", type: "string", required: false, description: "Nome do arquivo (para documento)" },
                 ]}
                 requestExample={`# Exemplo 1: Enviar IMAGEM
-curl -X POST "https://api.uplinklite.com/api/sua-sessao/send-media" \\
-  -H "Authorization: Bearer seu-token-aqui" \\
+curl -X POST "https://api.uplinklite.com/message/sendMedia/sua-instancia" \\
+  -H "apikey: sua-apikey-aqui" \\
   -H "Content-Type: application/json" \\
   -d '{
-    "phone": "5511999999999",
-    "mediaUrl": "https://exemplo.com/foto.jpg",
-    "mediaType": "image",
+    "number": "5511999999999",
+    "media": "https://exemplo.com/foto.jpg",
+    "mediatype": "image",
     "caption": "Confira esta imagem!"
   }'
 
 # Exemplo 2: Enviar ÁUDIO
-curl -X POST "https://api.uplinklite.com/api/sua-sessao/send-media" \\
-  -H "Authorization: Bearer seu-token-aqui" \\
+curl -X POST "https://api.uplinklite.com/message/sendMedia/sua-instancia" \\
+  -H "apikey: sua-apikey-aqui" \\
   -H "Content-Type: application/json" \\
   -d '{
-    "phone": "5511999999999",
-    "mediaUrl": "https://exemplo.com/audio.mp3",
-    "mediaType": "audio"
+    "number": "5511999999999",
+    "media": "https://exemplo.com/audio.mp3",
+    "mediatype": "audio"
   }'
 
 # Exemplo 3: Enviar DOCUMENTO/ARQUIVO
-curl -X POST "https://api.uplinklite.com/api/sua-sessao/send-media" \\
-  -H "Authorization: Bearer seu-token-aqui" \\
+curl -X POST "https://api.uplinklite.com/message/sendMedia/sua-instancia" \\
+  -H "apikey: sua-apikey-aqui" \\
   -H "Content-Type: application/json" \\
   -d '{
-    "phone": "5511999999999",
-    "mediaUrl": "https://exemplo.com/relatorio.pdf",
-    "mediaType": "document",
-    "filename": "relatorio.pdf"
+    "number": "5511999999999",
+    "media": "https://exemplo.com/relatorio.pdf",
+    "mediatype": "document",
+    "fileName": "relatorio.pdf"
   }'`}
                 responseExample={`{
-  "success": true,
-  "message": "Mídia enviada com sucesso",
-  "messageId": "WAM987654321"
+  "key": {
+    "remoteJid": "5511999999999@s.whatsapp.net",
+    "fromMe": true,
+    "id": "BAE5A1234567891"
+  },
+  "messageTimestamp": "1234567890"
 }`}
               />
             </motion.section>
@@ -188,15 +194,14 @@ curl -X POST "https://api.uplinklite.com/api/sua-sessao/send-media" \\
 const sendMessage = async () => {
   try {
     const response = await axios.post(
-      'https://api.uplinklite.com/api/sua-sessao/send-message',
+      'https://api.uplinklite.com/message/sendText/sua-instancia',
       {
-        phone: '5511999999999',
-        message: 'Olá! Esta é uma mensagem de teste.',
-        isGroup: false
+        number: '5511999999999',
+        text: 'Olá! Esta é uma mensagem de teste.'
       },
       {
         headers: {
-          'Authorization': 'Bearer seu-token-aqui',
+          'apikey': 'sua-apikey-aqui',
           'Content-Type': 'application/json'
         }
       }
@@ -226,15 +231,14 @@ sendMessage();`}
                     code={`import requests
 
 def send_message():
-    url = 'https://api.uplinklite.com/api/sua-sessao/send-message'
+    url = 'https://api.uplinklite.com/message/sendText/sua-instancia'
     headers = {
-        'Authorization': 'Bearer seu-token-aqui',
+        'apikey': 'sua-apikey-aqui',
         'Content-Type': 'application/json'
     }
     data = {
-        'phone': '5511999999999',
-        'message': 'Olá! Esta é uma mensagem de teste.',
-        'isGroup': False
+        'number': '5511999999999',
+        'text': 'Olá! Esta é uma mensagem de teste.'
     }
     
     response = requests.post(url, json=data, headers=headers)
@@ -260,17 +264,16 @@ send_message()`}
 $curl = curl_init();
 
 curl_setopt_array($curl, array(
-  CURLOPT_URL => 'https://api.uplinklite.com/api/sua-sessao/send-message',
+  CURLOPT_URL => 'https://api.uplinklite.com/message/sendText/sua-instancia',
   CURLOPT_RETURNTRANSFER => true,
   CURLOPT_POST => true,
   CURLOPT_HTTPHEADER => array(
-    'Authorization: Bearer seu-token-aqui',
+    'apikey: sua-apikey-aqui',
     'Content-Type: application/json'
   ),
   CURLOPT_POSTFIELDS => json_encode(array(
-    'phone' => '5511999999999',
-    'message' => 'Olá! Esta é uma mensagem de teste.',
-    'isGroup' => false
+    'number' => '5511999999999',
+    'text' => 'Olá! Esta é uma mensagem de teste.'
   ))
 ));
 
@@ -302,7 +305,7 @@ if ($httpCode == 200) {
             <CardHeader>
               <CardTitle id="get-token-heading" className="flex items-center gap-2">
                 <Shield className="h-5 w-5 text-primary" aria-hidden="true" />
-                Como Obter seu Bearer Token da API WhatsApp
+                Como Obter sua API Key da API WhatsApp
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -312,8 +315,8 @@ if ($httpCode == 200) {
                   <li>Acesse o <strong>Dashboard</strong></li>
                   <li>Clique em <strong>"Ferramentas"</strong></li>
                   <li>Clique em <strong>"Ver Token da API"</strong></li>
-                  <li>Selecione a sessão desejada no dropdown (se houver múltiplas)</li>
-                  <li>Copie o token</li>
+                  <li>Selecione a instância desejada no dropdown (se houver múltiplas)</li>
+                  <li>Copie a apikey</li>
                 </ol>
               </div>
               
@@ -323,9 +326,9 @@ if ($httpCode == 200) {
                 <h3 className="font-semibold text-sm">📍 Opção 2: Via Detalhes da Sessão</h3>
                 <ol className="space-y-2 list-decimal list-inside text-sm ml-2">
                   <li>Vá para <strong>Sessões → Minhas Sessões</strong></li>
-                  <li>Selecione a sessão desejada</li>
+                  <li>Selecione a instância desejada</li>
                   <li>Clique em <strong>"Ver Detalhes"</strong></li>
-                  <li>Na seção <strong>"Credenciais da API"</strong>, copie o <strong>API Token</strong></li>
+                  <li>Na seção <strong>"Credenciais da API"</strong>, copie a <strong>API Key</strong></li>
                 </ol>
               </div>
 
@@ -333,8 +336,8 @@ if ($httpCode == 200) {
                 <AlertCircle className="h-4 w-4" aria-hidden="true" />
                 <AlertTitle>Segurança</AlertTitle>
                 <AlertDescription>
-                  Nunca compartilhe seu Bearer Token publicamente! 
-                  Ele dá acesso total à sua sessão WhatsApp.
+                  Nunca compartilhe sua apikey publicamente! 
+                  Ela dá acesso total à sua instância WhatsApp.
                 </AlertDescription>
               </Alert>
               
@@ -343,7 +346,7 @@ if ($httpCode == 200) {
                   💡 <strong>Dica:</strong> Use o header no formato:
                 </p>
                 <code className="block bg-background px-3 py-2 rounded text-xs">
-                  Authorization: Bearer seu-token-aqui
+                  apikey: sua-apikey-aqui
                 </code>
               </div>
             </CardContent>

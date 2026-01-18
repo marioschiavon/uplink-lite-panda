@@ -13,6 +13,7 @@ import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { evolutionApi } from "@/services/evolutionApi";
 
 interface SessionData {
   id: string;
@@ -117,33 +118,23 @@ const SessionMonitoring = () => {
 
         setSessions(sessionsWithStatus);
 
-        // Verificar status de cada sessão em paralelo
+        // Verificar status de cada sessão em paralelo usando Evolution API
         const statusPromises = (sessionsData as any[]).map(async (session) => {
           if (!session.api_session || !session.api_token) {
             return { id: session.id, status: 'no-session' as const, statusMessage: 'Sem sessão ativa' };
           }
 
           try {
-            const response = await fetch(
-              `https://api.uplinklite.com/api/${session.api_session}/check-connection-session`,
-              {
-                headers: {
-                  'accept': '*/*',
-                  'Authorization': `Bearer ${session.api_token}`
-                }
-              }
-            );
-
-            const data = await response.json();
+            const result = await evolutionApi.checkConnection(session.api_session, session.api_token);
             
-            if (data.message === 'QRCODE') {
+            if (result.message === 'QRCODE') {
               return { id: session.id, status: 'qrcode' as const, statusMessage: 'Aguardando QR Code' };
             }
 
             return {
               id: session.id,
-              status: data.status ? 'online' as const : 'offline' as const,
-              statusMessage: data.message || 'Desconhecido'
+              status: result.status ? 'online' as const : 'offline' as const,
+              statusMessage: result.message || 'Desconhecido'
             };
           } catch (error) {
             return { id: session.id, status: 'offline' as const, statusMessage: 'Erro ao verificar' };
