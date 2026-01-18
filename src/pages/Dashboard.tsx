@@ -17,6 +17,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { evolutionApi } from "@/services/evolutionApi";
 
 interface UserData {
   id: string;
@@ -191,28 +192,11 @@ const Dashboard = () => {
 
   const fetchSessionStatus = async (sessionId: string, apiSession: string, apiToken: string) => {
     try {
-      const response = await fetch(
-        `https://api.uplinklite.com/api/${apiSession}/check-connection-session`,
-        {
-          headers: {
-            'accept': '*/*',
-            'Authorization': `Bearer ${apiToken}`
-          }
-        }
-      );
-      
-      if (response.ok) {
-        const data = await response.json();
-        setSessionsStatus(prev => ({
-          ...prev,
-          [sessionId]: data
-        }));
-      } else {
-        setSessionsStatus(prev => ({
-          ...prev,
-          [sessionId]: { status: false, message: 'Offline' }
-        }));
-      }
+      const result = await evolutionApi.checkConnection(apiSession, apiToken);
+      setSessionsStatus(prev => ({
+        ...prev,
+        [sessionId]: result
+      }));
     } catch (error) {
       console.error(`Error fetching session status for ${sessionId}:`, error);
       setSessionsStatus(prev => ({
@@ -230,28 +214,15 @@ const Dashboard = () => {
     }
     
     try {
-      const response = await fetch(
-        `https://api.uplinklite.com/api/${session.api_session}/send-message`,
-        {
-          method: 'POST',
-          headers: {
-            'accept': '*/*',
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${session.api_token}`
-          },
-          body: JSON.stringify({
-            phone: phoneNumber,
-            isGroup: false,
-            isNewsletter: false,
-            isLid: false,
-            message: message
-          })
-        }
+      const result = await evolutionApi.sendText(
+        session.api_session,
+        session.api_token,
+        phoneNumber,
+        message
       );
       
-      if (!response.ok) {
-        const errorData = await response.text();
-        throw new Error(`Erro ${response.status}: ${errorData}`);
+      if (!result.success) {
+        throw new Error(result.error || "Erro ao enviar mensagem");
       }
       
       toast.success("Mensagem enviada com sucesso!");
@@ -500,41 +471,26 @@ const Dashboard = () => {
           </CardContent>
         </Card>
 
-        <Card className="hover:shadow-lg transition-shadow">
+        <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => navigate("/api-docs")}>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Settings className="h-5 w-5" />
-              Ferramentas
+              Documentação API
             </CardTitle>
             <CardDescription>
-              Teste mensagens e veja tokens de API
+              Integre o WhatsApp em suas aplicações
             </CardDescription>
           </CardHeader>
-          <CardContent className="flex flex-col sm:flex-row gap-2">
-            {activeSessions.length > 0 && (
-              <BearerTokenSheet
-                sessions={activeSessions
-                  .filter(s => s.api_token)
-                  .map(s => ({
-                    id: s.id,
-                    name: s.name,
-                    api_token: s.api_token!
-                  }))
-                }
-              />
-            )}
-            
-            {activeSessions.length > 0 && (
-              <SendTestMessageDialog
-                sessions={activeSessions.map(s => ({ id: s.id, name: s.name }))}
-                onSend={handleSendTestMessage}
-              />
-            )}
+          <CardContent>
+            <Button variant="outline" className="w-full">
+              Ver Docs
+              <ArrowRight className="h-4 w-4 ml-2" />
+            </Button>
           </CardContent>
         </Card>
       </motion.div>
 
-      {/* Últimas Sessões Preview */}
+      {/* Sessions Overview */}
       {sessions.length > 0 && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -542,46 +498,41 @@ const Dashboard = () => {
           transition={{ duration: 0.5, delay: 0.3 }}
         >
           <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle>Últimas Sessões</CardTitle>
-                  <CardDescription>
-                    Preview das suas sessões mais recentes
-                  </CardDescription>
-                </div>
-                <Button variant="ghost" asChild>
-                  <Link to="/sessions">
-                    Ver Todas
-                    <ArrowRight className="h-4 w-4 ml-2" />
-                  </Link>
-                </Button>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle>Suas Sessões</CardTitle>
+                <CardDescription>
+                  Status das suas sessões WhatsApp
+                </CardDescription>
               </div>
+              <Button variant="outline" size="sm" onClick={() => navigate("/sessions")}>
+                Ver Todas
+                <ArrowRight className="h-4 w-4 ml-2" />
+              </Button>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {sessions.slice(0, 3).map((session) => (
+                {sessions.slice(0, 4).map((session) => (
                   <div
                     key={session.id}
-                    className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 border rounded-lg hover:bg-muted/50 transition-colors"
+                    className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors cursor-pointer"
+                    onClick={() => navigate("/sessions")}
                   >
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-3 mb-1 flex-wrap">
-                        <h4 className="font-semibold truncate">{session.name}</h4>
-                        {getStatusBadge(session.id)}
+                    <div className="flex items-center gap-3">
+                      <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                        <MessageSquare className="h-5 w-5 text-primary" />
                       </div>
-                      <p className="text-sm text-muted-foreground truncate">
-                        {session.api_session || 'Sem sessão configurada'}
-                      </p>
-                      {session.updated_at && (
-                        <p className="text-xs text-muted-foreground mt-1">
-                          Atualizado {formatDistanceToNow(new Date(session.updated_at), { addSuffix: true, locale: ptBR })}
+                      <div>
+                        <p className="font-medium">{session.name}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {session.updated_at 
+                            ? formatDistanceToNow(new Date(session.updated_at), { addSuffix: true, locale: ptBR })
+                            : 'Sem atualização'
+                          }
                         </p>
-                      )}
+                      </div>
                     </div>
-                    <Button variant="ghost" size="sm" className="w-full sm:w-auto" onClick={() => navigate("/sessions")}>
-                      Ver Detalhes
-                    </Button>
+                    {getStatusBadge(session.id)}
                   </div>
                 ))}
               </div>
@@ -590,36 +541,35 @@ const Dashboard = () => {
         </motion.div>
       )}
 
-      {/* Anúncios Recentes (Superadmin apenas) */}
-      {userData?.role === 'superadmin' && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.4 }}
-        >
-          <Card className="border-primary/20">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="flex items-center gap-2">
-                    <Megaphone className="h-5 w-5 text-primary" />
-                    Gerenciar Anúncios
-                  </CardTitle>
-                  <CardDescription>
-                    Acesso administrativo para gerenciar anúncios do sistema
-                  </CardDescription>
-                </div>
-                <Button variant="default" asChild>
-                  <Link to="/announcements">
-                    Acessar
-                    <ArrowRight className="h-4 w-4 ml-2" />
-                  </Link>
-                </Button>
-              </div>
-            </CardHeader>
-          </Card>
-        </motion.div>
-      )}
+      {/* Tools Section */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.4 }}
+      >
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Settings className="h-5 w-5" />
+              Ferramentas
+            </CardTitle>
+            <CardDescription>
+              Acesse ferramentas úteis para gerenciar sua conta
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-wrap gap-3">
+            <BearerTokenSheet sessions={sessions} />
+            <SendTestMessageDialog 
+              sessions={sessions} 
+              onSend={handleSendTestMessage}
+            />
+            <Button variant="outline" onClick={() => navigate("/announcements")}>
+              <Megaphone className="h-4 w-4 mr-2" />
+              Comunicados
+            </Button>
+          </CardContent>
+        </Card>
+      </motion.div>
     </div>
   );
 };
