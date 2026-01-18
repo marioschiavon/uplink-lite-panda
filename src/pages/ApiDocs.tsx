@@ -51,7 +51,7 @@ const ApiDocs = () => {
             <AlertDescription className="space-y-2">
               <p>
                 Todas as requisições requerem autenticação via <strong>apikey</strong> no header. 
-                Obtenha sua apikey no Dashboard → Ferramentas → Ver Bearer Token.
+                Obtenha sua apikey no Dashboard → Ferramentas → Ver API Key.
               </p>
               <code className="block bg-muted px-3 py-2 rounded text-sm mt-2">
                 apikey: sua-apikey-aqui

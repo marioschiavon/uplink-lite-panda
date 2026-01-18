@@ -7,7 +7,7 @@ import CreateOrgModal from "@/components/CreateOrgModal";
 import { AnnouncementBanner } from "@/components/AnnouncementBanner";
 import { StatsCard } from "@/components/dashboard/StatsCard";
 import { OrganizationBanner } from "@/components/dashboard/OrganizationBanner";
-import { BearerTokenSheet } from "@/components/dashboard/BearerTokenSheet";
+import { ApiKeySheet } from "@/components/dashboard/ApiKeySheet";
 import { SendTestMessageDialog } from "@/components/dashboard/SendTestMessageDialog";
 import { ConnectionHelpCard } from "@/components/dashboard/ConnectionHelpCard";
 import { toast } from "sonner";
@@ -558,7 +558,7 @@ const Dashboard = () => {
             </CardDescription>
           </CardHeader>
           <CardContent className="flex flex-wrap gap-3">
-            <BearerTokenSheet sessions={sessions} />
+            <ApiKeySheet sessions={sessions} />
             <SendTestMessageDialog 
               sessions={sessions} 
               onSend={handleSendTestMessage}
