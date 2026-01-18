@@ -95,6 +95,10 @@ serve(async (req) => {
     // 7. Criar instância na Evolution API
     console.log(`Creating instance in Evolution API: ${session_name}`);
     
+    let instanceApiKey: string | null = null;
+    let instanceData: any = null;
+    let instanceExists = false;
+
     const createResponse = await fetch(`${evolutionApiUrl}/instance/create`, {
       method: 'POST',
       headers: {
@@ -110,32 +114,68 @@ serve(async (req) => {
 
     if (!createResponse.ok) {
       const errorText = await createResponse.text();
-      console.error(`Evolution API error: ${createResponse.status} - ${errorText}`);
+      console.error(`Evolution API create error: ${createResponse.status} - ${errorText}`);
       
-      // Se a instância já existe, tentar buscar os dados
+      // Se a instância já existe (400 ou 409), buscar o token existente
       if (createResponse.status === 400 || createResponse.status === 409) {
-        console.log('Instance may already exist, proceeding with existing data...');
+        console.log('Instance already exists, fetching existing token...');
+        instanceExists = true;
       } else {
         throw new Error(`Evolution API error: ${createResponse.status} - ${errorText}`);
       }
-    }
-
-    let instanceApiKey = evolutionApiKey; // Fallback to global key
-    let instanceData: any = null;
-
-    try {
-      instanceData = await createResponse.json();
-      console.log('Evolution API response:', JSON.stringify(instanceData));
-      
-      // Tentar extrair o apikey específico da instância
-      if (instanceData?.hash?.apikey) {
-        instanceApiKey = instanceData.hash.apikey;
+    } else {
+      try {
+        instanceData = await createResponse.json();
+        console.log('Evolution API create response:', JSON.stringify(instanceData));
+        
+        // Extrair o apikey específico da nova instância
+        if (instanceData?.hash?.apikey) {
+          instanceApiKey = instanceData.hash.apikey;
+          console.log('Got new instance apikey:', instanceApiKey);
+        }
+      } catch (parseError) {
+        console.log('Could not parse Evolution API create response');
       }
-    } catch (parseError) {
-      console.log('Could not parse Evolution API response, using global key');
     }
 
-    console.log(`Instance created/found: ${session_name}`);
+    // Se a instância já existia ou não conseguimos o token, buscar via fetchInstances
+    if (!instanceApiKey || instanceExists) {
+      console.log('Fetching existing instances to get token...');
+      
+      const fetchResponse = await fetch(`${evolutionApiUrl}/instance/fetchInstances`, {
+        headers: {
+          'apikey': evolutionApiKey
+        }
+      });
+
+      if (fetchResponse.ok) {
+        const instances = await fetchResponse.json();
+        console.log(`Found ${Array.isArray(instances) ? instances.length : 0} instances`);
+        
+        if (Array.isArray(instances)) {
+          const existingInstance = instances.find((i: any) => 
+            i.name === session_name || i.instanceName === session_name
+          );
+          
+          if (existingInstance) {
+            // O token da instância pode estar em diferentes campos dependendo da versão
+            instanceApiKey = existingInstance.token || existingInstance.apikey || existingInstance.hash?.apikey;
+            console.log('Found existing instance token:', instanceApiKey ? 'YES' : 'NO');
+          } else {
+            console.log('Instance not found in fetchInstances response');
+          }
+        }
+      } else {
+        console.error('Failed to fetch instances:', fetchResponse.status);
+      }
+    }
+
+    // Se ainda não temos o token, é um erro
+    if (!instanceApiKey) {
+      throw new Error('Could not obtain instance API key from Evolution API');
+    }
+
+    console.log(`Instance created/found: ${session_name} with valid API key`);
 
     // 8. Criar ou atualizar registro na tabela sessions usando service_role
     const supabaseAdmin = createClient(

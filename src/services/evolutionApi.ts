@@ -183,6 +183,66 @@ export const deleteInstance = async (
 };
 
 /**
+ * Interface para instância retornada pelo fetchInstances
+ */
+export interface EvolutionInstanceInfo {
+  name: string;
+  token: string;
+  status?: string;
+}
+
+/**
+ * Buscar todas as instâncias (usado para recuperar token de instância existente)
+ * Requer a Global API Key
+ */
+export const fetchInstances = async (
+  globalApiKey: string
+): Promise<EvolutionInstanceInfo[]> => {
+  try {
+    const response = await fetch(
+      `${EVOLUTION_API_URL}/instance/fetchInstances`,
+      {
+        headers: {
+          'apikey': globalApiKey
+        }
+      }
+    );
+
+    if (!response.ok) {
+      console.error('Erro ao buscar instâncias:', response.status);
+      return [];
+    }
+
+    const data = await response.json();
+    
+    // A Evolution API retorna um array de instâncias
+    if (Array.isArray(data)) {
+      return data.map((instance: any) => ({
+        name: instance.name || instance.instanceName,
+        token: instance.token || instance.apikey,
+        status: instance.status
+      }));
+    }
+    
+    return [];
+  } catch (error) {
+    console.error('Erro ao buscar instâncias:', error);
+    return [];
+  }
+};
+
+/**
+ * Verificar se o token tem formato válido da Evolution API
+ * Tokens válidos são UUIDs no formato: XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX
+ */
+export const isValidEvolutionToken = (token: string | null | undefined): boolean => {
+  if (!token) return false;
+  // UUID pattern para Evolution API tokens
+  const uuidPattern = /^[A-F0-9]{8}-[A-F0-9]{4}-[A-F0-9]{4}-[A-F0-9]{4}-[A-F0-9]{12}$/i;
+  return uuidPattern.test(token);
+};
+
+/**
  * Enviar mensagem de texto
  */
 export const sendText = async (
@@ -270,6 +330,8 @@ export const evolutionApi = {
   fetchQRCode,
   logoutInstance,
   deleteInstance,
+  fetchInstances,
+  isValidEvolutionToken,
   sendText,
   sendMedia
 };

@@ -10,7 +10,7 @@ import { StatsCard } from "@/components/dashboard/StatsCard";
 import { toast } from "sonner";
 import { MessageSquare, Zap, Clock, AlertTriangle, Plus } from "lucide-react";
 import { motion } from "framer-motion";
-import { evolutionApi, NormalizedConnectionStatus } from "@/services/evolutionApi";
+import { evolutionApi, NormalizedConnectionStatus, isValidEvolutionToken } from "@/services/evolutionApi";
 
 interface SessionData {
   id: string;
@@ -59,6 +59,7 @@ const Sessions = () => {
   const [qrExpiresIn, setQrExpiresIn] = useState<number | null>(null);
   const [generatingQrCode, setGeneratingQrCode] = useState(false);
   const [qrCodeKey, setQrCodeKey] = useState<string>("");
+  const [reconfiguringSession, setReconfiguringSession] = useState<string | null>(null);
 
   const fetchSessions = async () => {
     try {
@@ -177,7 +178,40 @@ const Sessions = () => {
     }
   }, []);
 
+  const handleReconfigureSession = async (session: SessionData) => {
+    setReconfiguringSession(session.id);
+    
+    try {
+      toast.info("Reconfigurando sessão para Evolution API...");
+      
+      const { data, error } = await supabase.functions.invoke('generate-whatsapp-token', {
+        body: { session_name: session.name }
+      });
+      
+      if (error) throw error;
+      
+      if (data.success) {
+        toast.success("Sessão reconfigurada com sucesso! O novo token foi salvo.");
+        await fetchSessions();
+      } else {
+        throw new Error(data.error || "Erro ao reconfigurar sessão");
+      }
+    } catch (error: any) {
+      console.error('Erro ao reconfigurar sessão:', error);
+      toast.error(error.message || "Erro ao reconfigurar sessão");
+    } finally {
+      setReconfiguringSession(null);
+    }
+  };
+
   const handleStartSession = useCallback(async (session: SessionData) => {
+    // Verificar se o token é válido para Evolution API
+    if (session.api_token && !isValidEvolutionToken(session.api_token)) {
+      toast.warning("Token desatualizado detectado. Reconfigurando sessão...");
+      await handleReconfigureSession(session);
+      return;
+    }
+
     // Validar se precisa de assinatura
     if (session.requires_subscription) {
       const { data: subscription } = await supabase
