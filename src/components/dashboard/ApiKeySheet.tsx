@@ -13,7 +13,7 @@ import { Separator } from "@/components/ui/separator";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 
-interface BearerTokenSheetProps {
+interface ApiKeySheetProps {
   sessions: Array<{
     id: string;
     name: string;
@@ -21,7 +21,7 @@ interface BearerTokenSheetProps {
   }>;
 }
 
-export function BearerTokenSheet({ sessions }: BearerTokenSheetProps) {
+export function ApiKeySheet({ sessions }: ApiKeySheetProps) {
   const [copied, setCopied] = useState(false);
   const [selectedSessionId, setSelectedSessionId] = useState<string>(sessions[0]?.id || "");
 
@@ -43,7 +43,7 @@ export function BearerTokenSheet({ sessions }: BearerTokenSheetProps) {
       <SheetTrigger asChild>
         <Button variant="outline" className="gap-2 w-full sm:w-auto justify-center">
           <Key className="h-4 w-4" />
-          Ver Token da API
+          Ver API Key
           <Badge variant="secondary" className="ml-1">
             {sessions.length}
           </Badge>
@@ -51,9 +51,9 @@ export function BearerTokenSheet({ sessions }: BearerTokenSheetProps) {
       </SheetTrigger>
       <SheetContent side="right" className="w-full sm:w-96">
         <SheetHeader>
-          <SheetTitle>Bearer Token</SheetTitle>
+          <SheetTitle>API Key</SheetTitle>
           <SheetDescription>
-            Token de autenticação da API WhatsApp
+            Chave de autenticação da API WhatsApp
           </SheetDescription>
         </SheetHeader>
 
@@ -96,7 +96,7 @@ export function BearerTokenSheet({ sessions }: BearerTokenSheetProps) {
             ) : (
               <>
                 <Copy className="h-4 w-4" />
-                Copiar Token
+                Copiar API Key
               </>
             )}
           </Button>
@@ -107,17 +107,17 @@ export function BearerTokenSheet({ sessions }: BearerTokenSheetProps) {
             <h4 className="font-semibold">Como usar:</h4>
             <div>
               <p className="text-muted-foreground mb-2">
-                Adicione o token no header Authorization:
+                Adicione a chave no header apikey:
               </p>
               <code className="bg-muted p-2 rounded block text-xs overflow-x-auto">
-                Authorization: Bearer {token.substring(0, 20)}...
+                apikey: {token.substring(0, 20)}...
               </code>
             </div>
             <div>
               <p className="text-muted-foreground mb-2">Exemplo com cURL:</p>
               <code className="bg-muted p-2 rounded block text-xs overflow-x-auto">
                 curl -X POST \<br />
-                &nbsp;&nbsp;-H "Authorization: Bearer TOKEN" \<br />
+                &nbsp;&nbsp;-H "apikey: SUA_API_KEY" \<br />
                 &nbsp;&nbsp;-H "Content-Type: application/json" \<br />
                 &nbsp;&nbsp;URL_DA_API
               </code>

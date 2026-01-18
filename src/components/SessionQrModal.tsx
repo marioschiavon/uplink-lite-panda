@@ -198,10 +198,10 @@ const SessionQrModal = ({
                 </p>
               </div>
 
-              {/* API Token */}
+              {/* API Key */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">Bearer Token</span>
+                  <span className="text-sm font-medium">API Key</span>
                   <Button
                     variant="ghost"
                     size="sm"
@@ -216,7 +216,7 @@ const SessionQrModal = ({
                   {session.api_token}
                 </code>
                 <p className="text-xs text-muted-foreground">
-                  Use este token no header: <code className="bg-muted px-1 py-0.5 rounded">Authorization: Bearer {session.api_token}</code>
+                  Use esta chave no header: <code className="bg-muted px-1 py-0.5 rounded">apikey: {session.api_token}</code>
                 </p>
               </div>
             </motion.div>
