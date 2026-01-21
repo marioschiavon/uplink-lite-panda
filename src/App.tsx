@@ -33,6 +33,7 @@ const App = () => (
         <Routes>
           {/* Public Routes */}
           <Route path="/" element={<Index />} />
+          <Route path="/api-docs" element={<ApiDocs />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
           <Route path="/welcome" element={<Welcome />} />
@@ -48,7 +49,6 @@ const App = () => (
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/sessions" element={<Sessions />} />
             <Route path="/subscriptions" element={<Subscriptions />} />
-            <Route path="/api-docs" element={<ApiDocs />} />
             <Route path="/announcements" element={<Announcements />} />
             <Route path="/monitoring" element={<SessionMonitoring />} />
           </Route>
