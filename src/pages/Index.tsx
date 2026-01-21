@@ -24,25 +24,27 @@ const Index = () => {
   return (
     <>
       <SEO 
-        title="API WhatsApp para Automações | Uplink - R$ 69,90/mês"
-        description="API WhatsApp para automações empresariais. Configure em 5 minutos, envie mensagens ilimitadas por R$ 69,90/mês. Suporte em português 24/7. A melhor alternativa de WhatsApp API do Brasil."
+        browserTitle="UplinkLite"
+        title="Melhor API WhatsApp Brasil | UplinkLite - R$ 69,90/mês"
+        description="A melhor API WhatsApp do Brasil para automações empresariais. Configure em 5 minutos, envie mensagens ilimitadas por R$ 69,90/mês. Suporte em português 24/7. Integre com n8n, Make, Zapier."
         canonical="https://uplinklite.com/"
       />
       <Helmet>
+        {/* Schema.org SoftwareApplication */}
         <script type="application/ld+json">
           {JSON.stringify({
             "@context": "https://schema.org",
             "@type": "SoftwareApplication",
-            "name": "Uplink - API WhatsApp",
+            "name": "UplinkLite - Melhor API WhatsApp do Brasil",
             "applicationCategory": "BusinessApplication",
             "operatingSystem": "Web",
-            "description": "API WhatsApp para automações empresariais. Configure em 5 minutos, envie mensagens ilimitadas.",
+            "description": "A melhor API WhatsApp do Brasil para automações empresariais. Configure em 5 minutos, envie mensagens ilimitadas por R$ 69,90/mês.",
             "url": "https://uplinklite.com",
             "offers": {
               "@type": "Offer",
               "price": "69.90",
               "priceCurrency": "BRL",
-              "priceValidUntil": "2025-12-31"
+              "priceValidUntil": "2026-12-31"
             },
             "aggregateRating": {
               "@type": "AggregateRating",
@@ -55,6 +57,114 @@ const Index = () => {
               "name": "S7",
               "url": "https://uplinklite.com"
             }
+          })}
+        </script>
+        
+        {/* Schema.org Organization */}
+        <script type="application/ld+json">
+          {JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "Organization",
+            "name": "UplinkLite",
+            "url": "https://uplinklite.com",
+            "logo": "https://uplinklite.com/logo-512.png",
+            "description": "A melhor API WhatsApp do Brasil para automações empresariais",
+            "contactPoint": {
+              "@type": "ContactPoint",
+              "contactType": "customer support",
+              "availableLanguage": ["Portuguese"],
+              "email": "suporte@uplinklite.com"
+            },
+            "sameAs": []
+          })}
+        </script>
+        
+        {/* Schema.org FAQPage */}
+        <script type="application/ld+json">
+          {JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "FAQPage",
+            "mainEntity": [
+              {
+                "@type": "Question",
+                "name": "Preciso ser BSP do WhatsApp?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "Não! Nossa solução funciona de forma independente. Você não precisa ser Business Service Provider do WhatsApp."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "Quanto tempo leva para configurar a API WhatsApp?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "Menos de 5 minutos! Crie sua conta, configure a sessão escaneando o QR Code e comece a enviar mensagens imediatamente."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "Existe limite de mensagens na API WhatsApp?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "Não há limite de mensagens no plano. Você pode enviar quantas mensagens precisar para seus clientes."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "Posso cancelar a qualquer momento?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "Sim! Não há fidelidade. Você pode cancelar sua assinatura quando quiser, sem multas ou taxas adicionais."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "A UplinkLite oferece suporte técnico?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "Sim! Oferecemos suporte técnico 24/7 em português. Nossa equipe está sempre pronta para ajudar."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "Por que a UplinkLite é a melhor API WhatsApp do Brasil?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "A UplinkLite oferece a melhor relação custo-benefício do mercado: R$ 69,90/mês com mensagens ilimitadas, configuração em 5 minutos, suporte 24/7 em português, integração com n8n, Make, Zapier e outras plataformas, sem necessidade de ser BSP do WhatsApp."
+                }
+              }
+            ]
+          })}
+        </script>
+        
+        {/* Schema.org HowTo */}
+        <script type="application/ld+json">
+          {JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "HowTo",
+            "name": "Como configurar a API WhatsApp da UplinkLite",
+            "description": "Configure sua API WhatsApp em 3 passos simples e comece a enviar mensagens automatizadas",
+            "totalTime": "PT5M",
+            "step": [
+              {
+                "@type": "HowToStep",
+                "name": "Crie sua conta",
+                "text": "Faça o cadastro em menos de 1 minuto com seu e-mail",
+                "position": 1
+              },
+              {
+                "@type": "HowToStep",
+                "name": "Configure a sessão",
+                "text": "Escaneie o QR Code com seu WhatsApp para conectar",
+                "position": 2
+              },
+              {
+                "@type": "HowToStep",
+                "name": "Comece a enviar",
+                "text": "Use nossa API para enviar mensagens automaticamente",
+                "position": 3
+              }
+            ]
           })}
         </script>
       </Helmet>
@@ -129,19 +239,19 @@ const Index = () => {
             >
               <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-2 rounded-full text-sm font-medium border border-primary/20">
                 <Sparkles className="h-4 w-4" />
-                <span>A API WhatsApp mais simples do Brasil</span>
+                <span>Melhor API WhatsApp para Automações</span>
               </div>
 
               <h1 className="text-5xl md:text-7xl font-bold leading-tight">
-                WhatsApp API
+                A Melhor API
                 <br />
                 <span className="bg-gradient-to-r from-primary via-primary to-secondary bg-clip-text text-transparent">
-                  em 5 minutos
+                  WhatsApp do Brasil
                 </span>
               </h1>
               
               <p className="text-xl text-muted-foreground leading-relaxed">
-                Configure sua API WhatsApp sem burocracia. Suporte em português, pagamento em R$ e documentação completa. Comece agora e envie sua primeira mensagem em minutos.
+                Configure sua API WhatsApp em 5 minutos sem burocracia. A alternativa mais simples e barata à API oficial. Suporte em português 24/7, pagamento em R$ e integração com n8n, Make e Zapier.
               </p>
 
               <div className="flex flex-wrap items-center gap-4 pt-4">
@@ -355,7 +465,7 @@ const Index = () => {
               <span className="text-primary">ferramentas favoritas</span>
             </h2>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              Compatível com as principais plataformas de automação e linguagens
+              A melhor API WhatsApp para n8n, Make, Zapier e todas as linguagens de programação
             </p>
           </motion.div>
 
@@ -758,6 +868,10 @@ const Index = () => {
           <Accordion type="single" collapsible className="space-y-4">
             {[
               {
+                question: "Por que a UplinkLite é a melhor API WhatsApp do Brasil?",
+                answer: "A UplinkLite oferece a melhor relação custo-benefício do mercado: R$ 69,90/mês com mensagens ilimitadas, configuração em 5 minutos, suporte 24/7 em português, integração com n8n, Make, Zapier e outras plataformas, sem necessidade de ser BSP do WhatsApp."
+              },
+              {
                 question: "Preciso ser BSP do WhatsApp?",
                 answer: "Não! Nossa solução funciona de forma independente. Você não precisa ser Business Service Provider do WhatsApp."
               },
@@ -780,6 +894,10 @@ const Index = () => {
               {
                 question: "Como funciona o pagamento?",
                 answer: "Aceitamos cartão de crédito via Stripe. O pagamento é mensal e recorrente. Você pode gerenciar sua assinatura no painel."
+              },
+              {
+                question: "A API WhatsApp funciona com n8n, Make e Zapier?",
+                answer: "Sim! Nossa API WhatsApp é compatível com n8n, Make (Integromat), Zapier, Bubble e qualquer plataforma que aceite webhooks e requisições HTTP. Também funciona com Python, Node.js, PHP e outras linguagens."
               }
             ].map((faq, index) => (
               <motion.div
@@ -865,7 +983,7 @@ const Index = () => {
                 <span className="text-xl font-bold">Uplink</span>
               </div>
               <p className="text-muted-foreground text-sm leading-relaxed">
-                A API WhatsApp mais simples do Brasil. Automatize a comunicação da sua empresa em minutos.
+                A melhor API WhatsApp do Brasil. Automatize a comunicação da sua empresa em minutos com a alternativa mais simples e barata do mercado.
               </p>
             </div>
 

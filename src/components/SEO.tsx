@@ -1,6 +1,7 @@
 import { Helmet } from 'react-helmet-async';
 
 interface SEOProps {
+  browserTitle?: string;
   title: string;
   description: string;
   canonical?: string;
@@ -10,6 +11,7 @@ interface SEOProps {
 }
 
 export const SEO = ({ 
+  browserTitle,
   title, 
   description, 
   canonical, 
@@ -17,11 +19,12 @@ export const SEO = ({
   ogImage = "https://uplinklite.com/logo-512.png",
   ogType = "website"
 }: SEOProps) => {
-  const fullTitle = title.includes("Uplink") ? title : `${title} | Uplink - API WhatsApp`;
+  const seoTitle = title.includes("UplinkLite") ? title : `${title} | UplinkLite`;
+  const tabTitle = browserTitle || "UplinkLite";
   
   return (
     <Helmet>
-      <title>{fullTitle}</title>
+      <title>{tabTitle}</title>
       <meta name="description" content={description} />
       {canonical && <link rel="canonical" href={canonical} />}
       {noindex ? (
@@ -31,7 +34,7 @@ export const SEO = ({
       )}
       
       {/* Open Graph */}
-      <meta property="og:title" content={fullTitle} />
+      <meta property="og:title" content={seoTitle} />
       <meta property="og:description" content={description} />
       <meta property="og:type" content={ogType} />
       <meta property="og:image" content={ogImage} />
@@ -39,7 +42,7 @@ export const SEO = ({
       
       {/* Twitter */}
       <meta name="twitter:card" content="summary_large_image" />
-      <meta name="twitter:title" content={fullTitle} />
+      <meta name="twitter:title" content={seoTitle} />
       <meta name="twitter:description" content={description} />
       <meta name="twitter:image" content={ogImage} />
     </Helmet>
