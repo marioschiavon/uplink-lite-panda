@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
-import { BookOpen, Shield, Code2, Zap, AlertCircle } from "lucide-react";
+import { BookOpen, Shield, Code2, Zap, AlertCircle, ArrowLeft } from "lucide-react";
+import { Link } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -55,6 +56,22 @@ const ApiDocs = () => {
           })}
         </script>
       </Helmet>
+      {/* Navigation Header */}
+      <header className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
+        <div className="container mx-auto px-6 py-4 flex items-center justify-between">
+          <Link to="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+            <img src="/logo-uplink.png" alt="UplinkLite" className="h-8 w-auto" />
+          </Link>
+          <Link 
+            to="/" 
+            className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Voltar para a página inicial
+          </Link>
+        </div>
+      </header>
+
       <div className="container mx-auto p-6 space-y-6">
         {/* Header */}
         <motion.header
