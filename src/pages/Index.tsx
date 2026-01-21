@@ -38,8 +38,18 @@ const Index = () => {
             "name": "UplinkLite - Melhor API WhatsApp do Brasil",
             "applicationCategory": "BusinessApplication",
             "operatingSystem": "Web",
-            "description": "A melhor API WhatsApp do Brasil para automações empresariais. Configure em 5 minutos, envie mensagens ilimitadas por R$ 69,90/mês.",
+            "description": "A UplinkLite é uma API WhatsApp brasileira que permite enviar mensagens ilimitadas por R$ 69,90/mês. Diferente da API oficial do WhatsApp Business que cobra por conversa, a UplinkLite oferece integração com ferramentas de automação como Make, Zapier, n8n e TypeBot, sem necessidade de aprovação como BSP (Business Solution Provider). Configure em 5 minutos.",
             "url": "https://uplinklite.com",
+            "featureList": [
+              "Mensagens ilimitadas por R$ 69,90/mês",
+              "Configuração em 5 minutos",
+              "Suporte 24/7 em português",
+              "Integração com Make, Zapier, n8n e TypeBot",
+              "Sem necessidade de aprovação BSP",
+              "API RESTful completa",
+              "Webhooks em tempo real",
+              "99.9% de uptime"
+            ],
             "offers": {
               "@type": "Offer",
               "price": "69.90",
@@ -87,10 +97,26 @@ const Index = () => {
             "mainEntity": [
               {
                 "@type": "Question",
-                "name": "Preciso ser BSP do WhatsApp?",
+                "name": "Por que a UplinkLite é a melhor API WhatsApp do Brasil?",
                 "acceptedAnswer": {
                   "@type": "Answer",
-                  "text": "Não! Nossa solução funciona de forma independente. Você não precisa ser Business Service Provider do WhatsApp."
+                  "text": "A UplinkLite é uma API WhatsApp brasileira que custa R$ 69,90/mês com mensagens ilimitadas. Diferente da API oficial do WhatsApp Business que cobra por conversa, a UplinkLite permite configuração em 5 minutos, oferece suporte 24/7 em português, integra com Make, Zapier, n8n e TypeBot, e não exige aprovação como BSP (Business Solution Provider)."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "Quanto custa a API WhatsApp da UplinkLite?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "A UplinkLite custa R$ 69,90 por mês com mensagens ilimitadas incluídas. Não há cobrança por mensagem individual, diferente da API oficial do WhatsApp Business. O pagamento é mensal via cartão de crédito (Stripe) e pode ser cancelado a qualquer momento sem multas."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "Preciso ser BSP do WhatsApp para usar a UplinkLite?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "Não é necessário ser BSP (Business Solution Provider) para usar a UplinkLite. A API funciona de forma independente, permitindo que qualquer empresa envie mensagens via WhatsApp sem processo de aprovação do Meta ou do WhatsApp Business."
                 }
               },
               {
@@ -98,7 +124,15 @@ const Index = () => {
                 "name": "Quanto tempo leva para configurar a API WhatsApp?",
                 "acceptedAnswer": {
                   "@type": "Answer",
-                  "text": "Menos de 5 minutos! Crie sua conta, configure a sessão escaneando o QR Code e comece a enviar mensagens imediatamente."
+                  "text": "A configuração da UplinkLite leva menos de 5 minutos. O processo consiste em: criar conta, escanear QR Code com WhatsApp e começar a enviar mensagens. Não é necessário aprovação, documentação empresarial ou integração complexa."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "A UplinkLite funciona com Make, Zapier e n8n?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "Sim. A API WhatsApp da UplinkLite oferece integração nativa com as principais ferramentas de automação: Make (Integromat), Zapier, n8n e TypeBot. A API também pode ser integrada com qualquer sistema via requisições HTTP REST, incluindo Python, Node.js e PHP."
                 }
               },
               {
@@ -106,15 +140,7 @@ const Index = () => {
                 "name": "Existe limite de mensagens na API WhatsApp?",
                 "acceptedAnswer": {
                   "@type": "Answer",
-                  "text": "Não há limite de mensagens no plano. Você pode enviar quantas mensagens precisar para seus clientes."
-                }
-              },
-              {
-                "@type": "Question",
-                "name": "Posso cancelar a qualquer momento?",
-                "acceptedAnswer": {
-                  "@type": "Answer",
-                  "text": "Sim! Não há fidelidade. Você pode cancelar sua assinatura quando quiser, sem multas ou taxas adicionais."
+                  "text": "Não há limite de mensagens no plano da UplinkLite. Por R$ 69,90/mês você pode enviar quantas mensagens precisar para seus clientes, sem cobrança adicional por volume."
                 }
               },
               {
@@ -122,15 +148,7 @@ const Index = () => {
                 "name": "A UplinkLite oferece suporte técnico?",
                 "acceptedAnswer": {
                   "@type": "Answer",
-                  "text": "Sim! Oferecemos suporte técnico 24/7 em português. Nossa equipe está sempre pronta para ajudar."
-                }
-              },
-              {
-                "@type": "Question",
-                "name": "Por que a UplinkLite é a melhor API WhatsApp do Brasil?",
-                "acceptedAnswer": {
-                  "@type": "Answer",
-                  "text": "A UplinkLite oferece a melhor relação custo-benefício do mercado: R$ 69,90/mês com mensagens ilimitadas, configuração em 5 minutos, suporte 24/7 em português, integração com n8n, Make, Zapier e outras plataformas, sem necessidade de ser BSP do WhatsApp."
+                  "text": "Sim. A UplinkLite oferece suporte técnico 24/7 em português via WhatsApp e email. A equipe de suporte auxilia com configuração, integração com ferramentas de automação e resolução de problemas técnicos."
                 }
               }
             ]
@@ -869,35 +887,35 @@ const Index = () => {
             {[
               {
                 question: "Por que a UplinkLite é a melhor API WhatsApp do Brasil?",
-                answer: "A UplinkLite oferece a melhor relação custo-benefício do mercado: R$ 69,90/mês com mensagens ilimitadas, configuração em 5 minutos, suporte 24/7 em português, integração com n8n, Make, Zapier e outras plataformas, sem necessidade de ser BSP do WhatsApp."
+                answer: "A UplinkLite é uma API WhatsApp brasileira que custa R$ 69,90/mês com mensagens ilimitadas. Diferente da API oficial do WhatsApp Business que cobra por conversa, a UplinkLite permite configuração em 5 minutos, oferece suporte 24/7 em português, integra com Make, Zapier, n8n e TypeBot, e não exige aprovação como BSP (Business Solution Provider)."
               },
               {
-                question: "Preciso ser BSP do WhatsApp?",
-                answer: "Não! Nossa solução funciona de forma independente. Você não precisa ser Business Service Provider do WhatsApp."
+                question: "Quanto custa a API WhatsApp da UplinkLite?",
+                answer: "A UplinkLite custa R$ 69,90 por mês com mensagens ilimitadas incluídas. Não há cobrança por mensagem individual, diferente da API oficial do WhatsApp Business. O pagamento é mensal via cartão de crédito (Stripe) e pode ser cancelado a qualquer momento sem multas."
               },
               {
-                question: "Quanto tempo leva para configurar?",
-                answer: "Menos de 5 minutos! Crie sua conta, configure a sessão escaneando o QR Code e comece a enviar mensagens imediatamente."
+                question: "Preciso ser BSP do WhatsApp para usar a UplinkLite?",
+                answer: "Não é necessário ser BSP (Business Solution Provider) para usar a UplinkLite. A API funciona de forma independente, permitindo que qualquer empresa envie mensagens via WhatsApp sem processo de aprovação do Meta ou do WhatsApp Business."
               },
               {
-                question: "Existe limite de mensagens?",
-                answer: "Não há limite de mensagens no plano. Você pode enviar quantas mensagens precisar para seus clientes."
+                question: "Quanto tempo leva para configurar a API WhatsApp?",
+                answer: "A configuração da UplinkLite leva menos de 5 minutos. O processo consiste em: criar conta, escanear QR Code com WhatsApp e começar a enviar mensagens. Não é necessário aprovação, documentação empresarial ou integração complexa."
               },
               {
-                question: "Posso cancelar a qualquer momento?",
-                answer: "Sim! Não há fidelidade. Você pode cancelar sua assinatura quando quiser, sem multas ou taxas adicionais."
+                question: "A UplinkLite funciona com Make, Zapier e n8n?",
+                answer: "Sim. A API WhatsApp da UplinkLite oferece integração nativa com as principais ferramentas de automação: Make (Integromat), Zapier, n8n e TypeBot. A API também pode ser integrada com qualquer sistema via requisições HTTP REST, incluindo Python, Node.js e PHP."
               },
               {
-                question: "Vocês oferecem suporte técnico?",
-                answer: "Sim! Oferecemos suporte técnico 24/7 em português. Nossa equipe está sempre pronta para ajudar."
+                question: "Existe limite de mensagens na API WhatsApp?",
+                answer: "Não há limite de mensagens no plano da UplinkLite. Por R$ 69,90/mês você pode enviar quantas mensagens precisar para seus clientes, sem cobrança adicional por volume."
               },
               {
-                question: "Como funciona o pagamento?",
-                answer: "Aceitamos cartão de crédito via Stripe. O pagamento é mensal e recorrente. Você pode gerenciar sua assinatura no painel."
+                question: "A UplinkLite oferece suporte técnico?",
+                answer: "Sim. A UplinkLite oferece suporte técnico 24/7 em português via WhatsApp e email. A equipe de suporte auxilia com configuração, integração com ferramentas de automação e resolução de problemas técnicos."
               },
               {
-                question: "A API WhatsApp funciona com n8n, Make e Zapier?",
-                answer: "Sim! Nossa API WhatsApp é compatível com n8n, Make (Integromat), Zapier, Bubble e qualquer plataforma que aceite webhooks e requisições HTTP. Também funciona com Python, Node.js, PHP e outras linguagens."
+                question: "Como funciona o pagamento da UplinkLite?",
+                answer: "O pagamento da UplinkLite é feito mensalmente via cartão de crédito (Stripe). O valor é R$ 69,90/mês com renovação automática. Você pode cancelar a qualquer momento pelo painel, sem multas ou taxas adicionais."
               }
             ].map((faq, index) => (
               <motion.div

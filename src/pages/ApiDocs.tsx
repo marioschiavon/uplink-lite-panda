@@ -8,6 +8,7 @@ import { Separator } from "@/components/ui/separator";
 import { EndpointCard } from "@/components/api-docs/EndpointCard";
 import { CodeBlock } from "@/components/api-docs/CodeBlock";
 import { SEO } from "@/components/SEO";
+import { Helmet } from "react-helmet-async";
 
 const ApiDocs = () => {
   const commonErrors = [
@@ -20,29 +21,89 @@ const ApiDocs = () => {
   return (
     <>
       <SEO 
-        title="Documentação da API WhatsApp | Uplink"
-        description="Documentação completa da API WhatsApp Uplink com Evolution API. Aprenda a enviar mensagens, mídias e integrar com n8n, Make, Zapier. Exemplos em JavaScript, Python e PHP."
+        title="Documentação da API WhatsApp | UplinkLite"
+        description="Documentação completa da API WhatsApp UplinkLite. Aprenda a enviar mensagens, mídias e integrar com Make, Zapier, n8n e TypeBot. Exemplos em JavaScript, Python e PHP."
         canonical="https://uplinklite.com/api-docs"
       />
+      <Helmet>
+        {/* Schema.org TechArticle */}
+        <script type="application/ld+json">
+          {JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "TechArticle",
+            "headline": "Documentação da API WhatsApp UplinkLite",
+            "description": "Documentação técnica completa para integrar a API WhatsApp UplinkLite em suas aplicações. Inclui autenticação, endpoints para envio de mensagens e mídias, exemplos de código em JavaScript, Python e PHP.",
+            "author": {
+              "@type": "Organization",
+              "name": "UplinkLite"
+            },
+            "publisher": {
+              "@type": "Organization",
+              "name": "UplinkLite",
+              "url": "https://uplinklite.com"
+            },
+            "mainEntityOfPage": "https://uplinklite.com/api-docs",
+            "datePublished": "2024-01-01",
+            "dateModified": "2026-01-21",
+            "inLanguage": "pt-BR",
+            "keywords": ["API WhatsApp", "documentação API", "enviar mensagens WhatsApp", "integração WhatsApp", "Make", "Zapier", "n8n", "TypeBot"],
+            "about": {
+              "@type": "SoftwareApplication",
+              "name": "UplinkLite API",
+              "applicationCategory": "BusinessApplication"
+            }
+          })}
+        </script>
+      </Helmet>
       <div className="container mx-auto p-6 space-y-6">
         {/* Header */}
         <motion.header
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="space-y-4"
+          className="space-y-6"
         >
           <div className="flex items-center gap-3">
             <BookOpen className="h-8 w-8 text-primary" aria-hidden="true" />
             <div>
-              <h1 className="text-3xl font-bold">Documentação da API WhatsApp Uplink</h1>
+              <h1 className="text-3xl font-bold">Documentação da API WhatsApp UplinkLite</h1>
               <p className="text-muted-foreground">
-                Integre o WhatsApp nas suas aplicações com nossa API REST (Evolution API v2)
+                Integre o WhatsApp nas suas aplicações com nossa API REST
               </p>
             </div>
             <Badge variant="outline" className="ml-auto">
               v2.0
             </Badge>
           </div>
+
+          {/* Introduction Section - GEO Optimized */}
+          <Card className="border-2 border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">
+            <CardContent className="pt-6 space-y-4">
+              <h2 className="text-xl font-semibold">O que é a API WhatsApp UplinkLite?</h2>
+              <p className="text-muted-foreground leading-relaxed">
+                A UplinkLite é uma API WhatsApp brasileira que permite enviar mensagens de texto, imagens, áudio e documentos via WhatsApp por R$ 69,90/mês com mensagens ilimitadas. A API é RESTful e pode ser integrada com qualquer linguagem de programação (JavaScript, Python, PHP) ou plataforma de automação (Make, Zapier, n8n, TypeBot).
+              </p>
+              
+              <div className="grid md:grid-cols-2 gap-4 pt-2">
+                <div className="space-y-2">
+                  <h3 className="font-medium text-sm">Requisitos</h3>
+                  <ul className="text-sm text-muted-foreground space-y-1">
+                    <li>• Conta ativa na UplinkLite</li>
+                    <li>• Sessão WhatsApp configurada</li>
+                    <li>• API Key (obtida no Dashboard)</li>
+                  </ul>
+                </div>
+                <div className="space-y-2">
+                  <h3 className="font-medium text-sm">Casos de Uso</h3>
+                  <ul className="text-sm text-muted-foreground space-y-1">
+                    <li>• Notificações de pedidos e entregas</li>
+                    <li>• Confirmação de agendamentos</li>
+                    <li>• Campanhas de marketing</li>
+                    <li>• Atendimento automatizado</li>
+                  </ul>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
           {/* Authentication Section */}
           <Alert className="border-primary/50 bg-primary/5">
