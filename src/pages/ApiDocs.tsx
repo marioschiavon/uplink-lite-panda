@@ -59,8 +59,21 @@ const ApiDocs = () => {
       {/* Navigation Header */}
       <header className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
         <div className="container mx-auto px-6 py-4 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-            <img src="/logo-uplink.png" alt="UplinkLite" className="h-8 w-auto" />
+          <Link to="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
+            <div className="relative">
+              <div className="absolute inset-0 bg-primary/20 rounded-full blur-lg animate-pulse-glow" />
+              <img 
+                src="/logo-uplink.png" 
+                alt="Uplink - API WhatsApp" 
+                width="40"
+                height="40"
+                className="h-10 w-10 relative drop-shadow-lg rounded-full"
+              />
+            </div>
+            <span className="text-2xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+              Uplink
+            </span>
+            <Badge variant="secondary" className="text-xs">Lite</Badge>
           </Link>
           <Link 
             to="/" 
