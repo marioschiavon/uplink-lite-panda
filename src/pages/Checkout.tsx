@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { Loader2, CreditCard, Shield, Check, ArrowLeft } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import { useRegionalPricing, formatPrice } from "@/hooks/useRegionalPricing";
 
 export default function Checkout() {
   const [loading, setLoading] = useState(false);
@@ -13,6 +15,8 @@ export default function Checkout() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const sessionName = searchParams.get('session_name');
+  const { t } = useTranslation();
+  const pricing = useRegionalPricing();
 
   useEffect(() => {
     checkAuth();
@@ -21,7 +25,7 @@ export default function Checkout() {
   const checkAuth = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
-      toast.error("Você precisa fazer login primeiro");
+      toast.error(t('checkout.loginRequired'));
       navigate("/login");
       return;
     }
@@ -30,7 +34,7 @@ export default function Checkout() {
 
   const handleSubscribe = async () => {
     if (!sessionName) {
-      toast.error("Nome da sessão não encontrado. Volte ao dashboard e tente novamente.");
+      toast.error(t('checkout.sessionNameRequired'));
       return;
     }
 
@@ -38,12 +42,11 @@ export default function Checkout() {
     setCreatingSession(true);
 
     try {
-      // PASSO 1: Criar registro de sessão PENDENTE no banco (sem chamar API externa)
-      toast.info("Preparando sua sessão...");
+      toast.info(t('checkout.preparingSession'));
       console.log('Criando registro de sessão:', sessionName);
       
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Usuário não autenticado');
+      if (!user) throw new Error('User not authenticated');
 
       const { data: userRecord } = await supabase
         .from("users")
@@ -52,10 +55,9 @@ export default function Checkout() {
         .single();
 
       if (!userRecord?.organization_id) {
-        throw new Error('Organização não encontrada');
+        throw new Error('Organization not found');
       }
 
-      // Criar sessão pendente (sem api_session/token ainda)
       const { data: newSession, error: sessionError } = await supabase
         .from('sessions')
         .insert({
@@ -69,14 +71,13 @@ export default function Checkout() {
 
       if (sessionError) {
         console.error('Erro ao criar sessão:', sessionError);
-        throw new Error('Erro ao criar registro da sessão');
+        throw new Error(t('checkout.sessionCreateError'));
       }
 
       console.log('Sessão criada:', newSession.id);
       setCreatingSession(false);
 
-      // PASSO 2: Criar checkout Stripe
-      toast.info("Redirecionando para pagamento...");
+      toast.info(t('checkout.redirectingPayment'));
       console.log('Criando checkout Stripe para sessão:', newSession.id);
 
       const { data, error } = await supabase.functions.invoke('create-stripe-checkout', {
@@ -92,15 +93,18 @@ export default function Checkout() {
         console.log('Redirecionando para Stripe Checkout:', data.url);
         window.location.href = data.url;
       } else {
-        throw new Error(data.error || "Erro ao criar sessão de pagamento");
+        throw new Error(data.error || "Error creating payment session");
       }
     } catch (error: any) {
       console.error("Erro no processo de checkout:", error);
-      toast.error(error.message || "Erro ao processar assinatura");
+      toast.error(error.message || t('checkout.checkoutError'));
       setLoading(false);
       setCreatingSession(false);
     }
   };
+
+  const priceDisplay = formatPrice(pricing);
+  const features = t('checkout.features', { returnObjects: true }) as string[];
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4 relative">
@@ -112,7 +116,7 @@ export default function Checkout() {
           className="gap-2"
         >
           <ArrowLeft className="h-4 w-4" />
-          Voltar ao Dashboard
+          {t('checkout.backToDashboard')}
         </Button>
       </div>
 
@@ -121,11 +125,11 @@ export default function Checkout() {
           <div className="mx-auto mb-4 h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
             <CreditCard className="h-8 w-8 text-primary" />
           </div>
-          <CardTitle className="text-3xl">Assinar Uplink</CardTitle>
+          <CardTitle className="text-3xl">{t('checkout.title')}</CardTitle>
           <CardDescription className="text-lg mt-2">
             {sessionName 
-              ? `Finalize o pagamento para criar a sessão "${sessionName}"`
-              : "Plano de Sessão API WhatsApp"
+              ? t('checkout.subtitleWithSession', { sessionName })
+              : t('checkout.subtitle')
             }
           </CardDescription>
         </CardHeader>
@@ -133,39 +137,24 @@ export default function Checkout() {
         <CardContent className="space-y-6">
           <div className="text-center py-6 border-y">
             <div className="text-5xl font-bold text-primary mb-2">
-              R$ 69,90
+              {priceDisplay}
             </div>
-            <div className="text-muted-foreground">por mês</div>
+            <div className="text-muted-foreground">{t('checkout.perMonth')}</div>
           </div>
 
           <div className="space-y-3">
-            <div className="flex items-center gap-3">
-              <Check className="h-5 w-5 text-primary flex-shrink-0" />
-              <span>1 sessão de API WhatsApp</span>
-            </div>
-            <div className="flex items-center gap-3">
-              <Check className="h-5 w-5 text-primary flex-shrink-0" />
-              <span>Configuração em minutos</span>
-            </div>
-            <div className="flex items-center gap-3">
-              <Check className="h-5 w-5 text-primary flex-shrink-0" />
-              <span>Documentação completa</span>
-            </div>
-            <div className="flex items-center gap-3">
-              <Check className="h-5 w-5 text-primary flex-shrink-0" />
-              <span>Suporte técnico</span>
-            </div>
-            <div className="flex items-center gap-3">
-              <Check className="h-5 w-5 text-primary flex-shrink-0" />
-              <span>Cancele quando quiser</span>
-            </div>
+            {features.map((feature, index) => (
+              <div key={index} className="flex items-center gap-3">
+                <Check className="h-5 w-5 text-primary flex-shrink-0" />
+                <span>{feature}</span>
+              </div>
+            ))}
           </div>
 
           <div className="bg-muted/50 p-4 rounded-lg flex items-start gap-3">
             <Shield className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
             <div className="text-sm text-muted-foreground">
-              Pagamento 100% seguro processado pelo Mercado Pago. 
-              Renovação automática mensal. Cancele quando quiser.
+              {t('checkout.securePayment')}
             </div>
           </div>
 
@@ -178,16 +167,16 @@ export default function Checkout() {
             {creatingSession && (
               <>
                 <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                Criando sessão...
+                {t('checkout.creatingSession')}
               </>
             )}
             {!creatingSession && loading && (
               <>
                 <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                Processando pagamento...
+                {t('checkout.processingPayment')}
               </>
             )}
-            {!creatingSession && !loading && "Assinar agora"}
+            {!creatingSession && !loading && t('checkout.subscribeNow')}
           </Button>
 
           <Button
@@ -196,18 +185,18 @@ export default function Checkout() {
             disabled={loading}
             className="w-full"
           >
-            Voltar ao Dashboard
+            {t('checkout.backToDashboard')}
           </Button>
 
           {!sessionName && (
             <p className="text-sm text-destructive text-center font-medium">
-              ⚠️ Nome da sessão não encontrado. Volte ao dashboard.
+              {t('checkout.sessionNotFound')}
             </p>
           )}
 
           <div className="text-center text-sm text-muted-foreground">
-            Ao assinar, você concorda com nossos{" "}
-            <button onClick={() => navigate("/terms")} className="text-primary hover:underline">Termos de Serviço</button>
+            {t('checkout.termsAgree')}{" "}
+            <button onClick={() => navigate("/terms")} className="text-primary hover:underline">{t('checkout.termsLink')}</button>
           </div>
         </CardContent>
       </Card>

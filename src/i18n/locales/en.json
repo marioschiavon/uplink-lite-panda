@@ -1,0 +1,289 @@
+{
+  "nav": {
+    "features": "Features",
+    "integrations": "Integrations",
+    "pricing": "Pricing",
+    "docs": "Docs",
+    "login": "Login",
+    "startNow": "Get Started",
+    "back": "Back"
+  },
+  "hero": {
+    "badge": "Best WhatsApp API for Automation",
+    "title": "The Best",
+    "titleHighlight": "WhatsApp API",
+    "description": "Set up your WhatsApp API in 5 minutes without bureaucracy. The simplest and most affordable alternative to the official API. 24/7 support, flexible payments, and integration with n8n, Make, and Zapier.",
+    "cta": "Get Started",
+    "seeIntegrations": "See Integrations",
+    "supportPt": "24/7 Support",
+    "uptime": "99.9% Uptime",
+    "paymentLocal": "Flexible Payments"
+  },
+  "metrics": {
+    "messagesSent": "Messages Sent",
+    "uptime": "Uptime",
+    "setupTime": "To Set Up",
+    "support": "Support Available"
+  },
+  "features": {
+    "badge": "Powerful Features",
+    "title": "Everything you need to",
+    "titleHighlight": "automate WhatsApp",
+    "subtitle": "A complete API with all the features your business needs",
+    "messaging": {
+      "title": "Message Sending",
+      "description": "Send text, images, audio, video, and documents with ease"
+    },
+    "webhooks": {
+      "title": "Real-Time Webhooks",
+      "description": "Receive instant notifications for status updates and message replies"
+    },
+    "qrcode": {
+      "title": "Dynamic QR Code",
+      "description": "Connect WhatsApp in seconds by scanning the generated QR Code"
+    },
+    "api": {
+      "title": "Complete RESTful API",
+      "description": "Clear documentation with examples in multiple languages"
+    },
+    "instances": {
+      "title": "Multiple Instances",
+      "description": "Manage multiple WhatsApp sessions in a single account"
+    },
+    "security": {
+      "title": "Guaranteed Security",
+      "description": "End-to-end encryption and secure tokens for your messages"
+    }
+  },
+  "integrations": {
+    "badge": "Integrations",
+    "title": "Integrate with your",
+    "titleHighlight": "favorite tools",
+    "subtitle": "The best WhatsApp API for n8n, Make, Zapier, and all programming languages",
+    "automation": "Automation",
+    "integration": "Integration",
+    "workflows": "Workflows",
+    "nocode": "No-Code",
+    "language": "Language",
+    "javascript": "JavaScript",
+    "backend": "Backend",
+    "spreadsheets": "Spreadsheets"
+  },
+  "howItWorks": {
+    "badge": "Simple and Fast",
+    "title": "Start in",
+    "titleHighlight": "3 steps",
+    "step1": {
+      "title": "Create your account",
+      "description": "Quick signup in less than 1 minute. Access the control panel."
+    },
+    "step2": {
+      "title": "Set up your session",
+      "description": "Inside the panel, create a new API session with one click."
+    },
+    "step3": {
+      "title": "Start sending",
+      "description": "Copy the credentials and integrate with your system, chatbot, or automation."
+    }
+  },
+  "pricing": {
+    "badge": "Transparent Pricing",
+    "title": "Simple plan,",
+    "titleHighlight": "no surprises",
+    "subtitle": "No hidden fees, no paperwork",
+    "popular": "MOST POPULAR",
+    "sessionTitle": "WhatsApp API Session",
+    "perMonth": "/month",
+    "perSession": "Per active session",
+    "features": [
+      "1 WhatsApp API session",
+      "Setup in minutes",
+      "Unlimited messages",
+      "Real-time webhooks",
+      "Complete documentation",
+      "24/7 technical support",
+      "No setup fee",
+      "Cancel anytime"
+    ],
+    "cta": "Subscribe Now",
+    "cancelAnytime": "✓ Cancel anytime • No commitment"
+  },
+  "useCases": {
+    "badge": "Use Cases",
+    "title": "What you can",
+    "titleHighlight": "automate today",
+    "subtitle": "See how real businesses use the WhatsApp API to solve everyday problems",
+    "orderConfirmation": {
+      "title": "Order Confirmation",
+      "description": "Automatically notify when an order is confirmed, paid, or shipped. Integrate with your online store and reduce support tickets."
+    },
+    "cartRecovery": {
+      "title": "Cart Recovery",
+      "description": "Send automatic reminders to customers who abandoned their cart. Increase conversion rate by up to 30%."
+    },
+    "appointmentReminders": {
+      "title": "Appointment Reminders",
+      "description": "Reduce no-shows by sending confirmations and reminders 24h before. Ideal for clinics, salons, and offices."
+    },
+    "nps": {
+      "title": "NPS Survey",
+      "description": "Automatically collect feedback after each service. Measure satisfaction and identify improvements."
+    },
+    "billing": {
+      "title": "Billing & Invoices",
+      "description": "Send invoices, payment links, and due date reminders. Reduce delinquency automatically."
+    },
+    "delivery": {
+      "title": "Delivery Tracking",
+      "description": "Keep customers informed about each delivery step. Integrate with carriers and reduce \"Where's my order?\" inquiries."
+    },
+    "promotions": {
+      "title": "Promotional Campaigns",
+      "description": "Send offers, coupons, and news to your customer base. Segment by behavior and purchase history."
+    },
+    "chatbot": {
+      "title": "Chatbot Support",
+      "description": "Answer FAQs 24/7 with AI. Automatically route complex cases to human agents."
+    }
+  },
+  "testimonials": {
+    "badge": "Testimonials",
+    "title": "Companies that have",
+    "titleHighlight": "automated"
+  },
+  "faq": {
+    "badge": "FAQ",
+    "title": "Frequently Asked",
+    "titleHighlight": "Questions",
+    "questions": [
+      {
+        "question": "Why is UplinkLite the best WhatsApp API?",
+        "answer": "UplinkLite is a WhatsApp API that costs $15/month with unlimited messages. Unlike the official WhatsApp Business API that charges per conversation, UplinkLite allows setup in 5 minutes, offers 24/7 support, integrates with Make, Zapier, n8n, and TypeBot, and doesn't require BSP (Business Solution Provider) approval."
+      },
+      {
+        "question": "How much does the UplinkLite WhatsApp API cost?",
+        "answer": "UplinkLite costs $15 per month with unlimited messages included. There's no per-message charge, unlike the official WhatsApp Business API. Payment is monthly via credit card (Stripe) and can be canceled at any time without penalties."
+      },
+      {
+        "question": "Do I need to be a WhatsApp BSP to use UplinkLite?",
+        "answer": "No BSP (Business Solution Provider) approval is required to use UplinkLite. The API works independently, allowing any business to send WhatsApp messages without Meta or WhatsApp Business approval processes."
+      },
+      {
+        "question": "How long does it take to set up the WhatsApp API?",
+        "answer": "UplinkLite setup takes less than 5 minutes. The process is: create an account, scan the QR Code with WhatsApp, and start sending messages. No approval, business documentation, or complex integration required."
+      },
+      {
+        "question": "Does UplinkLite work with Make, Zapier, and n8n?",
+        "answer": "Yes. The UplinkLite WhatsApp API offers native integration with major automation tools: Make (Integromat), Zapier, n8n, and TypeBot. The API can also be integrated with any system via HTTP REST requests, including Python, Node.js, and PHP."
+      },
+      {
+        "question": "Is there a message limit on the WhatsApp API?",
+        "answer": "There's no message limit on the UplinkLite plan. For $15/month, you can send as many messages as you need to your customers, with no additional volume charges."
+      },
+      {
+        "question": "Does UplinkLite offer technical support?",
+        "answer": "Yes. UplinkLite offers 24/7 technical support via WhatsApp and email. The support team assists with setup, integration with automation tools, and troubleshooting."
+      },
+      {
+        "question": "How does UplinkLite payment work?",
+        "answer": "UplinkLite payment is made monthly via credit card (Stripe). The price is $15/month with automatic renewal. You can cancel at any time through the dashboard, with no fines or additional fees."
+      }
+    ]
+  },
+  "cta": {
+    "title": "Ready to automate",
+    "titleHighlight": "your WhatsApp?",
+    "subtitle": "Set up in minutes and start sending automated messages today",
+    "button": "Get Started",
+    "viewDocs": "View Documentation",
+    "footer": "✓ Setup in minutes • 24/7 support • Cancel anytime"
+  },
+  "footer": {
+    "description": "The best WhatsApp API. Automate your business communication in minutes with the simplest and most affordable alternative on the market.",
+    "product": "Product",
+    "features": "Features",
+    "pricing": "Pricing",
+    "documentation": "Documentation",
+    "company": "Company",
+    "terms": "Terms of Service",
+    "privacy": "Privacy Policy",
+    "support": "Support",
+    "support247": "24/7 Support",
+    "inPortuguese": "Multilingual",
+    "copyright": "© 2025 Uplink Lite. All rights reserved.",
+    "sslSecure": "SSL Secure"
+  },
+  "auth": {
+    "login": "Login",
+    "loginTitle": "Uplink",
+    "loginSubtitle": "Log in to access the dashboard",
+    "email": "Email",
+    "emailPlaceholder": "your@email.com",
+    "password": "Password",
+    "passwordPlaceholder": "••••••••",
+    "forgotPassword": "Forgot my password",
+    "loginButton": "Sign In",
+    "loggingIn": "Signing in...",
+    "noAccount": "Don't have an account?",
+    "signupLink": "Sign Up",
+    "loginSuccess": "Login successful!",
+    "loginError": "Login failed",
+    "signupTitle": "Create your account and start automating WhatsApp",
+    "name": "Name",
+    "namePlaceholder": "Your full name",
+    "signupButton": "Create Account",
+    "creatingAccount": "Creating account...",
+    "hasAccount": "Already have an account?",
+    "loginLink": "Sign In",
+    "signupSuccess": "Account created! Redirecting...",
+    "signupError": "Failed to create account",
+    "resetPasswordTitle": "Reset Password",
+    "resetPasswordSubtitle": "Enter your email to receive recovery instructions",
+    "sendInstructions": "Send Instructions",
+    "sending": "Sending...",
+    "emailSent": "Email sent! Check your inbox",
+    "resetError": "Failed to send recovery email",
+    "backToLogin": "Back to login",
+    "updatePasswordTitle": "New Password",
+    "updatePasswordSubtitle": "Enter your new password",
+    "newPassword": "New password",
+    "confirmPassword": "Confirm password",
+    "updateButton": "Update Password",
+    "updating": "Updating...",
+    "passwordMismatch": "Passwords do not match",
+    "passwordTooShort": "Password must be at least 6 characters",
+    "passwordUpdated": "Password updated successfully!",
+    "updateError": "Failed to update password",
+    "invalidLink": "Invalid recovery link"
+  },
+  "checkout": {
+    "title": "Subscribe to Uplink",
+    "subtitle": "WhatsApp API Session Plan",
+    "subtitleWithSession": "Complete payment to create session \"{{sessionName}}\"",
+    "perMonth": "per month",
+    "features": [
+      "1 WhatsApp API session",
+      "Setup in minutes",
+      "Complete documentation",
+      "Technical support",
+      "Cancel anytime"
+    ],
+    "securePayment": "100% secure payment processed by Stripe. Automatic monthly renewal. Cancel anytime.",
+    "subscribeNow": "Subscribe Now",
+    "creatingSession": "Creating session...",
+    "processingPayment": "Processing payment...",
+    "backToDashboard": "Back to Dashboard",
+    "sessionNotFound": "⚠️ Session name not found. Return to dashboard.",
+    "termsAgree": "By subscribing, you agree to our",
+    "termsLink": "Terms of Service",
+    "loginRequired": "You need to log in first",
+    "preparingSession": "Preparing your session...",
+    "redirectingPayment": "Redirecting to payment...",
+    "sessionCreateError": "Failed to create session record",
+    "checkoutError": "Failed to process subscription",
+    "sessionNameRequired": "Session name not found. Return to dashboard and try again."
+  },
+  "common": {
+    "poweredBy": "Powered by"
+  }
+}
