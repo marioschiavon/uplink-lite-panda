@@ -1,0 +1,289 @@
+{
+  "nav": {
+    "features": "Recursos",
+    "integrations": "Integrações",
+    "pricing": "Preços",
+    "docs": "Docs",
+    "login": "Login",
+    "startNow": "Começar Agora",
+    "back": "Voltar"
+  },
+  "hero": {
+    "badge": "Melhor API WhatsApp para Automações",
+    "title": "A Melhor API",
+    "titleHighlight": "WhatsApp do Brasil",
+    "description": "Configure sua API WhatsApp em 5 minutos sem burocracia. A alternativa mais simples e barata à API oficial. Suporte em português 24/7, pagamento em R$ e integração com n8n, Make e Zapier.",
+    "cta": "Começar Agora",
+    "seeIntegrations": "Ver Integrações",
+    "supportPt": "Suporte em Português",
+    "uptime": "99.9% Uptime",
+    "paymentLocal": "Pagamento em R$"
+  },
+  "metrics": {
+    "messagesSent": "Mensagens Enviadas",
+    "uptime": "Uptime",
+    "setupTime": "Para Configurar",
+    "support": "Suporte Disponível"
+  },
+  "features": {
+    "badge": "Recursos Poderosos",
+    "title": "Tudo que você precisa para",
+    "titleHighlight": "automatizar o WhatsApp",
+    "subtitle": "Uma API completa com todas as funcionalidades que sua empresa precisa",
+    "messaging": {
+      "title": "Envio de Mensagens",
+      "description": "Envie texto, imagens, áudio, vídeo e documentos com facilidade total"
+    },
+    "webhooks": {
+      "title": "Webhooks em Tempo Real",
+      "description": "Receba notificações instantâneas de status e respostas de mensagens"
+    },
+    "qrcode": {
+      "title": "QR Code Dinâmico",
+      "description": "Conecte o WhatsApp em segundos escaneando o QR Code gerado"
+    },
+    "api": {
+      "title": "API RESTful Completa",
+      "description": "Documentação clara com exemplos em múltiplas linguagens"
+    },
+    "instances": {
+      "title": "Múltiplas Instâncias",
+      "description": "Gerencie várias sessões WhatsApp em uma única conta"
+    },
+    "security": {
+      "title": "Segurança Garantida",
+      "description": "Criptografia end-to-end e tokens seguros para suas mensagens"
+    }
+  },
+  "integrations": {
+    "badge": "Integrações",
+    "title": "Integre com suas",
+    "titleHighlight": "ferramentas favoritas",
+    "subtitle": "A melhor API WhatsApp para n8n, Make, Zapier e todas as linguagens de programação",
+    "automation": "Automação",
+    "integration": "Integração",
+    "workflows": "Workflows",
+    "nocode": "No-Code",
+    "language": "Linguagem",
+    "javascript": "JavaScript",
+    "backend": "Backend",
+    "spreadsheets": "Planilhas"
+  },
+  "howItWorks": {
+    "badge": "Simples e Rápido",
+    "title": "Comece em",
+    "titleHighlight": "3 passos",
+    "step1": {
+      "title": "Crie sua conta",
+      "description": "Cadastro rápido em menos de 1 minuto. Acesse o painel de controle."
+    },
+    "step2": {
+      "title": "Configure sua sessão",
+      "description": "Dentro do painel, crie uma nova sessão de API com um clique."
+    },
+    "step3": {
+      "title": "Comece a enviar",
+      "description": "Copie as credenciais e integre com seu sistema, chatbot ou automação."
+    }
+  },
+  "pricing": {
+    "badge": "Preços Transparentes",
+    "title": "Plano simples,",
+    "titleHighlight": "sem surpresas",
+    "subtitle": "Sem taxas escondidas, sem burocracia",
+    "popular": "MAIS POPULAR",
+    "sessionTitle": "Sessão API WhatsApp",
+    "perMonth": "/mês",
+    "perSession": "Por sessão ativa",
+    "features": [
+      "1 sessão de API WhatsApp",
+      "Configuração em minutos",
+      "Mensagens ilimitadas",
+      "Webhooks em tempo real",
+      "Documentação completa",
+      "Suporte técnico 24/7",
+      "Sem taxa de adesão",
+      "Cancele quando quiser"
+    ],
+    "cta": "Contratar Agora",
+    "cancelAnytime": "✓ Cancele a qualquer momento • Sem fidelidade"
+  },
+  "useCases": {
+    "badge": "Casos de Uso",
+    "title": "O que você pode",
+    "titleHighlight": "automatizar hoje",
+    "subtitle": "Veja como empresas reais usam a API WhatsApp para resolver problemas do dia a dia",
+    "orderConfirmation": {
+      "title": "Confirmação de Pedidos",
+      "description": "Notifique automaticamente quando um pedido é confirmado, pago ou enviado. Integre com sua loja virtual e reduza tickets de suporte."
+    },
+    "cartRecovery": {
+      "title": "Recuperação de Carrinho",
+      "description": "Envie lembretes automáticos para clientes que abandonaram o carrinho. Aumente a taxa de conversão em até 30%."
+    },
+    "appointmentReminders": {
+      "title": "Lembretes de Consultas",
+      "description": "Reduza faltas enviando confirmações e lembretes 24h antes. Ideal para clínicas, salões e consultórios."
+    },
+    "nps": {
+      "title": "Pesquisa NPS",
+      "description": "Colete feedback automaticamente após cada atendimento. Mensure a satisfação e identifique melhorias."
+    },
+    "billing": {
+      "title": "Cobrança e Segunda Via",
+      "description": "Envie boletos, links de pagamento e lembretes de vencimento. Reduza inadimplência de forma automática."
+    },
+    "delivery": {
+      "title": "Tracking de Entregas",
+      "description": "Mantenha clientes informados sobre cada etapa da entrega. Integre com transportadoras e reduza \"Cadê meu pedido?\"."
+    },
+    "promotions": {
+      "title": "Disparo de Promoções",
+      "description": "Envie ofertas, cupons e novidades para sua base de clientes. Segmente por comportamento e histórico de compras."
+    },
+    "chatbot": {
+      "title": "Atendimento com Chatbot",
+      "description": "Responda perguntas frequentes 24/7 com IA. Encaminhe casos complexos para atendentes humanos automaticamente."
+    }
+  },
+  "testimonials": {
+    "badge": "Depoimentos",
+    "title": "Empresas que já",
+    "titleHighlight": "automatizaram"
+  },
+  "faq": {
+    "badge": "FAQ",
+    "title": "Dúvidas",
+    "titleHighlight": "frequentes",
+    "questions": [
+      {
+        "question": "Por que a UplinkLite é a melhor API WhatsApp do Brasil?",
+        "answer": "A UplinkLite é uma API WhatsApp brasileira que custa R$ 69,90/mês com mensagens ilimitadas. Diferente da API oficial do WhatsApp Business que cobra por conversa, a UplinkLite permite configuração em 5 minutos, oferece suporte 24/7 em português, integra com Make, Zapier, n8n e TypeBot, e não exige aprovação como BSP (Business Solution Provider)."
+      },
+      {
+        "question": "Quanto custa a API WhatsApp da UplinkLite?",
+        "answer": "A UplinkLite custa R$ 69,90 por mês com mensagens ilimitadas incluídas. Não há cobrança por mensagem individual, diferente da API oficial do WhatsApp Business. O pagamento é mensal via cartão de crédito (Stripe) e pode ser cancelado a qualquer momento sem multas."
+      },
+      {
+        "question": "Preciso ser BSP do WhatsApp para usar a UplinkLite?",
+        "answer": "Não é necessário ser BSP (Business Solution Provider) para usar a UplinkLite. A API funciona de forma independente, permitindo que qualquer empresa envie mensagens via WhatsApp sem processo de aprovação do Meta ou do WhatsApp Business."
+      },
+      {
+        "question": "Quanto tempo leva para configurar a API WhatsApp?",
+        "answer": "A configuração da UplinkLite leva menos de 5 minutos. O processo consiste em: criar conta, escanear QR Code com WhatsApp e começar a enviar mensagens. Não é necessário aprovação, documentação empresarial ou integração complexa."
+      },
+      {
+        "question": "A UplinkLite funciona com Make, Zapier e n8n?",
+        "answer": "Sim. A API WhatsApp da UplinkLite oferece integração nativa com as principais ferramentas de automação: Make (Integromat), Zapier, n8n e TypeBot. A API também pode ser integrada com qualquer sistema via requisições HTTP REST, incluindo Python, Node.js e PHP."
+      },
+      {
+        "question": "Existe limite de mensagens na API WhatsApp?",
+        "answer": "Não há limite de mensagens no plano da UplinkLite. Por R$ 69,90/mês você pode enviar quantas mensagens precisar para seus clientes, sem cobrança adicional por volume."
+      },
+      {
+        "question": "A UplinkLite oferece suporte técnico?",
+        "answer": "Sim. A UplinkLite oferece suporte técnico 24/7 em português via WhatsApp e email. A equipe de suporte auxilia com configuração, integração com ferramentas de automação e resolução de problemas técnicos."
+      },
+      {
+        "question": "Como funciona o pagamento da UplinkLite?",
+        "answer": "O pagamento da UplinkLite é feito mensalmente via cartão de crédito (Stripe). O valor é R$ 69,90/mês com renovação automática. Você pode cancelar a qualquer momento pelo painel, sem multas ou taxas adicionais."
+      }
+    ]
+  },
+  "cta": {
+    "title": "Pronto para automatizar",
+    "titleHighlight": "seu WhatsApp?",
+    "subtitle": "Configure em minutos e comece a enviar mensagens automáticas hoje mesmo",
+    "button": "Começar Agora",
+    "viewDocs": "Ver Documentação",
+    "footer": "✓ Configuração em minutos • Suporte em português • Cancele quando quiser"
+  },
+  "footer": {
+    "description": "A melhor API WhatsApp do Brasil. Automatize a comunicação da sua empresa em minutos com a alternativa mais simples e barata do mercado.",
+    "product": "Produto",
+    "features": "Recursos",
+    "pricing": "Preços",
+    "documentation": "Documentação",
+    "company": "Empresa",
+    "terms": "Termos de Uso",
+    "privacy": "Política de Privacidade",
+    "support": "Suporte",
+    "support247": "Suporte 24/7",
+    "inPortuguese": "Em Português",
+    "copyright": "© 2025 Uplink Lite. Todos os direitos reservados.",
+    "sslSecure": "SSL Seguro"
+  },
+  "auth": {
+    "login": "Login",
+    "loginTitle": "Uplink",
+    "loginSubtitle": "Faça login para acessar o painel",
+    "email": "Email",
+    "emailPlaceholder": "seu@email.com",
+    "password": "Senha",
+    "passwordPlaceholder": "••••••••",
+    "forgotPassword": "Esqueci minha senha",
+    "loginButton": "Entrar",
+    "loggingIn": "Entrando...",
+    "noAccount": "Não tem uma conta?",
+    "signupLink": "Cadastre-se",
+    "loginSuccess": "Login realizado com sucesso!",
+    "loginError": "Erro ao fazer login",
+    "signupTitle": "Crie sua conta e comece a automatizar o WhatsApp",
+    "name": "Nome",
+    "namePlaceholder": "Seu nome completo",
+    "signupButton": "Criar conta",
+    "creatingAccount": "Criando conta...",
+    "hasAccount": "Já tem conta?",
+    "loginLink": "Entrar",
+    "signupSuccess": "Conta criada! Redirecionando...",
+    "signupError": "Erro ao criar conta",
+    "resetPasswordTitle": "Recuperar senha",
+    "resetPasswordSubtitle": "Digite seu e-mail para receber as instruções de recuperação",
+    "sendInstructions": "Enviar instruções",
+    "sending": "Enviando...",
+    "emailSent": "E-mail enviado! Verifique sua caixa de entrada",
+    "resetError": "Erro ao enviar e-mail de recuperação",
+    "backToLogin": "Voltar ao login",
+    "updatePasswordTitle": "Nova senha",
+    "updatePasswordSubtitle": "Digite sua nova senha",
+    "newPassword": "Nova senha",
+    "confirmPassword": "Confirmar senha",
+    "updateButton": "Atualizar senha",
+    "updating": "Atualizando...",
+    "passwordMismatch": "As senhas não coincidem",
+    "passwordTooShort": "A senha deve ter pelo menos 6 caracteres",
+    "passwordUpdated": "Senha atualizada com sucesso!",
+    "updateError": "Erro ao atualizar senha",
+    "invalidLink": "Link de recuperação inválido"
+  },
+  "checkout": {
+    "title": "Assinar Uplink",
+    "subtitle": "Plano de Sessão API WhatsApp",
+    "subtitleWithSession": "Finalize o pagamento para criar a sessão \"{{sessionName}}\"",
+    "perMonth": "por mês",
+    "features": [
+      "1 sessão de API WhatsApp",
+      "Configuração em minutos",
+      "Documentação completa",
+      "Suporte técnico",
+      "Cancele quando quiser"
+    ],
+    "securePayment": "Pagamento 100% seguro processado pelo Stripe. Renovação automática mensal. Cancele quando quiser.",
+    "subscribeNow": "Assinar agora",
+    "creatingSession": "Criando sessão...",
+    "processingPayment": "Processando pagamento...",
+    "backToDashboard": "Voltar ao Dashboard",
+    "sessionNotFound": "⚠️ Nome da sessão não encontrado. Volte ao dashboard.",
+    "termsAgree": "Ao assinar, você concorda com nossos",
+    "termsLink": "Termos de Serviço",
+    "loginRequired": "Você precisa fazer login primeiro",
+    "preparingSession": "Preparando sua sessão...",
+    "redirectingPayment": "Redirecionando para pagamento...",
+    "sessionCreateError": "Erro ao criar registro da sessão",
+    "checkoutError": "Erro ao processar assinatura",
+    "sessionNameRequired": "Nome da sessão não encontrado. Volte ao dashboard e tente novamente."
+  },
+  "common": {
+    "poweredBy": "Powered by"
+  }
+}

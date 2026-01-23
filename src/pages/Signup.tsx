@@ -8,9 +8,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { toast } from "sonner";
 import { Loader2, Mail, Lock, User } from "lucide-react";
 import { SEO } from "@/components/SEO";
+import { useTranslation } from "react-i18next";
 
 const Signup = () => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -47,11 +49,11 @@ const Signup = () => {
       if (error) throw error;
 
       if (data.user) {
-        toast.success("Conta criada! Redirecionando...");
+        toast.success(t('auth.signupSuccess'));
         navigate("/welcome");
       }
     } catch (error: any) {
-      toast.error(error.message || "Erro ao criar conta");
+      toast.error(error.message || t('auth.signupError'));
     } finally {
       setLoading(false);
     }
@@ -60,8 +62,8 @@ const Signup = () => {
   return (
     <>
       <SEO 
-        title="Criar Conta | API WhatsApp Uplink"
-        description="Crie sua conta grátis na Uplink e comece a usar a API WhatsApp em minutos. Configure sua sessão e envie mensagens automatizadas por R$ 69,90/mês."
+        title="Create Account | WhatsApp API Uplink"
+        description="Create your free Uplink account and start using the WhatsApp API in minutes."
         canonical="https://uplinklite.com/signup"
       />
       <div className="min-h-screen flex items-center justify-center bg-background p-4">
@@ -72,7 +74,7 @@ const Signup = () => {
             <div className="mx-auto w-20 h-20 flex items-center justify-center">
               <img 
                 src="/logo-uplink.png" 
-                alt="Uplink - API WhatsApp para automações empresariais"
+                alt="Uplink - WhatsApp API"
                 loading="lazy"
                 width="80"
                 height="80"
@@ -83,19 +85,19 @@ const Signup = () => {
               Uplink
             </CardTitle>
             <CardDescription className="text-muted-foreground">
-              Crie sua conta e comece a automatizar o WhatsApp
+              {t('auth.signupTitle')}
             </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSignup} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="name">Nome</Label>
+                <Label htmlFor="name">{t('auth.name')}</Label>
                 <div className="relative">
                   <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
                     id="name"
                     type="text"
-                    placeholder="Seu nome completo"
+                    placeholder={t('auth.namePlaceholder')}
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     required
@@ -104,13 +106,13 @@ const Signup = () => {
                 </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email">{t('auth.email')}</Label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
                     id="email"
                     type="email"
-                    placeholder="seu@email.com"
+                    placeholder={t('auth.emailPlaceholder')}
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
@@ -119,13 +121,13 @@ const Signup = () => {
                 </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="password">Senha</Label>
+                <Label htmlFor="password">{t('auth.password')}</Label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
                     id="password"
                     type="password"
-                    placeholder="••••••••"
+                    placeholder={t('auth.passwordPlaceholder')}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
@@ -142,22 +144,22 @@ const Signup = () => {
                 {loading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Criando conta...
+                    {t('auth.creatingAccount')}
                   </>
                 ) : (
-                  "Criar conta"
+                  t('auth.signupButton')
                 )}
               </Button>
             </form>
-                <div className="mt-6 text-center text-sm text-muted-foreground">
-                  Já tem conta?{" "}
-                  <Link to="/login" className="text-primary hover:text-primary/80 font-medium transition-colors">
-                    Entrar
-                  </Link>
-                </div>
-                <div className="mt-4 text-center text-xs text-muted-foreground/60">
-                  Powered by <span className="font-medium">S7</span>
-                </div>
+            <div className="mt-6 text-center text-sm text-muted-foreground">
+              {t('auth.hasAccount')}{" "}
+              <Link to="/login" className="text-primary hover:text-primary/80 font-medium transition-colors">
+                {t('auth.loginLink')}
+              </Link>
+            </div>
+            <div className="mt-4 text-center text-xs text-muted-foreground/60">
+              {t('common.poweredBy')} <span className="font-medium">S7</span>
+            </div>
           </CardContent>
         </Card>
       </div>

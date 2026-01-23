@@ -8,9 +8,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { toast } from "sonner";
 import { Loader2, Mail, Lock, ArrowLeft } from "lucide-react";
 import { SEO } from "@/components/SEO";
+import { useTranslation } from "react-i18next";
 
 const Login = () => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -38,11 +40,11 @@ const Login = () => {
       if (error) throw error;
 
       if (data.session) {
-        toast.success("Login realizado com sucesso!");
+        toast.success(t('auth.loginSuccess'));
         navigate("/dashboard");
       }
     } catch (error: any) {
-      toast.error(error.message || "Erro ao fazer login");
+      toast.error(error.message || t('auth.loginError'));
     } finally {
       setLoading(false);
     }
@@ -52,20 +54,19 @@ const Login = () => {
     <>
       <SEO 
         title="Login | Uplink - API WhatsApp"
-        description="Acesse sua conta Uplink e gerencie suas sessões de API WhatsApp. Envie mensagens automatizadas para seus clientes."
+        description="Access your Uplink account and manage your WhatsApp API sessions."
         canonical="https://uplinklite.com/login"
         noindex={true}
       />
       <div className="min-h-screen flex items-center justify-center bg-background p-4">
         <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-background to-primary/10 pointer-events-none" />
         
-        {/* Botão Voltar */}
         <Link 
           to="/" 
           className="absolute top-4 left-4 flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors z-10"
         >
           <ArrowLeft className="h-4 w-4" />
-          Voltar
+          {t('nav.back')}
         </Link>
         
         <Card className="w-full max-w-md relative bg-card border-border shadow-xl animate-fade-in">
@@ -73,7 +74,7 @@ const Login = () => {
             <div className="mx-auto w-20 h-20 flex items-center justify-center">
               <img 
                 src="/logo-uplink.png" 
-                alt="Uplink - API WhatsApp para automações empresariais"
+                alt="Uplink - WhatsApp API"
                 loading="lazy"
                 width="80"
                 height="80"
@@ -81,22 +82,22 @@ const Login = () => {
               />
             </div>
             <CardTitle className="text-3xl font-bold">
-              Uplink
+              {t('auth.loginTitle')}
             </CardTitle>
             <CardDescription className="text-muted-foreground">
-              Faça login para acessar o painel
+              {t('auth.loginSubtitle')}
             </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleLogin} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email">{t('auth.email')}</Label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
                     id="email"
                     type="email"
-                    placeholder="seu@email.com"
+                    placeholder={t('auth.emailPlaceholder')}
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
@@ -105,13 +106,13 @@ const Login = () => {
                 </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="password">Senha</Label>
+                <Label htmlFor="password">{t('auth.password')}</Label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
                     id="password"
                     type="password"
-                    placeholder="••••••••"
+                    placeholder={t('auth.passwordPlaceholder')}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
@@ -124,7 +125,7 @@ const Login = () => {
                   to="/reset-password" 
                   className="text-sm text-primary hover:text-primary/80 font-medium"
                 >
-                  Esqueci minha senha
+                  {t('auth.forgotPassword')}
                 </Link>
               </div>
               <Button 
@@ -135,22 +136,22 @@ const Login = () => {
                 {loading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Entrando...
+                    {t('auth.loggingIn')}
                   </>
                 ) : (
-                  "Entrar"
+                  t('auth.loginButton')
                 )}
               </Button>
             </form>
-                <div className="mt-6 text-center text-sm text-muted-foreground">
-                  Não tem uma conta?{" "}
-                  <Link to="/signup" className="text-primary hover:text-primary/80 font-medium">
-                    Cadastre-se
-                  </Link>
-                </div>
-                <div className="mt-4 text-center text-xs text-muted-foreground/60">
-                  Powered by <span className="font-medium">S7</span>
-                </div>
+            <div className="mt-6 text-center text-sm text-muted-foreground">
+              {t('auth.noAccount')}{" "}
+              <Link to="/signup" className="text-primary hover:text-primary/80 font-medium">
+                {t('auth.signupLink')}
+              </Link>
+            </div>
+            <div className="mt-4 text-center text-xs text-muted-foreground/60">
+              {t('common.poweredBy')} <span className="font-medium">S7</span>
+            </div>
           </CardContent>
         </Card>
       </div>
