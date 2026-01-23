@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { StepIndicator } from "./StepIndicator";
@@ -17,6 +18,7 @@ interface OnboardingWizardProps {
 
 export function OnboardingWizard({ initialStep = 0, existingOrgId = null }: OnboardingWizardProps) {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [currentStep, setCurrentStep] = useState(initialStep);
   const [orgName, setOrgName] = useState("");
   const [orgId, setOrgId] = useState<string | null>(existingOrgId);
@@ -25,14 +27,14 @@ export function OnboardingWizard({ initialStep = 0, existingOrgId = null }: Onbo
   const [isLoading, setIsLoading] = useState(false);
 
   const steps = [
-    { title: "Organização", description: "Nome da empresa" },
-    { title: "Sessão", description: "Nome da sessão WhatsApp" },
-    { title: "Pagamento", description: "Finalizar assinatura" },
+    { title: t('onboarding.step1.title'), description: t('onboarding.step1.description') },
+    { title: t('onboarding.step2.title'), description: t('onboarding.step2.description') },
+    { title: t('onboarding.step3.title'), description: t('onboarding.step3.description') },
   ];
 
   const handleCreateOrg = async () => {
     if (!orgName.trim()) {
-      toast.error("Digite o nome da sua organização");
+      toast.error(t('onboarding.errors.enterOrgName'));
       return;
     }
 
@@ -40,7 +42,7 @@ export function OnboardingWizard({ initialStep = 0, existingOrgId = null }: Onbo
 
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Usuário não autenticado");
+      if (!user) throw new Error(t('onboarding.errors.userNotAuthenticated'));
 
       // Criar organização
       const { data: newOrg, error: orgError } = await supabase
@@ -60,11 +62,11 @@ export function OnboardingWizard({ initialStep = 0, existingOrgId = null }: Onbo
       if (userError) throw userError;
 
       setOrgId(newOrg.id);
-      toast.success("Organização criada!");
+      toast.success(t('onboarding.success.orgCreated'));
       setCurrentStep(1);
     } catch (error: any) {
       console.error("Erro ao criar organização:", error);
-      toast.error(error.message || "Erro ao criar organização");
+      toast.error(error.message || t('onboarding.errors.createOrgError'));
     } finally {
       setIsLoading(false);
     }
@@ -72,19 +74,18 @@ export function OnboardingWizard({ initialStep = 0, existingOrgId = null }: Onbo
 
   const handleSessionStep = () => {
     if (!sessionName.trim()) {
-      toast.error("Digite o nome da sessão");
+      toast.error(t('onboarding.errors.enterSessionName'));
       return;
     }
 
-    // Validar nome da sessão
     const regex = /^[a-zA-Z0-9-_]+$/;
     if (!regex.test(sessionName)) {
-      toast.error("Use apenas letras, números, - e _");
+      toast.error(t('onboarding.errors.invalidSessionName'));
       return;
     }
 
     if (sessionName.length < 3 || sessionName.length > 50) {
-      toast.error("O nome deve ter entre 3 e 50 caracteres");
+      toast.error(t('onboarding.errors.sessionNameLength'));
       return;
     }
 
@@ -93,7 +94,7 @@ export function OnboardingWizard({ initialStep = 0, existingOrgId = null }: Onbo
 
   const handlePayment = async () => {
     if (!orgId || !sessionName) {
-      toast.error("Dados incompletos");
+      toast.error(t('onboarding.errors.incompleteData'));
       return;
     }
 
@@ -115,7 +116,7 @@ export function OnboardingWizard({ initialStep = 0, existingOrgId = null }: Onbo
 
       if (sessionError) throw sessionError;
 
-      toast.info("Redirecionando para pagamento...");
+      toast.info(t('onboarding.success.redirectingPayment'));
 
       // Criar checkout Stripe
       const { data, error } = await supabase.functions.invoke("create-stripe-checkout", {
@@ -131,7 +132,7 @@ export function OnboardingWizard({ initialStep = 0, existingOrgId = null }: Onbo
       }
     } catch (error: any) {
       console.error("Erro no checkout:", error);
-      toast.error(error.message || "Erro ao processar pagamento");
+      toast.error(error.message || t('onboarding.errors.checkoutError'));
       setIsLoading(false);
     }
   };
@@ -165,7 +166,7 @@ export function OnboardingWizard({ initialStep = 0, existingOrgId = null }: Onbo
         className="absolute top-4 right-4 text-muted-foreground hover:text-foreground z-20 gap-1.5"
       >
         <X className="h-4 w-4" />
-        Sair
+        {t('onboarding.exit')}
       </Button>
       
       <div className="w-full max-w-lg relative z-10">
@@ -182,10 +183,10 @@ export function OnboardingWizard({ initialStep = 0, existingOrgId = null }: Onbo
             className="w-16 h-16 mx-auto mb-4 rounded-full"
           />
           <h1 className="text-2xl font-bold text-foreground">
-            Bem-vindo ao Uplink!
+            {t('onboarding.welcome')}
           </h1>
           <p className="text-muted-foreground mt-2">
-            Configure sua API WhatsApp em 3 passos simples
+            {t('onboarding.setupDescription')}
           </p>
         </motion.div>
 
@@ -261,7 +262,7 @@ export function OnboardingWizard({ initialStep = 0, existingOrgId = null }: Onbo
           animate={{ opacity: 1 }}
           transition={{ delay: 0.3 }}
         >
-          ⏱️ Tempo estimado: 2 minutos
+          {t('onboarding.estimatedTime')}
         </motion.p>
       </div>
     </div>
