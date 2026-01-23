@@ -6,7 +6,8 @@ import { useNavigate, Link } from "react-router-dom";
 import { 
   Check, Zap, Shield, Clock, MessageSquare, ShoppingCart, Calendar, Package,
   Code2, Webhook, QrCode, Layers, Star, TrendingUp, Users, ChevronRight,
-  Play, CheckCircle2, Sparkles, Timer, Headphones, FileCode
+  Play, CheckCircle2, Sparkles, Timer, Headphones, FileCode, Receipt,
+  Truck, Megaphone, Bot, BarChart3, CreditCard
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { SEO } from "@/components/SEO";
@@ -48,6 +49,14 @@ const Index = () => {
               "Sem necessidade de aprovação BSP",
               "API RESTful completa",
               "Webhooks em tempo real",
+              "Confirmação automática de pedidos via WhatsApp",
+              "Recuperação de carrinho abandonado",
+              "Lembretes de consultas e agendamentos",
+              "Pesquisa de satisfação NPS via WhatsApp",
+              "Cobrança e envio de segunda via de boletos",
+              "Tracking de entregas em tempo real",
+              "Disparo de promoções e cupons",
+              "Atendimento 24/7 com chatbot",
               "99.9% de uptime"
             ],
             "offers": {
@@ -713,61 +722,72 @@ const Index = () => {
           >
             <Badge variant="outline" className="mb-2">Casos de Uso</Badge>
             <h2 className="text-4xl md:text-5xl font-bold">
-              Perfeito para
+              O que você pode
               <br />
-              <span className="text-primary">qualquer negócio</span>
+              <span className="text-primary">automatizar hoje</span>
             </h2>
+            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+              Veja como empresas reais usam a API WhatsApp para resolver problemas do dia a dia
+            </p>
           </motion.div>
 
-          <div className="grid md:grid-cols-2 gap-8">
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[
               {
                 icon: ShoppingCart,
-                title: "E-commerce",
-                items: [
-                  "Confirmação de pedidos",
-                  "Status de pagamento",
-                  "Rastreamento de entrega",
-                  "Pós-venda automatizado"
-                ],
+                title: "Confirmação de Pedidos",
+                description: "Notifique automaticamente quando um pedido é confirmado, pago ou enviado. Integre com sua loja virtual e reduza tickets de suporte.",
                 color: "text-blue-500",
                 bg: "bg-blue-500/10"
               },
               {
+                icon: Receipt,
+                title: "Recuperação de Carrinho",
+                description: "Envie lembretes automáticos para clientes que abandonaram o carrinho. Aumente a taxa de conversão em até 30%.",
+                color: "text-orange-500",
+                bg: "bg-orange-500/10"
+              },
+              {
                 icon: Calendar,
-                title: "Agendamentos",
-                items: [
-                  "Confirmação de consultas",
-                  "Lembretes automáticos",
-                  "Reagendamentos",
-                  "Pesquisa de satisfação"
-                ],
+                title: "Lembretes de Consultas",
+                description: "Reduza faltas enviando confirmações e lembretes 24h antes. Ideal para clínicas, salões e consultórios.",
                 color: "text-purple-500",
                 bg: "bg-purple-500/10"
               },
               {
-                icon: Package,
-                title: "Logística",
-                items: [
-                  "Status de envio",
-                  "Atualização de localização",
-                  "Tentativas de entrega",
-                  "Confirmação de recebimento"
-                ],
-                color: "text-green-500",
-                bg: "bg-green-500/10"
+                icon: BarChart3,
+                title: "Pesquisa NPS",
+                description: "Colete feedback automaticamente após cada atendimento. Mensure a satisfação e identifique melhorias.",
+                color: "text-pink-500",
+                bg: "bg-pink-500/10"
               },
               {
-                icon: MessageSquare,
-                title: "Automações",
-                items: [
-                  "Integração com CRM",
-                  "Notificações de eventos",
-                  "Alertas de pagamento",
-                  "Confirmações automáticas"
-                ],
-                color: "text-orange-500",
-                bg: "bg-orange-500/10"
+                icon: CreditCard,
+                title: "Cobrança e Segunda Via",
+                description: "Envie boletos, links de pagamento e lembretes de vencimento. Reduza inadimplência de forma automática.",
+                color: "text-emerald-500",
+                bg: "bg-emerald-500/10"
+              },
+              {
+                icon: Truck,
+                title: "Tracking de Entregas",
+                description: "Mantenha clientes informados sobre cada etapa da entrega. Integre com transportadoras e reduza \"Cadê meu pedido?\".",
+                color: "text-cyan-500",
+                bg: "bg-cyan-500/10"
+              },
+              {
+                icon: Megaphone,
+                title: "Disparo de Promoções",
+                description: "Envie ofertas, cupons e novidades para sua base de clientes. Segmente por comportamento e histórico de compras.",
+                color: "text-yellow-500",
+                bg: "bg-yellow-500/10"
+              },
+              {
+                icon: Bot,
+                title: "Atendimento com Chatbot",
+                description: "Responda perguntas frequentes 24/7 com IA. Encaminhe casos complexos para atendentes humanos automaticamente.",
+                color: "text-indigo-500",
+                bg: "bg-indigo-500/10"
               }
             ].map((useCase, index) => (
               <motion.div
@@ -775,24 +795,17 @@ const Index = () => {
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                transition={{ delay: index * 0.1 }}
+                transition={{ delay: index * 0.05 }}
               >
                 <Card className="border-2 hover:border-primary/50 hover:shadow-2xl transition-all group h-full">
                   <CardHeader className="space-y-4">
-                    <div className="flex items-center gap-4">
-                      <div className={`w-14 h-14 ${useCase.bg} rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform`}>
-                        <useCase.icon className={`h-7 w-7 ${useCase.color}`} />
-                      </div>
-                      <CardTitle className="text-2xl">{useCase.title}</CardTitle>
+                    <div className={`w-12 h-12 ${useCase.bg} rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform`}>
+                      <useCase.icon className={`h-6 w-6 ${useCase.color}`} />
                     </div>
-                    <div className="space-y-3 pt-4">
-                      {useCase.items.map((item, i) => (
-                        <div key={i} className="flex items-start gap-3">
-                          <Check className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
-                          <span className="text-muted-foreground">{item}</span>
-                        </div>
-                      ))}
-                    </div>
+                    <CardTitle className="text-xl">{useCase.title}</CardTitle>
+                    <CardDescription className="text-base leading-relaxed">
+                      {useCase.description}
+                    </CardDescription>
                   </CardHeader>
                 </Card>
               </motion.div>
