@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, Link, useSearchParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -16,8 +17,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { formatDistanceToNow } from "date-fns";
-import { ptBR } from "date-fns/locale";
+import { ptBR, enUS } from "date-fns/locale";
 import { evolutionApi } from "@/services/evolutionApi";
+import { useRegionalPricing, formatPrice } from "@/hooks/useRegionalPricing";
 
 interface UserData {
   id: string;
@@ -53,6 +55,8 @@ interface SessionStatus {
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const { t, i18n } = useTranslation();
+  const pricing = useRegionalPricing();
   const [searchParams] = useSearchParams();
   const [loading, setLoading] = useState(true);
   const [userData, setUserData] = useState<UserData | null>(null);
@@ -64,6 +68,8 @@ const Dashboard = () => {
   const [monthlyTotal, setMonthlyTotal] = useState(0);
   const [showConnectionHelp, setShowConnectionHelp] = useState(false);
   const [newSessionName, setNewSessionName] = useState<string | undefined>();
+  
+  const dateLocale = i18n.language.startsWith('pt') ? ptBR : enUS;
 
   const fetchUserData = async () => {
     try {
@@ -184,7 +190,7 @@ const Dashboard = () => {
       setMonthlyTotal(total);
     } catch (error: any) {
       console.error("❌ Error fetching data:", error);
-      toast.error(`Erro ao carregar dados: ${error.message || 'Erro desconhecido'}`);
+      toast.error(`${t('dashboard.errorLoadingData')}: ${error.message || t('common.error')}`);
     } finally {
       setLoading(false);
     }
@@ -209,7 +215,7 @@ const Dashboard = () => {
   const handleSendTestMessage = async (sessionId: string, phoneNumber: string, message: string) => {
     const session = sessions.find(s => s.id === sessionId);
     if (!session?.api_session || !session?.api_token) {
-      toast.error("Sessão não encontrada.");
+      toast.error(t('sessions.sessionNotFound'));
       return;
     }
     
@@ -225,7 +231,7 @@ const Dashboard = () => {
         throw new Error(result.error || "Erro ao enviar mensagem");
       }
       
-      toast.success("Mensagem enviada com sucesso!");
+      toast.success(t('common.success'));
       
     } catch (error: any) {
       console.error('Erro ao enviar mensagem:', error);
@@ -293,14 +299,15 @@ const Dashboard = () => {
   const getStatusBadge = (sessionId: string) => {
     const status = sessionsStatus[sessionId];
     if (status?.status === true) {
-      return <Badge className="bg-green-500/10 text-green-600">Online</Badge>;
+      return <Badge className="bg-green-500/10 text-green-600">{t('common.online')}</Badge>;
     }
     if (status?.qrCode || status?.message?.toUpperCase() === 'QRCODE') {
-      return <Badge className="bg-yellow-500/10 text-yellow-600">QR Code</Badge>;
+      return <Badge className="bg-yellow-500/10 text-yellow-600">{t('common.qrCode')}</Badge>;
     }
-    return <Badge className="bg-red-500/10 text-red-600">Offline</Badge>;
+    return <Badge className="bg-red-500/10 text-red-600">{t('common.offline')}</Badge>;
   };
 
+  const priceDisplay = formatPrice(pricing);
   return (
     <div className="container mx-auto p-6 space-y-6">
       <CreateOrgModal 
@@ -345,10 +352,10 @@ const Dashboard = () => {
           }}
         >
           <StatsCard
-            title="Sessões Conectadas"
+            title={t('dashboard.connectedSessions')}
             value={activeSessions.length}
             icon={Zap}
-            subtitle="Conectadas via WhatsApp"
+            subtitle={t('dashboard.connectedViaWhatsApp')}
             color="green"
           />
         </motion.div>
@@ -360,10 +367,10 @@ const Dashboard = () => {
           }}
         >
           <StatsCard
-            title="Sessões Criadas"
+            title={t('dashboard.createdSessions')}
             value={sessions.length}
             icon={MessageSquare}
-            subtitle="Crie quantas precisar"
+            subtitle={t('dashboard.createAsNeeded')}
             color="blue"
           />
         </motion.div>
@@ -375,10 +382,10 @@ const Dashboard = () => {
           }}
         >
           <StatsCard
-            title="Assinaturas Ativas"
+            title={t('dashboard.activeSubscriptions')}
             value={activeSubscriptionsCount}
             icon={CreditCard}
-            subtitle="R$ 69,90 por sessão/mês"
+            subtitle={t('dashboard.pricePerSession', { price: priceDisplay })}
             color="green"
           />
         </motion.div>
@@ -390,10 +397,10 @@ const Dashboard = () => {
           }}
         >
           <StatsCard
-            title="Custo Mensal"
-            value={`R$ ${monthlyTotal.toFixed(2)}`}
+            title={t('dashboard.monthlyCost')}
+            value={`${pricing.symbol} ${monthlyTotal.toFixed(2)}`}
             icon={DollarSign}
-            subtitle="Total das suas assinaturas"
+            subtitle={t('dashboard.totalSubscriptions')}
             color="orange"
           />
         </motion.div>
@@ -421,9 +428,9 @@ const Dashboard = () => {
               onClick={handleShowHelp}
               className="shrink-0 gap-1.5 w-full sm:w-auto justify-center"
             >
-              <HelpCircle className="h-4 w-4" />
-              <span className="hidden xs:inline">Como conectar?</span>
-            </Button>
+            <HelpCircle className="h-4 w-4" />
+            <span className="hidden xs:inline">{t('dashboard.howToConnect')}</span>
+          </Button>
           )}
         </motion.div>
       )}
@@ -439,16 +446,16 @@ const Dashboard = () => {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <MessageSquare className="h-5 w-5" />
-              Gerenciar Sessões
+              {t('dashboard.manageSessions')}
             </CardTitle>
             <CardDescription>
-              Crie e gerencie suas sessões WhatsApp
+              {t('dashboard.manageSessionsDesc')}
             </CardDescription>
           </CardHeader>
           <CardContent>
             <Button variant="outline" className="w-full">
               <Plus className="h-4 w-4 mr-2" />
-              Nova Sessão
+              {t('dashboard.newSession')}
             </Button>
           </CardContent>
         </Card>
@@ -457,15 +464,15 @@ const Dashboard = () => {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <CreditCard className="h-5 w-5" />
-              Assinaturas
+              {t('dashboard.subscriptions')}
             </CardTitle>
             <CardDescription>
-              Gerencie suas assinaturas e pagamentos
+              {t('dashboard.subscriptionsDesc')}
             </CardDescription>
           </CardHeader>
           <CardContent>
             <Button variant="outline" className="w-full">
-              Ver Assinaturas
+              {t('dashboard.viewSubscriptions')}
               <ArrowRight className="h-4 w-4 ml-2" />
             </Button>
           </CardContent>
@@ -475,15 +482,15 @@ const Dashboard = () => {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Settings className="h-5 w-5" />
-              Documentação API
+              {t('dashboard.apiDocumentation')}
             </CardTitle>
             <CardDescription>
-              Integre o WhatsApp em suas aplicações
+              {t('dashboard.apiDocumentationDesc')}
             </CardDescription>
           </CardHeader>
           <CardContent>
             <Button variant="outline" className="w-full">
-              Ver Docs
+              {t('dashboard.viewDocs')}
               <ArrowRight className="h-4 w-4 ml-2" />
             </Button>
           </CardContent>
@@ -500,13 +507,13 @@ const Dashboard = () => {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
-                <CardTitle>Suas Sessões</CardTitle>
+                <CardTitle>{t('dashboard.yourSessions')}</CardTitle>
                 <CardDescription>
-                  Status das suas sessões WhatsApp
+                  {t('dashboard.sessionsStatus')}
                 </CardDescription>
               </div>
               <Button variant="outline" size="sm" onClick={() => navigate("/sessions")}>
-                Ver Todas
+                {t('common.viewAll')}
                 <ArrowRight className="h-4 w-4 ml-2" />
               </Button>
             </CardHeader>
@@ -526,8 +533,8 @@ const Dashboard = () => {
                         <p className="font-medium">{session.name}</p>
                         <p className="text-sm text-muted-foreground">
                           {session.updated_at 
-                            ? formatDistanceToNow(new Date(session.updated_at), { addSuffix: true, locale: ptBR })
-                            : 'Sem atualização'
+                            ? formatDistanceToNow(new Date(session.updated_at), { addSuffix: true, locale: dateLocale })
+                            : t('common.noUpdate')
                           }
                         </p>
                       </div>
@@ -551,10 +558,10 @@ const Dashboard = () => {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Settings className="h-5 w-5" />
-              Ferramentas
+              {t('dashboard.tools')}
             </CardTitle>
             <CardDescription>
-              Acesse ferramentas úteis para gerenciar sua conta
+              {t('dashboard.toolsDesc')}
             </CardDescription>
           </CardHeader>
           <CardContent className="flex flex-wrap gap-3">
@@ -565,7 +572,7 @@ const Dashboard = () => {
             />
             <Button variant="outline" onClick={() => navigate("/announcements")}>
               <Megaphone className="h-4 w-4 mr-2" />
-              Comunicados
+              {t('dashboard.announcements')}
             </Button>
           </CardContent>
         </Card>

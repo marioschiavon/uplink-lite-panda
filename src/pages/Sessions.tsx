@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -44,6 +45,7 @@ interface OrgData {
 
 const Sessions = () => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(true);
   const [sessions, setSessions] = useState<SessionData[]>([]);
   const [orgData, setOrgData] = useState<OrgData | null>(null);
@@ -78,7 +80,7 @@ const Sessions = () => {
       if (userError) throw userError;
 
       if (!userRecord.organization_id) {
-        toast.error("Organização não encontrada");
+        toast.error(t('sessions.organizationNotFound'));
         navigate("/dashboard");
         return;
       }
@@ -137,7 +139,7 @@ const Sessions = () => {
       }
     } catch (error: any) {
       console.error("❌ Error fetching data:", error);
-      toast.error(`Erro ao carregar dados: ${error.message || 'Erro desconhecido'}`);
+      toast.error(`${t('dashboard.errorLoadingData')}: ${error.message || t('common.error')}`);
     } finally {
       setLoading(false);
     }
@@ -182,7 +184,7 @@ const Sessions = () => {
     setReconfiguringSession(session.id);
     
     try {
-      toast.info("Reconfigurando sessão para Evolution API...");
+      toast.info(t('sessions.reconfiguringSession'));
       
       const { data, error } = await supabase.functions.invoke('generate-whatsapp-token', {
         body: { session_name: session.name }
@@ -191,14 +193,14 @@ const Sessions = () => {
       if (error) throw error;
       
       if (data.success) {
-        toast.success("Sessão reconfigurada com sucesso! O novo token foi salvo.");
+        toast.success(t('sessions.sessionReconfigured'));
         await fetchSessions();
       } else {
-        throw new Error(data.error || "Erro ao reconfigurar sessão");
+        throw new Error(data.error || t('sessions.reconfigureError'));
       }
     } catch (error: any) {
       console.error('Erro ao reconfigurar sessão:', error);
-      toast.error(error.message || "Erro ao reconfigurar sessão");
+      toast.error(error.message || t('sessions.reconfigureError'));
     } finally {
       setReconfiguringSession(null);
     }
@@ -207,7 +209,7 @@ const Sessions = () => {
   const handleStartSession = useCallback(async (session: SessionData) => {
     // Verificar se o token é válido para Evolution API
     if (session.api_token && !isValidEvolutionToken(session.api_token)) {
-      toast.warning("Token desatualizado detectado. Reconfigurando sessão...");
+      toast.warning(t('sessions.outdatedToken'));
       await handleReconfigureSession(session);
       return;
     }
@@ -222,7 +224,7 @@ const Sessions = () => {
         .maybeSingle();
 
       if (!subscription) {
-        toast.error("Esta sessão requer assinatura ativa. Finalize o pagamento primeiro.");
+        toast.error(t('sessions.subscriptionRequired'));
         navigate(`/checkout?session_name=${session.name}`);
         return;
       }
@@ -230,7 +232,7 @@ const Sessions = () => {
 
     // Se não tem api_session ainda, gerar token primeiro
     if (!session.api_session) {
-      toast.info("Configurando sua sessão...");
+      toast.info(t('sessions.configuringSession'));
       setStartingSession(true);
       
       try {
@@ -240,15 +242,15 @@ const Sessions = () => {
         );
         
         if (tokenError || !tokenData.success) {
-          throw new Error(tokenError?.message || "Erro ao configurar sessão. Verifique se a API está online.");
+          throw new Error(tokenError?.message || t('sessions.configuringError'));
         }
         
-        toast.success("Sessão configurada! Clique em 'Iniciar Sessão' novamente para conectar.");
+        toast.success(t('sessions.sessionConfigured'));
         await fetchSessions();
         return;
       } catch (error: any) {
         console.error('Erro ao configurar sessão:', error);
-        toast.error(error.message || "Erro ao configurar sessão");
+        toast.error(error.message || t('sessions.configuringError'));
         return;
       } finally {
         setStartingSession(false);
@@ -256,7 +258,7 @@ const Sessions = () => {
     }
 
     if (!session.api_token) {
-      toast.error("Token não encontrado.");
+      toast.error(t('sessions.tokenNotFound'));
       return;
     }
     
@@ -266,7 +268,7 @@ const Sessions = () => {
     setShowSessionModal(true);
     
     try {
-      toast.info("Conectando à Evolution API, aguarde...");
+      toast.info(t('sessions.connectingApi'));
       
       // Usar Evolution API para conectar e obter QR Code
       const qrData = await evolutionApi.connectInstance(session.api_session, session.api_token);
@@ -294,7 +296,7 @@ const Sessions = () => {
           }));
           setQrCodeKey(Date.now().toString());
           setGeneratingQrCode(false);
-          toast.success("QR Code gerado! Escaneie para conectar.");
+          toast.success(t('sessions.qrGenerated'));
           
           // Atualizar timestamp da última ação
           await supabase
@@ -319,18 +321,18 @@ const Sessions = () => {
             }));
             setQrCodeKey(Date.now().toString());
             setGeneratingQrCode(false);
-            toast.success("QR Code gerado! Escaneie para conectar.");
+            toast.success(t('sessions.qrGenerated'));
           } else {
-            throw new Error("QR Code não disponível. Tente novamente.");
+            throw new Error(t('sessions.qrNotAvailable'));
           }
         }
       } else {
-        throw new Error("Falha ao conectar com a Evolution API");
+        throw new Error(t('sessions.evolutionConnectionError'));
       }
       
     } catch (error: any) {
       console.error('Erro ao iniciar sessão:', error);
-      toast.error(error.message || "Erro ao iniciar sessão");
+      toast.error(error.message || t('sessions.startSessionError'));
       setGeneratingQrCode(false);
       setShowSessionModal(false);
     } finally {
@@ -357,7 +359,7 @@ const Sessions = () => {
         setSelectedSession(null);
         
         toast.info(
-          "QR Code expirou e a sessão ainda está desconectada. Clique em 'Iniciar Sessão' para tentar novamente.",
+          t('sessions.qrExpiredMessage'),
           { duration: 5000 }
         );
       } else if (result.status === true) {
@@ -365,7 +367,7 @@ const Sessions = () => {
           ...prev,
           [session.id]: result
         }));
-        toast.success("Sessão conectada com sucesso! ✓");
+        toast.success(t('sessions.sessionConnectedSuccess'));
       }
     } catch (error) {
       console.error('Erro ao verificar status na expiração:', error);
@@ -454,7 +456,7 @@ const Sessions = () => {
     if (orgData.is_legacy) {
       const activeSessionsCount = sessions.length;
       if (orgData.session_limit && activeSessionsCount >= orgData.session_limit) {
-        toast.error(`Limite de ${orgData.session_limit} sessões atingido. Exclua uma sessão existente.`);
+        toast.error(t('sessions.limitReached', { limit: orgData.session_limit }));
         return;
       }
       
@@ -470,26 +472,26 @@ const Sessions = () => {
         if (data.success && data.session_id) {
           await fetchSessions();
           setShowCreateSessionModal(false);
-          toast.success("Sessão criada com sucesso! Clique em 'Iniciar Sessão' para conectar.");
+          toast.success(t('sessions.sessionCreatedSuccess'));
         } else {
-          throw new Error(data.error || "Erro ao gerar token");
+          throw new Error(data.error || t('sessions.tokenError'));
         }
       } catch (error: any) {
         console.error("Erro ao criar sessão:", error);
-        toast.error(error.message || "Erro ao criar sessão");
+        toast.error(error.message || t('sessions.startSessionError'));
       } finally {
         setCreatingSession(false);
       }
       return;
     }
     
-    toast.info("Configure o pagamento para criar sua sessão");
+    toast.info(t('sessions.configurePayment'));
     navigate(`/checkout?session_name=${encodeURIComponent(sessionName)}`);
   };
 
   const handleRefreshQr = async (session: SessionData) => {
     if (!session.api_session || !session.api_token) {
-      toast.error("Sessão não encontrada.");
+      toast.error(t('sessions.sessionNotFound'));
       return;
     }
     
@@ -497,7 +499,7 @@ const Sessions = () => {
     setGeneratingQrCode(true);
     
     try {
-      toast.info("Buscando QR Code atualizado...");
+      toast.info(t('sessions.fetchingQr'));
       
       const qrData = await evolutionApi.fetchQRCode(session.api_session, session.api_token);
       
@@ -513,7 +515,7 @@ const Sessions = () => {
         }));
         setQrCodeKey(Date.now().toString());
         setGeneratingQrCode(false);
-        toast.success("QR Code atualizado!");
+        toast.success(t('sessions.qrUpdated'));
         
         // Atualizar timestamp da última ação
         await supabase
@@ -521,12 +523,12 @@ const Sessions = () => {
           .update({ updated_at: new Date().toISOString() })
           .eq('id', session.id);
       } else {
-        throw new Error("QR Code não disponível");
+        throw new Error(t('sessions.qrNotAvailable'));
       }
       
     } catch (error: any) {
       console.error('Erro ao atualizar QR Code:', error);
-      toast.error(error.message || "Erro ao atualizar QR Code");
+      toast.error(error.message || t('sessions.qrUpdateError'));
       setGeneratingQrCode(false);
     } finally {
       setRefreshingQr(false);
@@ -535,7 +537,7 @@ const Sessions = () => {
 
   const handleCloseSession = async (session: SessionData) => {
     if (!session.api_session || !session.api_token) {
-      toast.error("Sessão não encontrada");
+      toast.error(t('sessions.sessionNotFound'));
       return;
     }
     
@@ -550,14 +552,14 @@ const Sessions = () => {
           [session.id]: { status: false, message: 'offline' }
         }));
         
-        toast.success("Sessão desconectada com sucesso!");
+        toast.success(t('sessions.sessionDisconnected'));
         await fetchSessions();
       } else {
-        throw new Error("Falha ao desconectar sessão");
+        throw new Error(t('sessions.disconnectError'));
       }
     } catch (error: any) {
       console.error('Erro ao fechar sessão:', error);
-      toast.error(error.message || "Erro ao fechar sessão");
+      toast.error(error.message || t('sessions.disconnectError'));
     } finally {
       setClosingSession(false);
     }
@@ -657,9 +659,9 @@ const Sessions = () => {
         transition={{ duration: 0.3 }}
       >
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Sessões WhatsApp</h1>
+          <h1 className="text-3xl font-bold tracking-tight">{t('sessions.title')}</h1>
           <p className="text-muted-foreground mt-1">
-            Gerencie suas conexões WhatsApp
+            {t('sessions.subtitle')}
           </p>
         </div>
         <Button
@@ -669,7 +671,7 @@ const Sessions = () => {
           disabled={creatingSession}
         >
           <Plus className="h-5 w-5" />
-          Nova Sessão
+          {t('sessions.newSession')}
         </Button>
       </motion.div>
 
