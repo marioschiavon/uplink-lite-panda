@@ -441,6 +441,9 @@ export type Database = {
           requires_subscription: boolean | null
           status: string | null
           updated_at: string | null
+          webhook_enabled: boolean | null
+          webhook_events: string[] | null
+          webhook_url: string | null
         }
         Insert: {
           api_message_limit?: number | null
@@ -457,6 +460,9 @@ export type Database = {
           requires_subscription?: boolean | null
           status?: string | null
           updated_at?: string | null
+          webhook_enabled?: boolean | null
+          webhook_events?: string[] | null
+          webhook_url?: string | null
         }
         Update: {
           api_message_limit?: number | null
@@ -473,6 +479,9 @@ export type Database = {
           requires_subscription?: boolean | null
           status?: string | null
           updated_at?: string | null
+          webhook_enabled?: boolean | null
+          webhook_events?: string[] | null
+          webhook_url?: string | null
         }
         Relationships: [
           {
@@ -758,6 +767,54 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations_safe"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      webhook_logs: {
+        Row: {
+          created_at: string | null
+          error_message: string | null
+          event_type: string
+          id: string
+          payload: Json
+          response_code: number | null
+          session_id: string | null
+          status: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          error_message?: string | null
+          event_type: string
+          id?: string
+          payload: Json
+          response_code?: number | null
+          session_id?: string | null
+          status?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          error_message?: string | null
+          event_type?: string
+          id?: string
+          payload?: Json
+          response_code?: number | null
+          session_id?: string | null
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "webhook_logs_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "webhook_logs_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "sessions_safe"
             referencedColumns: ["id"]
           },
         ]

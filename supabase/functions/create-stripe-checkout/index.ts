@@ -108,6 +108,7 @@ serve(async (req) => {
           quantity: 1,
         },
       ],
+      allow_promotion_codes: true,
       subscription_data: {
         description: `Uplink - Sessão ${sessionData.name}`,
         metadata: {
