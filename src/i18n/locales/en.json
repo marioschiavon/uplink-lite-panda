@@ -301,6 +301,29 @@
     "offline": "Offline",
     "qrCode": "QR Code"
   },
+  "webhooks": {
+    "title": "Configure Webhook",
+    "description": "Receive real-time notifications when events occur",
+    "url": "Webhook URL",
+    "urlPlaceholder": "https://your-server.com/webhook",
+    "enabled": "Webhook Active",
+    "events": "Events",
+    "eventsDescription": "Select the events you want to receive",
+    "testWebhook": "Test Webhook",
+    "testSuccess": "Webhook tested successfully!",
+    "testError": "Error testing webhook",
+    "saveSuccess": "Configuration saved successfully",
+    "saveError": "Error saving configuration",
+    "urlRequired": "Webhook URL is required when enabled",
+    "httpsRequired": "URL must use HTTPS",
+    "eventsRequired": "Select at least one event",
+    "eventTypes": {
+      "MESSAGES_UPSERT": "Messages Received",
+      "MESSAGES_UPDATE": "Delivery Status",
+      "CONNECTION_UPDATE": "Connection Status",
+      "QRCODE_UPDATED": "QR Code Updated"
+    }
+  },
   "dashboard": {
     "connectedSessions": "Connected Sessions",
     "connectedViaWhatsApp": "Connected via WhatsApp",

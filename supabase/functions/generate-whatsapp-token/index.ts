@@ -243,7 +243,55 @@ serve(async (req) => {
       console.log('Session created:', sessionData.id);
     }
 
-    // 9. Atualizar organizations (compatibilidade temporária)
+    // 9. Configure webhook automatically in Evolution API
+    console.log(`Configuring webhook for instance: ${session_name}`);
+    
+    try {
+      const webhookConfig = {
+        enabled: true,
+        url: `https://kfsvpbujmetlendgwnrs.supabase.co/functions/v1/whatsapp-webhook`,
+        webhookByEvents: true,
+        webhookBase64: true,
+        headers: {
+          'apikey': instanceApiKey // Security: session token for validation
+        },
+        events: [
+          'MESSAGES_UPSERT',
+          'MESSAGES_UPDATE',
+          'CONNECTION_UPDATE',
+          'QRCODE_UPDATED'
+        ]
+      };
+
+      const webhookResponse = await fetch(`${evolutionApiUrl}/webhook/set/${session_name}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': evolutionApiKey
+        },
+        body: JSON.stringify(webhookConfig)
+      });
+
+      if (webhookResponse.ok) {
+        console.log('Webhook configured successfully for instance:', session_name);
+        
+        // Update session with default webhook events (not enabled until user configures URL)
+        await supabaseAdmin
+          .from('sessions')
+          .update({
+            webhook_events: ['MESSAGES_UPSERT', 'MESSAGES_UPDATE', 'CONNECTION_UPDATE', 'QRCODE_UPDATED']
+          })
+          .eq('id', sessionData.id);
+      } else {
+        const webhookError = await webhookResponse.text();
+        console.warn(`Webhook configuration warning: ${webhookResponse.status} - ${webhookError}`);
+      }
+    } catch (webhookError) {
+      console.warn('Non-critical: Failed to configure webhook:', webhookError);
+      // Don't fail the request, session was created successfully
+    }
+
+    // 10. Atualizar organizations (compatibilidade temporária)
     await supabaseAdmin
       .from('organizations')
       .update({ 
