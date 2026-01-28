@@ -281,7 +281,9 @@
     "redirectingPayment": "Redirecionando para pagamento...",
     "sessionCreateError": "Erro ao criar registro da sessão",
     "checkoutError": "Erro ao processar assinatura",
-    "sessionNameRequired": "Nome da sessão não encontrado. Volte ao dashboard e tente novamente."
+    "sessionNameRequired": "Nome da sessão não encontrado. Volte ao dashboard e tente novamente.",
+    "sessionReused": "Continuando com sessão existente...",
+    "sessionAlreadyActive": "Esta sessão já está ativa. Acesse suas sessões para gerenciá-la."
   },
   "common": {
     "poweredBy": "Powered by",

@@ -12,9 +12,11 @@ export default function Checkout() {
   const [loading, setLoading] = useState(false);
   const [creatingSession, setCreatingSession] = useState(false);
   const [user, setUser] = useState<any>(null);
+  const [orgId, setOrgId] = useState<string | null>(null);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const sessionName = searchParams.get('session_name');
+  const sessionIdFromUrl = searchParams.get('session_id');
   const { t } = useTranslation();
   const pricing = useRegionalPricing();
 
@@ -30,6 +32,38 @@ export default function Checkout() {
       return;
     }
     setUser(user);
+
+    // Buscar organization_id do usuário
+    const { data: userRecord } = await supabase
+      .from("users")
+      .select("organization_id")
+      .eq("id", user.id)
+      .single();
+
+    if (userRecord?.organization_id) {
+      setOrgId(userRecord.organization_id);
+    }
+  };
+
+  const proceedToStripeCheckout = async (sessionId: string) => {
+    toast.info(t('checkout.redirectingPayment'));
+    console.log('Criando checkout Stripe para sessão:', sessionId);
+
+    const { data, error } = await supabase.functions.invoke('create-stripe-checkout', {
+      body: { session_id: sessionId }
+    });
+
+    if (error) {
+      console.error('Erro ao criar checkout:', error);
+      throw error;
+    }
+
+    if (data.success && data.url) {
+      console.log('Redirecionando para Stripe Checkout:', data.url);
+      window.location.href = data.url;
+    } else {
+      throw new Error(data.error || "Error creating payment session");
+    }
   };
 
   const handleSubscribe = async () => {
@@ -38,31 +72,62 @@ export default function Checkout() {
       return;
     }
 
+    if (!orgId) {
+      toast.error(t('checkout.loginRequired'));
+      return;
+    }
+
     setLoading(true);
     setCreatingSession(true);
 
     try {
+      // 1. Se session_id foi passado na URL, usar sessão existente
+      if (sessionIdFromUrl) {
+        console.log('Usando sessão existente:', sessionIdFromUrl);
+        toast.info(t('checkout.sessionReused'));
+        await proceedToStripeCheckout(sessionIdFromUrl);
+        return;
+      }
+
+      // 2. Verificar se já existe sessão com mesmo nome nesta org
+      const { data: existingSession } = await supabase
+        .from('sessions')
+        .select('id, status')
+        .eq('name', sessionName)
+        .eq('organization_id', orgId)
+        .maybeSingle();
+
+      if (existingSession) {
+        if (existingSession.status === 'pending_payment') {
+          // Reutilizar sessão pendente
+          console.log('Reutilizando sessão pendente:', existingSession.id);
+          toast.info(t('checkout.sessionReused'));
+          await proceedToStripeCheckout(existingSession.id);
+          return;
+        }
+        
+        if (existingSession.status === 'active') {
+          // Sessão já ativa - redirecionar
+          toast.error(t('checkout.sessionAlreadyActive'));
+          navigate('/sessions');
+          return;
+        }
+
+        // Outro status - ainda pode reutilizar
+        console.log('Reutilizando sessão existente:', existingSession.id);
+        await proceedToStripeCheckout(existingSession.id);
+        return;
+      }
+
+      // 3. Criar nova sessão
       toast.info(t('checkout.preparingSession'));
       console.log('Criando registro de sessão:', sessionName);
-      
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('User not authenticated');
-
-      const { data: userRecord } = await supabase
-        .from("users")
-        .select("organization_id")
-        .eq("id", user.id)
-        .single();
-
-      if (!userRecord?.organization_id) {
-        throw new Error('Organization not found');
-      }
 
       const { data: newSession, error: sessionError } = await supabase
         .from('sessions')
         .insert({
           name: sessionName,
-          organization_id: userRecord.organization_id,
+          organization_id: orgId,
           requires_subscription: true,
           status: 'pending_payment'
         })
@@ -77,24 +142,7 @@ export default function Checkout() {
       console.log('Sessão criada:', newSession.id);
       setCreatingSession(false);
 
-      toast.info(t('checkout.redirectingPayment'));
-      console.log('Criando checkout Stripe para sessão:', newSession.id);
-
-      const { data, error } = await supabase.functions.invoke('create-stripe-checkout', {
-        body: { session_id: newSession.id }
-      });
-
-      if (error) {
-        console.error('Erro ao criar checkout:', error);
-        throw error;
-      }
-
-      if (data.success && data.url) {
-        console.log('Redirecionando para Stripe Checkout:', data.url);
-        window.location.href = data.url;
-      } else {
-        throw new Error(data.error || "Error creating payment session");
-      }
+      await proceedToStripeCheckout(newSession.id);
     } catch (error: any) {
       console.error("Erro no processo de checkout:", error);
       toast.error(error.message || t('checkout.checkoutError'));
