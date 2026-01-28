@@ -281,7 +281,9 @@
     "redirectingPayment": "Redirecting to payment...",
     "sessionCreateError": "Failed to create session record",
     "checkoutError": "Failed to process subscription",
-    "sessionNameRequired": "Session name not found. Return to dashboard and try again."
+    "sessionNameRequired": "Session name not found. Return to dashboard and try again.",
+    "sessionReused": "Continuing with existing session...",
+    "sessionAlreadyActive": "This session is already active. Go to your sessions to manage it."
   },
   "common": {
     "poweredBy": "Powered by",

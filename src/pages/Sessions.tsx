@@ -485,8 +485,57 @@ const Sessions = () => {
       return;
     }
     
-    toast.info(t('sessions.configurePayment'));
-    navigate(`/checkout?session_name=${encodeURIComponent(sessionName)}`);
+    // Primeiro criar a sessão para obter o ID, depois redirecionar com ambos parâmetros
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data: userRecord } = await supabase
+        .from("users")
+        .select("organization_id")
+        .eq("id", user.id)
+        .single();
+
+      if (!userRecord?.organization_id) return;
+
+      // Verificar se sessão já existe
+      const { data: existingSession } = await supabase
+        .from('sessions')
+        .select('id, status')
+        .eq('name', sessionName)
+        .eq('organization_id', userRecord.organization_id)
+        .maybeSingle();
+
+      if (existingSession) {
+        // Sessão já existe, redirecionar com ID
+        toast.info(t('sessions.configurePayment'));
+        navigate(`/checkout?session_id=${existingSession.id}&session_name=${encodeURIComponent(sessionName)}`);
+      } else {
+        // Criar nova sessão pendente
+        const { data: newSession, error } = await supabase
+          .from('sessions')
+          .insert({
+            name: sessionName,
+            organization_id: userRecord.organization_id,
+            requires_subscription: true,
+            status: 'pending_payment'
+          })
+          .select()
+          .single();
+
+        if (error) {
+          console.error('Erro ao criar sessão:', error);
+          toast.error(t('sessions.startSessionError'));
+          return;
+        }
+
+        toast.info(t('sessions.configurePayment'));
+        navigate(`/checkout?session_id=${newSession.id}&session_name=${encodeURIComponent(sessionName)}`);
+      }
+    } catch (error) {
+      console.error('Erro ao preparar checkout:', error);
+      toast.error(t('sessions.startSessionError'));
+    }
   };
 
   const handleRefreshQr = async (session: SessionData) => {
