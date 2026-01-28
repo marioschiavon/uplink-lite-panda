@@ -7,10 +7,13 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { Copy } from "lucide-react";
+import { Copy, Info, Webhook } from "lucide-react";
 import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
+import { ptBR, enUS } from "date-fns/locale";
+import { useTranslation } from "react-i18next";
+import { SessionWebhookConfig } from "./SessionWebhookConfig";
 
 interface SessionData {
   id: string;
@@ -28,15 +31,22 @@ interface SessionData {
   notification_phone?: string | null;
   status?: 'online' | 'offline' | 'qrcode' | 'loading' | 'no-session';
   statusMessage?: string;
+  webhook_url?: string | null;
+  webhook_enabled?: boolean;
+  webhook_events?: string[];
 }
 
 interface SessionDetailsModalProps {
   session: SessionData | null;
   open: boolean;
   onClose: () => void;
+  onRefresh?: () => void;
 }
 
-const SessionDetailsModal = ({ session, open, onClose }: SessionDetailsModalProps) => {
+const SessionDetailsModal = ({ session, open, onClose, onRefresh }: SessionDetailsModalProps) => {
+  const { t, i18n } = useTranslation();
+  const dateLocale = i18n.language.startsWith('pt') ? ptBR : enUS;
+
   if (!session) return null;
 
   const copyToClipboard = (text: string, label: string) => {
@@ -48,9 +58,9 @@ const SessionDetailsModal = ({ session, open, onClose }: SessionDetailsModalProp
     switch (session.status) {
       case 'online':
         return {
-          color: 'bg-green-500',
-          textColor: 'text-green-600',
-          bgColor: 'bg-green-50 dark:bg-green-950',
+          color: 'bg-primary',
+          textColor: 'text-primary',
+          bgColor: 'bg-primary/10',
           label: 'Online',
           emoji: '🟢'
         };
@@ -64,17 +74,17 @@ const SessionDetailsModal = ({ session, open, onClose }: SessionDetailsModalProp
         };
       case 'offline':
         return {
-          color: 'bg-red-500',
-          textColor: 'text-red-600',
-          bgColor: 'bg-red-50 dark:bg-red-950',
+          color: 'bg-destructive',
+          textColor: 'text-destructive',
+          bgColor: 'bg-destructive/10',
           label: 'Offline',
           emoji: '🔴'
         };
       default:
         return {
-          color: 'bg-gray-500',
-          textColor: 'text-gray-600',
-          bgColor: 'bg-gray-50 dark:bg-gray-950',
+          color: 'bg-muted',
+          textColor: 'text-muted-foreground',
+          bgColor: 'bg-muted',
           label: 'Desconhecido',
           emoji: '⚪'
         };
@@ -92,162 +102,186 @@ const SessionDetailsModal = ({ session, open, onClose }: SessionDetailsModalProp
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-2xl">
-            Detalhes da Sessão: {session.name}
+            {t('sessions.sessionDetails') || 'Detalhes da Sessão'}: {session.name}
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-6">
-          {/* Status */}
-          <div>
-            <h3 className="font-semibold mb-2">Status</h3>
-            <Badge className={`${statusConfig.bgColor} ${statusConfig.textColor} border-0 text-base px-4 py-2`}>
-              <span className={`inline-block w-3 h-3 rounded-full ${statusConfig.color} mr-2 animate-pulse`} />
-              {statusConfig.label}
-            </Badge>
-            {session.statusMessage && (
-              <p className="text-sm text-muted-foreground mt-2">
-                {session.statusMessage}
-              </p>
-            )}
-          </div>
+        <Tabs defaultValue="info" className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="info" className="flex items-center gap-2">
+              <Info className="h-4 w-4" />
+              {t('common.info') || 'Informações'}
+            </TabsTrigger>
+            <TabsTrigger value="webhook" className="flex items-center gap-2">
+              <Webhook className="h-4 w-4" />
+              Webhook
+            </TabsTrigger>
+          </TabsList>
 
-          {/* Informações Gerais */}
-          <div>
-            <h3 className="font-semibold mb-3 flex items-center gap-2">
-              📋 Informações Gerais
-            </h3>
-            <div className="space-y-2 text-sm bg-muted/50 p-4 rounded-lg">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">ID:</span>
-                <span className="font-mono text-xs">{session.id}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Nome:</span>
-                <span className="font-medium">{session.name}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Plano:</span>
-                <span className="font-medium">{session.plan || 'N/A'}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Criado em:</span>
-                <span>
-                  {format(new Date(session.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Atualizado em:</span>
-                <span>
-                  {format(new Date(session.updated_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
-                </span>
-              </div>
-              {session.notification_phone && (
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">📱 Tel. Notificação:</span>
-                  <span className="font-mono">{session.notification_phone}</span>
-                </div>
+          <TabsContent value="info" className="space-y-6 mt-4">
+            {/* Status */}
+            <div>
+              <h3 className="font-semibold mb-2">Status</h3>
+              <Badge className={`${statusConfig.bgColor} ${statusConfig.textColor} border-0 text-base px-4 py-2`}>
+                <span className={`inline-block w-3 h-3 rounded-full ${statusConfig.color} mr-2 animate-pulse`} />
+                {statusConfig.label}
+              </Badge>
+              {session.statusMessage && (
+                <p className="text-sm text-muted-foreground mt-2">
+                  {session.statusMessage}
+                </p>
               )}
             </div>
-          </div>
 
-          {/* Credenciais */}
-          {session.api_session && (
+            {/* Informações Gerais */}
             <div>
               <h3 className="font-semibold mb-3 flex items-center gap-2">
-                🔐 Credenciais
+                📋 {t('common.generalInfo') || 'Informações Gerais'}
               </h3>
-              <div className="space-y-3">
+              <div className="space-y-2 text-sm bg-muted/50 p-4 rounded-lg">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">ID:</span>
+                  <span className="font-mono text-xs">{session.id}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">{t('common.name') || 'Nome'}:</span>
+                  <span className="font-medium">{session.name}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">{t('common.plan') || 'Plano'}:</span>
+                  <span className="font-medium">{session.plan || 'N/A'}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">{t('common.createdAt') || 'Criado em'}:</span>
+                  <span>
+                    {format(new Date(session.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: dateLocale })}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">{t('common.updatedAt') || 'Atualizado em'}:</span>
+                  <span>
+                    {format(new Date(session.updated_at), "dd/MM/yyyy 'às' HH:mm", { locale: dateLocale })}
+                  </span>
+                </div>
+                {session.notification_phone && (
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">📱 Tel. Notificação:</span>
+                    <span className="font-mono">{session.notification_phone}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Credenciais */}
+            {session.api_session && (
+              <div>
+                <h3 className="font-semibold mb-3 flex items-center gap-2">
+                  🔐 {t('common.credentials') || 'Credenciais'}
+                </h3>
+                <div className="space-y-3">
+                  <div className="bg-muted/50 p-3 rounded-lg">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-sm text-muted-foreground">API Session</span>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => copyToClipboard(session.api_session!, "API Session")}
+                      >
+                        <Copy className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    <code className="text-xs break-all">{session.api_session}</code>
+                  </div>
+
+                  {session.api_token && (
+                    <div className="bg-muted/50 p-3 rounded-lg">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-sm text-muted-foreground">API Token</span>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => copyToClipboard(session.api_token!, "API Token")}
+                        >
+                          <Copy className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      <code className="text-xs break-all">{session.api_token.substring(0, 50)}...</code>
+                    </div>
+                  )}
+
+                  {session.api_token_full && (
+                    <div className="bg-muted/50 p-3 rounded-lg">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-sm text-muted-foreground">Token Full</span>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => copyToClipboard(session.api_token_full!, "Token Full")}
+                        >
+                          <Copy className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      <code className="text-xs break-all">{session.api_token_full.substring(0, 50)}...</code>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Uso da API */}
+            <div>
+              <h3 className="font-semibold mb-3 flex items-center gap-2">
+                📊 {t('common.apiUsage') || 'Uso da API'}
+              </h3>
+              <div className="bg-muted/50 p-4 rounded-lg space-y-3">
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">{t('common.messagesSent') || 'Mensagens Enviadas'}:</span>
+                  <span className="font-medium">
+                    {session.api_message_usage || 0} / {session.api_message_limit || 0}
+                  </span>
+                </div>
+                <div className="space-y-1">
+                  <div className="flex justify-between text-xs text-muted-foreground">
+                    <span>{t('common.progress') || 'Progresso'}</span>
+                    <span>{usagePercentage}%</span>
+                  </div>
+                  <Progress value={usagePercentage} className="h-2" />
+                </div>
+              </div>
+            </div>
+
+            {/* Limites */}
+            <div>
+              <h3 className="font-semibold mb-3 flex items-center gap-2">
+                ⚙️ {t('common.limits') || 'Limites'}
+              </h3>
+              <div className="grid grid-cols-2 gap-3">
                 <div className="bg-muted/50 p-3 rounded-lg">
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-sm text-muted-foreground">API Session</span>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => copyToClipboard(session.api_session!, "API Session")}
-                    >
-                      <Copy className="h-4 w-4" />
-                    </Button>
-                  </div>
-                  <code className="text-xs break-all">{session.api_session}</code>
+                  <div className="text-sm text-muted-foreground mb-1">{t('common.sessions') || 'Sessões'}</div>
+                  <div className="text-2xl font-bold">{session.session_limit || 0}</div>
                 </div>
-
-                {session.api_token && (
-                  <div className="bg-muted/50 p-3 rounded-lg">
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-sm text-muted-foreground">API Token</span>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => copyToClipboard(session.api_token!, "API Token")}
-                      >
-                        <Copy className="h-4 w-4" />
-                      </Button>
-                    </div>
-                    <code className="text-xs break-all">{session.api_token.substring(0, 50)}...</code>
-                  </div>
-                )}
-
-                {session.api_token_full && (
-                  <div className="bg-muted/50 p-3 rounded-lg">
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-sm text-muted-foreground">Token Full</span>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => copyToClipboard(session.api_token_full!, "Token Full")}
-                      >
-                        <Copy className="h-4 w-4" />
-                      </Button>
-                    </div>
-                    <code className="text-xs break-all">{session.api_token_full.substring(0, 50)}...</code>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* Uso da API */}
-          <div>
-            <h3 className="font-semibold mb-3 flex items-center gap-2">
-              📊 Uso da API
-            </h3>
-            <div className="bg-muted/50 p-4 rounded-lg space-y-3">
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Mensagens Enviadas:</span>
-                <span className="font-medium">
-                  {session.api_message_usage || 0} / {session.api_message_limit || 0}
-                </span>
-              </div>
-              <div className="space-y-1">
-                <div className="flex justify-between text-xs text-muted-foreground">
-                  <span>Progresso</span>
-                  <span>{usagePercentage}%</span>
+                <div className="bg-muted/50 p-3 rounded-lg">
+                  <div className="text-sm text-muted-foreground mb-1">{t('common.agents') || 'Agentes'}</div>
+                  <div className="text-2xl font-bold">{session.agent_limit || 0}</div>
                 </div>
-                <Progress value={usagePercentage} className="h-2" />
               </div>
             </div>
-          </div>
+          </TabsContent>
 
-          {/* Limites */}
-          <div>
-            <h3 className="font-semibold mb-3 flex items-center gap-2">
-              ⚙️ Limites
-            </h3>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="bg-muted/50 p-3 rounded-lg">
-                <div className="text-sm text-muted-foreground mb-1">Sessões</div>
-                <div className="text-2xl font-bold">{session.session_limit || 0}</div>
-              </div>
-              <div className="bg-muted/50 p-3 rounded-lg">
-                <div className="text-sm text-muted-foreground mb-1">Agentes</div>
-                <div className="text-2xl font-bold">{session.agent_limit || 0}</div>
-              </div>
-            </div>
-          </div>
-        </div>
+          <TabsContent value="webhook" className="mt-4">
+            <SessionWebhookConfig
+              sessionId={session.id}
+              sessionName={session.name}
+              initialUrl={session.webhook_url || ''}
+              initialEnabled={session.webhook_enabled || false}
+              initialEvents={session.webhook_events || ['MESSAGES_UPSERT', 'CONNECTION_UPDATE']}
+              onUpdate={onRefresh}
+            />
+          </TabsContent>
+        </Tabs>
 
         <div className="flex justify-end pt-4">
-          <Button onClick={onClose}>Fechar</Button>
+          <Button onClick={onClose}>{t('common.close') || 'Fechar'}</Button>
         </div>
       </DialogContent>
     </Dialog>
