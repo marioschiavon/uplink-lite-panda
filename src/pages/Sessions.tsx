@@ -618,6 +618,25 @@ const Sessions = () => {
     const session = sessions.find(s => s.id === sessionId);
     if (!session) return;
     
+    // Bloquear deleção de sessões com pagamento pendente
+    if (session.status === 'pending_payment') {
+      toast.warning(t('sessions.pendingPaymentDelete'));
+      return;
+    }
+    
+    // Verificar se existe checkout pendente no Stripe para esta sessão
+    const { data: pendingSub } = await supabase
+      .from('subscriptions' as any)
+      .select('status')
+      .eq('session_id', sessionId)
+      .eq('status', 'pending')
+      .maybeSingle();
+      
+    if (pendingSub) {
+      toast.warning(t('sessions.pendingPaymentDelete'));
+      return;
+    }
+    
     if (!confirm(`Tem certeza que deseja excluir a sessão "${session.name}"? Esta ação não pode ser desfeita.`)) {
       return;
     }

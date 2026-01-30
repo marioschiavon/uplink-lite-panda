@@ -39,23 +39,72 @@ serve(async (req) => {
         const sessionId = session.metadata?.session_id;
         const organizationId = session.metadata?.organization_id;
 
-        if (!sessionId || !organizationId) {
-          console.error('❌ Metadata ausente no checkout session');
+        if (!organizationId) {
+          console.error('❌ organization_id ausente no checkout session');
           break;
         }
 
-        console.log('✅ Pagamento aprovado para session:', sessionId);
+        // Validar se a sessão ainda existe, senão buscar a mais recente da org
+        let finalSessionId = sessionId;
+        
+        if (sessionId) {
+          const { data: sessionExists } = await supabaseAdmin
+            .from('sessions')
+            .select('id')
+            .eq('id', sessionId)
+            .maybeSingle();
+
+          if (!sessionExists) {
+            console.warn('⚠️ Sessão original não encontrada:', sessionId);
+            
+            // Buscar sessão mais recente da organização como fallback
+            const { data: latestSession } = await supabaseAdmin
+              .from('sessions')
+              .select('id, name')
+              .eq('organization_id', organizationId)
+              .order('created_at', { ascending: false })
+              .limit(1)
+              .maybeSingle();
+              
+            if (latestSession) {
+              finalSessionId = latestSession.id;
+              console.log('✅ Usando sessão mais recente da org:', latestSession.name, '| ID:', finalSessionId);
+            } else {
+              console.error('❌ Nenhuma sessão encontrada para a organização:', organizationId);
+              break;
+            }
+          }
+        } else {
+          // Se não tinha session_id nos metadados, buscar a mais recente
+          const { data: latestSession } = await supabaseAdmin
+            .from('sessions')
+            .select('id, name')
+            .eq('organization_id', organizationId)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+            
+          if (latestSession) {
+            finalSessionId = latestSession.id;
+            console.log('✅ Session_id não estava nos metadados. Usando sessão:', latestSession.name);
+          } else {
+            console.error('❌ Nenhuma sessão encontrada para a organização:', organizationId);
+            break;
+          }
+        }
+
+        console.log('✅ Pagamento aprovado para session:', finalSessionId);
 
         // Buscar subscription do Stripe
         const stripeSubscription = await stripe.subscriptions.retrieve(
           session.subscription as string
         );
 
-        // Verificar se já existe subscription
+        // Verificar se já existe subscription para esta sessão
         const { data: existingSub } = await supabaseAdmin
           .from('subscriptions')
           .select('id')
-          .eq('session_id', sessionId)
+          .eq('session_id', finalSessionId)
           .eq('payment_provider', 'stripe')
           .maybeSingle();
 
@@ -76,7 +125,7 @@ serve(async (req) => {
         } else {
           // Criar novo registro
           await supabaseAdmin.from('subscriptions').insert({
-            session_id: sessionId,
+            session_id: finalSessionId,
             organization_id: organizationId,
             status: 'active',
             amount: (stripeSubscription.items.data[0].price.unit_amount || 0) / 100,
@@ -97,9 +146,9 @@ serve(async (req) => {
         await supabaseAdmin.from('sessions').update({
           status: 'connected',
           requires_subscription: false,
-        }).eq('id', sessionId);
+        }).eq('id', finalSessionId);
 
-        console.log('✅ Assinatura ativada para sessão:', sessionId);
+        console.log('✅ Assinatura ativada para sessão:', finalSessionId);
 
         // Enviar email de confirmação
         if (session.customer_details?.email) {

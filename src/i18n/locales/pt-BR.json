@@ -398,7 +398,8 @@
     "deleteConfirm": "Tem certeza que deseja excluir a sessão \"{{name}}\"? Esta ação não pode ser desfeita.",
     "sessionDeleted": "Sessão excluída com sucesso!",
     "deleteError": "Erro ao excluir sessão",
-    "configurePayment": "Configure o pagamento para criar sua sessão"
+    "configurePayment": "Configure o pagamento para criar sua sessão",
+    "pendingPaymentDelete": "Esta sessão tem um pagamento pendente. Aguarde a conclusão ou cancele no portal de pagamentos."
   },
   "subscriptions": {
     "title": "Minhas Assinaturas",

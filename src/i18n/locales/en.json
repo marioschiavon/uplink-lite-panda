@@ -398,7 +398,8 @@
     "deleteConfirm": "Are you sure you want to delete session \"{{name}}\"? This action cannot be undone.",
     "sessionDeleted": "Session deleted successfully!",
     "deleteError": "Error deleting session",
-    "configurePayment": "Configure payment to create your session"
+    "configurePayment": "Configure payment to create your session",
+    "pendingPaymentDelete": "This session has a pending payment. Wait for completion or cancel in the payment portal."
   },
   "subscriptions": {
     "title": "My Subscriptions",
