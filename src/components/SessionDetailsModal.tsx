@@ -9,11 +9,11 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { Copy, Info, Webhook } from "lucide-react";
+import { Copy, Info, Webhook, Construction } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR, enUS } from "date-fns/locale";
 import { useTranslation } from "react-i18next";
-import { SessionWebhookConfig } from "./SessionWebhookConfig";
+import { Card, CardContent } from "@/components/ui/card";
 
 interface SessionData {
   id: string;
@@ -269,14 +269,17 @@ const SessionDetailsModal = ({ session, open, onClose, onRefresh }: SessionDetai
           </TabsContent>
 
           <TabsContent value="webhook" className="mt-4">
-            <SessionWebhookConfig
-              sessionId={session.id}
-              sessionName={session.name}
-              initialUrl={session.webhook_url || ''}
-              initialEnabled={session.webhook_enabled || false}
-              initialEvents={session.webhook_events || ['MESSAGES_UPSERT', 'CONNECTION_UPDATE']}
-              onUpdate={onRefresh}
-            />
+            <Card className="border-border">
+              <CardContent className="flex flex-col items-center justify-center py-12 space-y-4">
+                <div className="p-4 rounded-full bg-accent">
+                  <Construction className="h-12 w-12 text-accent-foreground" />
+                </div>
+                <h3 className="text-xl font-semibold">{t('webhooks.underConstruction')}</h3>
+                <p className="text-muted-foreground text-center max-w-md">
+                  {t('webhooks.underConstructionDescription')}
+                </p>
+              </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
 

@@ -324,7 +324,9 @@
       "MESSAGES_UPDATE": "Delivery Status",
       "CONNECTION_UPDATE": "Connection Status",
       "QRCODE_UPDATED": "QR Code Updated"
-    }
+    },
+    "underConstruction": "Under Construction",
+    "underConstructionDescription": "We are working to bring custom webhooks to your sessions. Soon you will be able to configure endpoints to receive real-time events."
   },
   "dashboard": {
     "connectedSessions": "Connected Sessions",
