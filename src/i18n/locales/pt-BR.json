@@ -326,7 +326,26 @@
       "QRCODE_UPDATED": "QR Code Atualizado"
     },
     "underConstruction": "Em Construção",
-    "underConstructionDescription": "Estamos trabalhando para trazer webhooks personalizados para suas sessões. Em breve você poderá configurar endpoints para receber eventos em tempo real."
+    "underConstructionDescription": "Estamos trabalhando para trazer webhooks personalizados para suas sessões. Em breve você poderá configurar endpoints para receber eventos em tempo real.",
+    "receiveMessages": "Receber Mensagens do WhatsApp",
+    "receiveMessagesDescription": "Configure para onde enviar as mensagens recebidas do seu número conectado",
+    "webhookUrl": "URL do Webhook",
+    "webhookUrlHint": "Endereço HTTPS que receberá as notificações em tempo real",
+    "securityToken": "Seu Token de Segurança",
+    "securityTokenHint": "Use este token para validar as requisições no seu servidor (header: apikey)",
+    "selectEvents": "Eventos para Receber",
+    "requiredEvent": "obrigatório",
+    "eventDescriptions": {
+      "MESSAGES_UPSERT": "Recebe todas as mensagens enviadas para o número conectado",
+      "MESSAGES_UPDATE": "Notifica quando mensagens são lidas ou entregues",
+      "CONNECTION_UPDATE": "Avisa quando a sessão conecta ou desconecta",
+      "QRCODE_UPDATED": "Notifica quando um novo QR Code é gerado"
+    },
+    "webhookActive": "Recebendo Msgs",
+    "webhookPending": "Configurar Webhook",
+    "saveConfiguration": "Salvar Configuração",
+    "tokenCopied": "Token copiado!",
+    "webhookActiveMessage": "Webhook ativo! As mensagens estão sendo encaminhadas para sua URL."
   },
   "dashboard": {
     "connectedSessions": "Sessões Conectadas",

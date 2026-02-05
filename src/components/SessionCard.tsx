@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { motion } from "framer-motion";
+import { Webhook, AlertCircle } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 interface SessionData {
   id: string;
@@ -15,6 +17,8 @@ interface SessionData {
   updated_at: string;
   status?: 'online' | 'offline' | 'qrcode' | 'loading' | 'no-session';
   statusMessage?: string;
+  webhook_url?: string | null;
+  webhook_enabled?: boolean;
 }
 
 interface SessionCardProps {
@@ -23,6 +27,9 @@ interface SessionCardProps {
 }
 
 const SessionCard = ({ session, onClick }: SessionCardProps) => {
+  const { t, i18n } = useTranslation();
+  const dateLocale = i18n.language.startsWith('pt') ? ptBR : undefined;
+
   const getStatusConfig = () => {
     switch (session.status) {
       case 'online':
@@ -69,6 +76,7 @@ const SessionCard = ({ session, onClick }: SessionCardProps) => {
   };
 
   const statusConfig = getStatusConfig();
+  const hasWebhook = session.webhook_enabled && session.webhook_url;
 
   return (
     <motion.div
@@ -83,9 +91,15 @@ const SessionCard = ({ session, onClick }: SessionCardProps) => {
               <span className={`inline-block w-2 h-2 rounded-full ${statusConfig.color} mr-2 animate-pulse`} />
               {statusConfig.label}
             </Badge>
-            {session.plan && (
-              <Badge variant="outline" className="text-xs">
-                {session.plan}
+            {hasWebhook ? (
+              <Badge className="bg-primary/10 text-primary border-0 text-xs">
+                <Webhook className="h-3 w-3 mr-1" />
+                {t('webhooks.webhookActive')}
+              </Badge>
+            ) : (
+              <Badge className="bg-yellow-50 dark:bg-yellow-950 text-yellow-600 border-0 text-xs">
+                <AlertCircle className="h-3 w-3 mr-1" />
+                {t('webhooks.webhookPending')}
               </Badge>
             )}
           </div>
@@ -103,16 +117,16 @@ const SessionCard = ({ session, onClick }: SessionCardProps) => {
             <div className="flex items-center gap-2 text-muted-foreground">
               <span>📱</span>
               <span className="truncate">
-                Sessão: {session.api_session || 'N/A'}
+                {t('sessions.session', 'Sessão')}: {session.api_session || 'N/A'}
               </span>
             </div>
             <div className="flex items-center gap-2 text-muted-foreground">
               <span>⏰</span>
               <span>
-                Atualizado{' '}
+                {t('common.updated', 'Atualizado')}{' '}
                 {formatDistanceToNow(new Date(session.updated_at), {
                   addSuffix: true,
-                  locale: ptBR
+                  locale: dateLocale
                 })}
               </span>
             </div>
@@ -125,7 +139,7 @@ const SessionCard = ({ session, onClick }: SessionCardProps) => {
             variant="outline"
             disabled={session.status === 'no-session'}
           >
-            Ver Detalhes
+            {t('sessions.viewDetails', 'Ver Detalhes')}
           </Button>
         </CardContent>
       </Card>
