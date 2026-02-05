@@ -1,123 +1,101 @@
 
 
-# Plano: Marcar Webhook como Em Construcao
+# Plano: Otimizar Logs de Webhook (Opção B)
 
-## Resumo
+## Situação Atual
 
-Adicionar um banner de "Em Construcao" na aba de Webhook do modal de detalhes da sessao, informando que a funcionalidade esta sendo desenvolvida. O restante do codigo nao apresenta erros tecnicos detectados.
+O código já está parcialmente otimizado:
+- **Sem webhook configurado**: Retorna sem logar (correto)
+- **Com webhook configurado**: Loga TODAS as tentativas (sucesso e falha)
 
----
+## Mudança Proposta
 
-## Mudancas a Implementar
+Logar apenas em casos específicos para economizar espaço:
 
-### 1. Atualizar SessionDetailsModal.tsx
+| Situação | Logar? | Motivo |
+|----------|--------|--------|
+| Webhook não configurado | Não | Já funciona assim |
+| Evento não inscrito | Não | Já funciona assim |
+| URL inválida (não HTTPS) | Sim | Erro de configuração, cliente precisa saber |
+| Entrega com sucesso | Não | Não precisa, a Evolution API já tem esse dado |
+| Entrega falhou | Sim | Cliente precisa debugar |
 
-**Localizacao:** `src/components/SessionDetailsModal.tsx`
+## Arquivo a Modificar
 
-**Mudanca:** Substituir o componente `SessionWebhookConfig` por um componente de "Em Construcao" com:
-- Icone de construcao (Construction ou Wrench)
-- Titulo explicativo
-- Mensagem informando que a funcionalidade esta em desenvolvimento
-- Visual consistente com o design do sistema
+`supabase/functions/whatsapp-webhook/index.ts`
+
+## Mudanças no Código
+
+### Remover log de sucesso (linha 164-171)
 
 **Antes:**
 ```typescript
-<TabsContent value="webhook" className="mt-4">
-  <SessionWebhookConfig
-    sessionId={session.id}
-    sessionName={session.name}
-    initialUrl={session.webhook_url || ''}
-    initialEnabled={session.webhook_enabled || false}
-    initialEvents={session.webhook_events || ['MESSAGES_UPSERT', 'CONNECTION_UPDATE']}
-    onUpdate={onRefresh}
-  />
-</TabsContent>
+// 8. Log the webhook delivery attempt
+await supabaseAdmin.from('webhook_logs').insert({
+  session_id: session.id,
+  event_type: eventType,
+  payload: forwardPayload,
+  status,
+  response_code: responseCode,
+  error_message: errorMessage
+});
 ```
 
 **Depois:**
 ```typescript
-<TabsContent value="webhook" className="mt-4">
-  <Card className="border-border">
-    <CardContent className="flex flex-col items-center justify-center py-12 space-y-4">
-      <div className="p-4 rounded-full bg-yellow-500/10">
-        <Construction className="h-12 w-12 text-yellow-500" />
-      </div>
-      <h3 className="text-xl font-semibold">{t('webhooks.underConstruction')}</h3>
-      <p className="text-muted-foreground text-center max-w-md">
-        {t('webhooks.underConstructionDescription')}
-      </p>
-    </CardContent>
-  </Card>
-</TabsContent>
-```
-
----
-
-### 2. Adicionar Traducoes
-
-**Arquivo:** `src/i18n/locales/pt-BR.json`
-
-```json
-"webhooks": {
-  ...
-  "underConstruction": "Em Construcao",
-  "underConstructionDescription": "Estamos trabalhando para trazer webhooks personalizados para suas sessoes. Em breve voce podera configurar endpoints para receber eventos em tempo real."
+// 8. Log only failed webhook deliveries (success logs are redundant with Evolution API)
+if (status === 'failed' || status === 'error') {
+  await supabaseAdmin.from('webhook_logs').insert({
+    session_id: session.id,
+    event_type: eventType,
+    payload: forwardPayload,
+    status,
+    response_code: responseCode,
+    error_message: errorMessage
+  });
 }
 ```
 
-**Arquivo:** `src/i18n/locales/en.json`
+## Resultado
 
-```json
-"webhooks": {
-  ...
-  "underConstruction": "Under Construction",
-  "underConstructionDescription": "We are working to bring custom webhooks to your sessions. Soon you will be able to configure endpoints to receive real-time events."
-}
+- **Logs reduzidos em ~90%**: Apenas falhas serão logadas
+- **Debugging mantido**: Cliente ainda pode ver o que falhou
+- **Performance melhorada**: Menos escritas no banco
+
+## Seção Técnica
+
+### Lógica Completa do Fluxo
+
+```text
+Evento chega da Evolution API
+        |
+        v
+  Sessão tem webhook_url?
+        |
+   Não  |  Sim
+        |    |
+   [RETURN]  v
+         Evento está inscrito?
+              |
+         Não  |  Sim
+              |    |
+         [RETURN]  v
+               URL é HTTPS?
+                    |
+               Não  |  Sim
+                    |    |
+              [LOG ERRO] v
+              [RETURN]   Tenta enviar
+                              |
+                    Sucesso   |   Falha
+                              |     |
+                     [RETURN] | [LOG ERRO]
+                              | [RETURN]
 ```
 
----
+### Arquivo Modificado
 
-### 3. Importar Icone no Modal
-
-Adicionar `Construction` aos imports do Lucide:
-
-```typescript
-import { Copy, Info, Webhook, Construction } from "lucide-react";
-```
-
----
-
-## Secao Tecnica
-
-### Arquivos Modificados
-
-| Arquivo | Tipo de Mudanca |
-|---------|-----------------|
-| `src/components/SessionDetailsModal.tsx` | Substituir webhook config por banner de construcao |
-| `src/i18n/locales/pt-BR.json` | Adicionar 2 novas traducoes |
-| `src/i18n/locales/en.json` | Adicionar 2 novas traducoes |
-
-### Dependencias
-
-Nenhuma nova dependencia necessaria. O icone `Construction` ja esta disponivel no pacote `lucide-react` instalado.
-
-### Componentes Mantidos
-
-O arquivo `SessionWebhookConfig.tsx` sera mantido no projeto para uso futuro quando a funcionalidade for reativada.
-
----
-
-## Verificacao de Erros
-
-Analisei os seguintes pontos e nao encontrei erros:
-- Console logs: Apenas warning do Tailwind CDN (normal em desenvolvimento)
-- Network requests: Sem erros
-- Traducoes: Todas as chaves usadas existem nos arquivos JSON
-- Componentes: Todos importados corretamente
-
----
-
-## Resultado Esperado
-
-Ao abrir os detalhes de uma sessao e clicar na aba "Webhook", o usuario vera um banner informativo indicando que a funcionalidade esta em desenvolvimento, em vez do formulario de configuracao.
+| Arquivo | Mudança |
+|---------|---------|
+| `supabase/functions/whatsapp-webhook/index.ts` | Condicionar log apenas para falhas |
 
