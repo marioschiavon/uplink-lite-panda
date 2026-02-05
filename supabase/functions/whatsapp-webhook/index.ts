@@ -160,15 +160,17 @@ serve(async (req) => {
       console.error(`Webhook forward error: ${errorMessage}`);
     }
 
-    // 8. Log the webhook delivery attempt
-    await supabaseAdmin.from('webhook_logs').insert({
-      session_id: session.id,
-      event_type: eventType,
-      payload: forwardPayload,
-      status,
-      response_code: responseCode,
-      error_message: errorMessage
-    });
+    // 8. Log only failed webhook deliveries (success logs are redundant with Evolution API)
+    if (status === 'failed' || status === 'error') {
+      await supabaseAdmin.from('webhook_logs').insert({
+        session_id: session.id,
+        event_type: eventType,
+        payload: forwardPayload,
+        status,
+        response_code: responseCode,
+        error_message: errorMessage
+      });
+    }
 
     const processingTime = Date.now() - startTime;
     console.log(`Webhook processed in ${processingTime}ms, status: ${status}`);
