@@ -470,7 +470,12 @@
     "step4Title": "Instant Reactivation",
     "step4Desc": "Cancelled sessions can be immediately reactivated by clicking \"Reactivate Subscription\".",
     "portalError": "Error opening management portal",
-    "customerNotFound": "Customer ID not found"
+    "customerNotFound": "Customer ID not found",
+    "pastDue": "Payment Pending",
+    "pastDueTitle": "Payment Not Processed",
+    "pastDueMessage": "Your last payment was not processed. Update your payment method to avoid session disconnection.",
+    "pastDueInstructions": "Access the Stripe portal to update your credit card. Payment will be processed automatically after the update.",
+    "updatePayment": "Update Payment"
   },
   "onboarding": {
     "welcome": "Welcome to Uplink!",

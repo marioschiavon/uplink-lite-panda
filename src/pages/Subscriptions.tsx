@@ -171,6 +171,13 @@ const Subscriptions = () => {
             Ativa
           </Badge>
         );
+      case "past_due":
+        return (
+          <Badge variant="outline" className="bg-red-500/10 text-red-600 border-red-200">
+            <AlertTriangle className="h-3 w-3 mr-1" />
+            Pagamento Pendente
+          </Badge>
+        );
       case "pending":
         return (
           <Badge variant="outline" className="bg-yellow-500/10 text-yellow-600 border-yellow-200">
@@ -438,6 +445,55 @@ const Subscriptions = () => {
                           </div>
                         )}
                       </div>
+
+                      {session.subscription.status === "past_due" && (
+                        <div className="space-y-3">
+                          <Alert className="border-red-300 bg-red-50">
+                            <AlertTriangle className="h-4 w-4 text-red-600" />
+                            <AlertDescription className="text-red-800">
+                              <div className="space-y-3">
+                                <div>
+                                  <p className="font-semibold mb-2">⚠️ Pagamento Não Processado</p>
+                                  <p className="mb-2">
+                                    Seu último pagamento não foi processado. Atualize seu método de pagamento para evitar a desconexão da sessão.
+                                  </p>
+                                  <p className="text-sm mb-3">
+                                    Acesse o portal do Stripe para atualizar seu cartão de crédito. O pagamento será processado automaticamente após a atualização.
+                                  </p>
+                                </div>
+                                <div className="flex flex-wrap gap-2">
+                                  <Button
+                                    size="sm"
+                                    onClick={() => handleManageSubscription(
+                                      session.subscription?.stripe_customer_id,
+                                      session.subscription?.payment_provider
+                                    )}
+                                    disabled={!session.subscription?.stripe_customer_id}
+                                    className="bg-red-600 hover:bg-red-700"
+                                  >
+                                    <CreditCard className="h-4 w-4 mr-2" />
+                                    Atualizar Pagamento
+                                  </Button>
+                                  {(session.subscription?.stripe_customer_id || session.subscription?.payment_provider === 'mercadopago') && (
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => handleManageSubscription(
+                                        session.subscription?.stripe_customer_id,
+                                        session.subscription?.payment_provider
+                                      )}
+                                      className="border-red-300"
+                                    >
+                                      <ExternalLink className="h-4 w-4 mr-2" />
+                                      Gerenciar no Portal
+                                    </Button>
+                                  )}
+                                </div>
+                              </div>
+                            </AlertDescription>
+                          </Alert>
+                        </div>
+                      )}
 
                       {session.subscription.status === "active" && (
                         <div className="flex flex-col gap-3">
