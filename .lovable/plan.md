@@ -1,259 +1,170 @@
 
-# Plano: Configuracao de Webhook para Receber Mensagens
 
-## Resumo
+# Plano: Notificacao de Pagamento Falho e Acesso ao Portal Stripe
 
-Substituir o banner "Em Construcao" por um formulario simplificado que permite aos clientes configurar o webhook para receber mensagens do WhatsApp. A URL sera pre-configurada automaticamente com o padrao `https://api.uplinklite.com/webhook/{nome_sessao}` e a seguranca sera garantida pelo token da sessao (api_token).
+## Problema Identificado
 
----
+Quando um pagamento falha no Stripe (cartao recusado, saldo insuficiente, etc.), o sistema:
+- Atualiza o status para `past_due` no banco de dados
+- **NAO** envia email avisando o cliente
+- **NAO** mostra alerta especifico na pagina de Assinaturas
+- O cliente nao sabe que precisa atualizar o metodo de pagamento
 
-## Arquitetura de Seguranca
+## Mudancas Necessarias
 
-O sistema ja possui seguranca implementada:
+### 1. Email de Notificacao de Pagamento Falho
 
-```text
-Evolution API
-     |
-     | (envia apikey no header)
-     v
-whatsapp-webhook Edge Function
-     |
-     | (valida api_token da sessao)
-     v
-webhook_url do cliente
-     |
-     | (recebe apikey no header para validacao)
-     v
-Sistema do Cliente
-```
+**Arquivo:** `supabase/functions/stripe-webhook/index.ts`
 
-**O cliente deve validar o header `apikey` recebido para garantir que a requisicao e legitima.**
+No bloco `invoice.payment_failed` (linhas 607-616), adicionar:
+- Buscar dados da subscription e email do cliente
+- Buscar nome da sessao associada
+- Enviar email via Resend com:
+  - Titulo: "Problema com seu pagamento"
+  - Motivo da falha (cartao recusado, etc.)
+  - Link direto para a pagina de assinaturas
+  - Instrucoes para atualizar o metodo de pagamento no portal Stripe
+  - Aviso de que a sessao pode ser desconectada se nao regularizar
 
----
+### 2. Badge e Alerta para Status `past_due` na UI
 
-## Mudancas a Implementar
+**Arquivo:** `src/pages/Subscriptions.tsx`
 
-### 1. SessionCard.tsx - Adicionar Badge de Status do Webhook
+Adicionar tratamento visual especifico para o status `past_due`:
+- Novo badge vermelho/laranja: "Pagamento Pendente"
+- Alerta destacado com icone de aviso explicando a situacao
+- Botao "Atualizar Pagamento" que abre o portal Stripe diretamente
+- Mensagem clara: "Seu ultimo pagamento nao foi processado. Atualize seu metodo de pagamento para evitar a desconexao da sessao."
 
-Adicionar um indicador visual mostrando se o webhook esta configurado ou pendente.
+### 3. Garantir Acesso ao Portal Stripe
 
-**Mudancas:**
-- Adicionar propriedades `webhook_url` e `webhook_enabled` na interface `SessionData`
-- Exibir badge de status do webhook apos o badge de status da conexao
-- Badge verde: "Recebendo Msgs" quando webhook ativo
-- Badge amarelo: "Configurar Webhook" quando nao configurado
+**Confirmacao:** O acesso ao portal Stripe ja funciona corretamente atraves da Edge Function `create-stripe-portal`. O cliente pode:
+- Alterar metodo de pagamento (cartao de credito)
+- Ver historico de cobracas
+- Cancelar assinatura
+- Reverter cancelamento
 
----
-
-### 2. SessionDetailsModal.tsx - Formulario Simplificado de Webhook
-
-Substituir o banner "Em Construcao" por um formulario funcional.
-
-**Layout do Formulario:**
-
-```text
-+------------------------------------------------+
-|  Receber Mensagens do WhatsApp                |
-|  Configure para onde enviar as mensagens      |
-+------------------------------------------------+
-|                                                |
-|  URL do Webhook (pre-preenchida)               |
-|  [https://api.uplinklite.com/webhook/sessao1] |
-|                                                |
-|  Seu Token de Seguranca (somente leitura)      |
-|  [abc123...] [Copiar]                         |
-|                                                |
-|  Eventos para Receber:                         |
-|  [x] Mensagens Recebidas (obrigatorio)         |
-|  [ ] Status de Entrega                         |
-|  [ ] Status da Conexao                         |
-|  [ ] Atualizacao do QR Code                    |
-|                                                |
-|  [Salvar Configuracao]                         |
-+------------------------------------------------+
-```
-
-**Logica:**
-- URL pre-preenchida: `https://api.uplinklite.com/webhook/{session.name}`
-- Token exibido (primeiros 20 chars + "...") com botao copiar
-- "Mensagens Recebidas" (MESSAGES_UPSERT) sempre ativado e desabilitado visualmente
-- Outros eventos sao opcionais (checkboxes)
-- Ao salvar, automaticamente define `webhook_enabled = true`
-
----
-
-### 3. Traducoes - Nomenclatura Amigavel
-
-**Eventos com nomes leigos:**
-
-| Evento Tecnico | PT-BR | EN |
-|----------------|-------|-----|
-| MESSAGES_UPSERT | Mensagens Recebidas | Messages Received |
-| MESSAGES_UPDATE | Status de Entrega (lido, entregue) | Delivery Status (read, delivered) |
-| CONNECTION_UPDATE | Status da Conexao (online/offline) | Connection Status (online/offline) |
-| QRCODE_UPDATED | Atualizacao do QR Code | QR Code Update |
-
-**Novas chaves de traducao:**
-
-```json
-"webhooks": {
-  "receiveMessages": "Receber Mensagens do WhatsApp",
-  "receiveMessagesDescription": "Configure para onde enviar as mensagens recebidas",
-  "webhookUrl": "URL do Webhook",
-  "webhookUrlHint": "Endereco HTTPS que recebera as notificacoes",
-  "securityToken": "Seu Token de Seguranca",
-  "securityTokenHint": "Use este token para validar as requisicoes no seu servidor",
-  "selectEvents": "Eventos para Receber",
-  "requiredEvent": "(obrigatorio)",
-  "optionalEvents": "Eventos opcionais",
-  "eventDescriptions": {
-    "MESSAGES_UPSERT": "Recebe todas as mensagens enviadas para o numero conectado",
-    "MESSAGES_UPDATE": "Notifica quando mensagens sao lidas ou entregues",
-    "CONNECTION_UPDATE": "Avisa quando a sessao conecta ou desconecta",
-    "QRCODE_UPDATED": "Notifica quando um novo QR Code e gerado"
-  },
-  "webhookActive": "Recebendo Mensagens",
-  "webhookPending": "Configurar Webhook",
-  "webhookSaved": "Webhook configurado com sucesso!",
-  "copyToken": "Copiar Token",
-  "tokenCopied": "Token copiado!"
-}
-```
-
----
-
-### 4. SessionCard.tsx - Interface Atualizada
-
-```typescript
-interface SessionData {
-  id: string;
-  name: string;
-  api_session: string | null;
-  api_token: string | null;
-  plan: string | null;
-  created_at: string;
-  updated_at: string;
-  status?: 'online' | 'offline' | 'qrcode' | 'loading' | 'no-session';
-  statusMessage?: string;
-  // Novas propriedades
-  webhook_url?: string | null;
-  webhook_enabled?: boolean;
-}
-```
+O botao "Gerenciar Assinatura" ja esta disponivel para todos os status que possuem `stripe_customer_id`. Nenhuma alteracao necessaria neste ponto.
 
 ---
 
 ## Secao Tecnica
 
-### Arquivos a Modificar
+### Arquivo 1: `supabase/functions/stripe-webhook/index.ts`
 
-| Arquivo | Mudanca |
-|---------|---------|
-| `src/components/SessionDetailsModal.tsx` | Substituir banner por formulario de webhook |
-| `src/components/SessionCard.tsx` | Adicionar badge de status do webhook + propriedades na interface |
-| `src/i18n/locales/pt-BR.json` | Novas traducoes para webhook |
-| `src/i18n/locales/en.json` | Novas traducoes para webhook |
-
-### Fluxo do Usuario
-
-```text
-1. Usuario abre "Ver Detalhes" de uma sessao
-         |
-         v
-2. Clica na aba "Webhook"
-         |
-         v
-3. Ve formulario com URL pre-preenchida
-   https://api.uplinklite.com/webhook/{nome_sessao}
-         |
-         v
-4. Pode editar URL se quiser usar outra
-         |
-         v
-5. Eventos: "Mensagens Recebidas" ja ativo
-   Pode marcar outros opcionais
-         |
-         v
-6. Copia o Token de Seguranca
-         |
-         v
-7. Clica "Salvar"
-         |
-         v
-8. Edge Function update-session-webhook salva no banco
-         |
-         v
-9. Badge no SessionCard muda para "Recebendo Mensagens" (verde)
-         |
-         v
-10. Mensagens do WhatsApp sao encaminhadas para a URL
-```
-
-### Validacao no Lado do Cliente
-
-Instrucoes para o cliente validar webhooks recebidos:
-
-```javascript
-// Exemplo: Validar webhook no servidor do cliente
-app.post('/webhook', (req, res) => {
-  const apikey = req.headers['apikey'];
-  const expectedToken = 'SEU_TOKEN_COPIADO';
-  
-  if (apikey !== expectedToken) {
-    return res.status(401).json({ error: 'Unauthorized' });
-  }
-  
-  // Processar evento
-  const { event, data } = req.body;
-  console.log(`Evento: ${event}`, data);
-  
-  res.status(200).json({ ok: true });
-});
-```
-
-### Componente Interno: WebhookConfigForm
-
-Criar um componente interno no SessionDetailsModal para manter o codigo organizado:
-
+**Bloco atual (linhas 607-616):**
 ```typescript
-// Componente simplificado dentro do modal
-function WebhookConfigForm({ session, onSave }) {
-  const [url, setUrl] = useState(
-    session.webhook_url || 
-    `https://api.uplinklite.com/webhook/${session.name}`
-  );
-  const [events, setEvents] = useState(
-    session.webhook_events || ['MESSAGES_UPSERT']
-  );
+case 'invoice.payment_failed': {
+  const invoice = event.data.object as Stripe.Invoice;
   
-  // MESSAGES_UPSERT sempre ativo
-  const toggleEvent = (eventId) => {
-    if (eventId === 'MESSAGES_UPSERT') return; // Nao pode desativar
-    // Toggle outros eventos
-  };
-  
-  const handleSave = async () => {
-    // Chamar edge function update-session-webhook
-  };
+  await supabaseAdmin.from('subscriptions')
+    .update({ status: 'past_due' })
+    .eq('stripe_subscription_id', invoice.subscription as string);
+
+  console.log('Pagamento falhou para subscription:', invoice.subscription);
+  break;
 }
 ```
 
-### Eventos Disponiveis
+**Bloco atualizado:**
+Apos o update do status, adicionar:
+- Busca dos dados da subscription (`payer_email`, `session_id`, `amount`)
+- Busca do nome da sessao
+- Envio de email via Resend com template informando o problema
+- Template inclui: nome da sessao, valor, motivo, link para portal e link para pagina de assinaturas
 
-| ID Tecnico | Nome Amigavel | Obrigatorio | Descricao |
-|------------|---------------|-------------|-----------|
-| MESSAGES_UPSERT | Mensagens Recebidas | Sim | Todas as mensagens do WhatsApp |
-| MESSAGES_UPDATE | Status de Entrega | Nao | Lido, entregue, visualizado |
-| CONNECTION_UPDATE | Status da Conexao | Nao | Online/offline da sessao |
-| QRCODE_UPDATED | QR Code Atualizado | Nao | Novo QR gerado |
+### Arquivo 2: `src/pages/Subscriptions.tsx`
 
----
+**Funcao `getStatusBadge`:** Adicionar case para `past_due`:
+```text
+case "past_due":
+  Badge laranja/vermelho com icone AlertTriangle
+  Texto: "Pagamento Pendente"
+```
 
-## Resultado Esperado
+**Secao de conteudo do card:** Adicionar bloco condicional para `past_due`:
+```text
+if (status === "past_due")
+  Alert vermelho com:
+  - Icone de alerta
+  - Texto explicativo sobre falha no pagamento
+  - Botao "Atualizar Pagamento" -> abre portal Stripe
+  - Botao "Gerenciar no Portal" -> abre portal Stripe
+```
 
-1. **SessionCard**: Badge mostrando status do webhook (verde/amarelo)
-2. **Modal**: Formulario funcional com URL pre-preenchida
-3. **Seguranca**: Token visivel para o cliente copiar e validar
-4. **Simplicidade**: MESSAGES_UPSERT sempre ativo por padrao
-5. **Flexibilidade**: Outros eventos sao opcionais
-6. **Backend**: Nenhuma alteracao necessaria (edge functions ja funcionam)
+### Arquivo 3: Traducoes (opcional)
+
+**Arquivos:** `src/i18n/locales/pt-BR.json` e `en.json`
+
+Novas chaves para status `past_due`:
+- "Pagamento Pendente" / "Payment Pending"
+- Mensagem explicativa sobre falha
+- Labels dos botoes
+
+### Template do Email de Pagamento Falho
+
+```text
+Assunto: Problema com seu Pagamento - Uplink Lite
+
+Conteudo:
+- Header vermelho/laranja com icone de alerta
+- Badge: "Pagamento Nao Processado"
+- Texto: "Nao conseguimos processar o pagamento da sua assinatura"
+- Card com detalhes (sessao, valor, status)
+- Bloco de alerta: "O que fazer agora" com instrucoes
+- Bloco informativo: prazo para regularizar antes da desconexao
+- Botao principal: "Atualizar Metodo de Pagamento" -> link para /subscriptions
+- Footer com suporte
+```
+
+### Fluxo Completo Apos Implementacao
+
+```text
+Stripe tenta cobrar o cartao
+        |
+   Pagamento falha
+        |
+        v
+invoice.payment_failed chega no webhook
+        |
+        +-> Atualiza status para "past_due"
+        |
+        +-> Busca email e dados da sessao
+        |
+        +-> Envia email de notificacao
+        |
+        v
+Cliente recebe email
+        |
+        +-> Clica no link do email
+        |
+        v
+Pagina de Assinaturas
+        |
+        +-> Ve alerta vermelho "Pagamento Pendente"
+        |
+        +-> Clica "Atualizar Pagamento"
+        |
+        v
+Portal Stripe
+        |
+        +-> Atualiza cartao de credito
+        |
+        v
+Stripe tenta cobrar novamente
+        |
+   Pagamento aprovado
+        |
+        v
+customer.subscription.updated -> status "active"
+```
+
+### Arquivos Modificados
+
+| Arquivo | Mudanca |
+|---------|---------|
+| `supabase/functions/stripe-webhook/index.ts` | Adicionar envio de email no `invoice.payment_failed` |
+| `src/pages/Subscriptions.tsx` | Adicionar badge e alerta para status `past_due` |
+| `src/i18n/locales/pt-BR.json` | Traducoes para status de pagamento pendente |
+| `src/i18n/locales/en.json` | Traducoes para status de pagamento pendente |
+
