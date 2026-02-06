@@ -612,6 +612,133 @@ serve(async (req) => {
           .eq('stripe_subscription_id', invoice.subscription as string);
 
         console.log('⚠️ Pagamento falhou para subscription:', invoice.subscription);
+
+        // Buscar dados da subscription para enviar email
+        const { data: failedSubData } = await supabaseAdmin
+          .from('subscriptions')
+          .select('session_id, payer_email, amount')
+          .eq('stripe_subscription_id', invoice.subscription as string)
+          .single();
+
+        if (failedSubData && (failedSubData as any).payer_email) {
+          try {
+            const { data: failedSessionData } = await supabaseAdmin
+              .from('sessions')
+              .select('name')
+              .eq('id', (failedSubData as any).session_id)
+              .maybeSingle();
+
+            const failedSessionName = (failedSessionData as any)?.name || 'Sua sessão';
+            const failedAmount = (failedSubData as any).amount || 0;
+            const failureReason = (invoice as any).last_finalization_error?.message || 
+                                  'Cartão recusado ou saldo insuficiente';
+
+            await resend.emails.send({
+              from: 'Uplink Lite <assinaturas@uplinklite.com>',
+              to: [(failedSubData as any).payer_email],
+              subject: '⚠️ Problema com seu Pagamento - Uplink Lite',
+              html: `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                  <meta charset="utf-8">
+                  <style>
+                    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; }
+                    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+                    .header { background: linear-gradient(135deg, #ef4444 0%, #f97316 100%); color: white; padding: 30px; border-radius: 10px 10px 0 0; text-align: center; }
+                    .content { background: #f9fafb; padding: 30px; border-radius: 0 0 10px 10px; }
+                    .card { background: white; padding: 20px; border-radius: 8px; margin: 20px 0; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+                    .error-badge { display: inline-block; background: #ef4444; color: white; padding: 8px 16px; border-radius: 20px; font-size: 14px; font-weight: 600; margin-bottom: 20px; }
+                    .detail-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #e5e7eb; }
+                    .detail-label { color: #6b7280; font-weight: 500; }
+                    .detail-value { color: #111827; font-weight: 600; }
+                    .button { display: inline-block; background: #667eea; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; font-weight: 600; margin-top: 20px; }
+                    .button-danger { background: #ef4444; }
+                    .footer { text-align: center; color: #6b7280; font-size: 14px; margin-top: 30px; }
+                  </style>
+                </head>
+                <body>
+                  <div class="container">
+                    <div class="header">
+                      <h1 style="margin: 0; font-size: 28px;">⚠️ Problema com seu Pagamento</h1>
+                    </div>
+                    <div class="content">
+                      <div class="error-badge">✕ Pagamento Não Processado</div>
+                      
+                      <p style="font-size: 16px; margin-bottom: 20px;">
+                        Não conseguimos processar o pagamento da sua assinatura do Uplink. Atualize seu método de pagamento para evitar a desconexão da sessão.
+                      </p>
+                      
+                      <div class="card" style="border-left: 4px solid #ef4444;">
+                        <h2 style="margin-top: 0; color: #111827; font-size: 20px;">📋 Detalhes</h2>
+                        
+                        <div class="detail-row">
+                          <span class="detail-label">Sessão:</span>
+                          <span class="detail-value">${failedSessionName}</span>
+                        </div>
+                        
+                        <div class="detail-row">
+                          <span class="detail-label">Valor:</span>
+                          <span class="detail-value">R$ ${failedAmount.toFixed(2)}/mês</span>
+                        </div>
+                        
+                        <div class="detail-row">
+                          <span class="detail-label">Motivo:</span>
+                          <span class="detail-value" style="color: #ef4444;">${failureReason}</span>
+                        </div>
+                        
+                        <div class="detail-row" style="border: none;">
+                          <span class="detail-label">Status:</span>
+                          <span class="detail-value" style="color: #f97316;">● Pagamento Pendente</span>
+                        </div>
+                      </div>
+                      
+                      <div style="background: #fef2f2; border-left: 4px solid #dc2626; padding: 15px; border-radius: 4px; margin: 20px 0;">
+                        <p style="margin: 0; color: #991b1b;">
+                          <strong>🔔 O que fazer agora:</strong><br>
+                          1. Acesse a página de Assinaturas no painel<br>
+                          2. Clique em "Atualizar Pagamento"<br>
+                          3. Atualize seu cartão de crédito no portal do Stripe<br>
+                          4. O pagamento será processado automaticamente
+                        </p>
+                      </div>
+                      
+                      <div style="background: #fffbeb; border-left: 4px solid #f59e0b; padding: 15px; border-radius: 4px; margin: 20px 0;">
+                        <p style="margin: 0; color: #92400e;">
+                          <strong>⏰ Importante:</strong><br>
+                          Se o pagamento não for regularizado, sua sessão poderá ser desconectada automaticamente. Atualize seu método de pagamento o mais rápido possível.
+                        </p>
+                      </div>
+                      
+                      <div style="text-align: center;">
+                        <a href="https://kfsvpbujmetlendgwnrs.lovable.app/subscriptions" class="button button-danger">
+                          Atualizar Método de Pagamento
+                        </a>
+                        <br>
+                        <a href="https://kfsvpbujmetlendgwnrs.lovable.app" class="button" style="margin-top: 10px;">
+                          Acessar Painel
+                        </a>
+                      </div>
+                      
+                      <div class="footer">
+                        <p>Se você já atualizou seu método de pagamento, desconsidere este email.</p>
+                        <p style="font-size: 12px; color: #9ca3af;">
+                          Dúvidas? Responda este email ou acesse nossa central de suporte.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </body>
+                </html>
+              `,
+            });
+            
+            console.log('📧 Email de pagamento falho enviado para:', (failedSubData as any).payer_email);
+          } catch (emailError) {
+            console.error('❌ Erro ao enviar email de pagamento falho:', emailError);
+          }
+        }
+
         break;
       }
 

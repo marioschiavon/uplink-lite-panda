@@ -470,7 +470,12 @@
     "step4Title": "Reativação Instantânea",
     "step4Desc": "Sessões canceladas podem ser reativadas imediatamente clicando em \"Reativar Assinatura\".",
     "portalError": "Erro ao abrir portal de gerenciamento",
-    "customerNotFound": "ID do cliente não encontrado"
+    "customerNotFound": "ID do cliente não encontrado",
+    "pastDue": "Pagamento Pendente",
+    "pastDueTitle": "Pagamento Não Processado",
+    "pastDueMessage": "Seu último pagamento não foi processado. Atualize seu método de pagamento para evitar a desconexão da sessão.",
+    "pastDueInstructions": "Acesse o portal do Stripe para atualizar seu cartão de crédito. O pagamento será processado automaticamente após a atualização.",
+    "updatePayment": "Atualizar Pagamento"
   },
   "onboarding": {
     "welcome": "Bem-vindo ao Uplink!",
