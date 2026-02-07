@@ -1,160 +1,143 @@
 
+# Corrigir Envio Incorreto de Emails de Lembrete
 
-# Plano: Notificacao via WhatsApp para Pagamento Falho
+## Problema Encontrado
 
-## Resumo
+O sistema continua enviando emails "Conecte seu WhatsApp" para clientes que ja tem sessao conectada. Isso acontece porque:
 
-Alem do email que ja e enviado, enviar uma mensagem via WhatsApp pelo numero da Uplink Lite quando o pagamento de um cliente falhar. A mensagem sera enviada para o `notification_phone` cadastrado na sessao do cliente.
+1. O campo `sessions.status` no banco de dados nunca e atualizado quando o WhatsApp realmente conecta
+2. Todas as sessoes ficam com status `configured` para sempre
+3. O script de lembretes verifica `sessions.status = 'connected'`, que nunca retorna resultados
+4. Resultado: clientes como `contato@gti.app.br` (assinatura ativa, sessao funcionando) recebem email a cada 2 dias pedindo para conectar
 
-## Dados da Instancia Uplink Lite
+Dados reais do banco confirmam o problema:
+- `bescz-app`: status=`configured`, assinatura=`active`, tem api_token -- recebe email indevidamente
+- `GroomerGenius`: status=`configured`, assinatura=`past_due`, tem api_token -- recebe email indevidamente
 
-| Campo | Valor |
-|-------|-------|
-| Instance Name | Uplink |
-| API Token | 1928996B03BC-4370-9645-ACB18B3A4C74 |
-| API URL | https://api.uplinklite.com |
-| Endpoint | POST /message/sendText/Uplink |
+## Causa Raiz
 
-## Mudancas Necessarias
+A funcao `whatsapp-webhook` recebe eventos `CONNECTION_UPDATE` da Evolution API quando o WhatsApp conecta/desconecta, mas **nao atualiza** o campo `sessions.status` no banco de dados. O status so e atualizado no Stripe webhook (apos pagamento) e no `generate-whatsapp-token` (criacao), mas nunca quando a conexao real do WhatsApp muda.
 
-### 1. Salvar o Token como Secret
+## Correcoes Necessarias
 
-Armazenar o token do WhatsApp da Uplink como secret no Supabase para uso seguro nas Edge Functions:
-- Nome: `UPLINK_WHATSAPP_TOKEN`
-- Valor: `1928996B03BC-4370-9645-ACB18B3A4C74`
+### 1. Atualizar `whatsapp-webhook` para sincronizar status de conexao
 
-### 2. Modificar `stripe-webhook/index.ts`
+**Arquivo:** `supabase/functions/whatsapp-webhook/index.ts`
 
-No bloco `invoice.payment_failed` (linha 625-628), adicionar `notification_phone` na query da sessao e enviar mensagem WhatsApp apos o email.
+Adicionar logica ANTES do check de webhook habilitado (porque o webhook do cliente pode nao estar configurado, mas o status precisa ser atualizado):
 
-**Query atual:**
-```typescript
-const { data: failedSessionData } = await supabaseAdmin
-  .from('sessions')
-  .select('name')
-  .eq('id', (failedSubData as any).session_id)
-  .maybeSingle();
+- Quando receber evento `CONNECTION_UPDATE`:
+  - Se `data.state === 'open'`: atualizar `sessions.status` para `connected`
+  - Se `data.state === 'close'`: atualizar `sessions.status` para `disconnected`
+- Essa logica roda independentemente do webhook do cliente estar configurado
+
+### 2. Corrigir logica do `send-onboarding-reminders`
+
+**Arquivo:** `supabase/functions/send-onboarding-reminders/index.ts`
+
+Melhorar a verificacao de sessao conectada (linhas 207-215):
+
+Atual (bugado):
+```
+.eq("status", "connected")
 ```
 
-**Query atualizada:**
-```typescript
-const { data: failedSessionData } = await supabaseAdmin
-  .from('sessions')
-  .select('name, notification_phone')
-  .eq('id', (failedSubData as any).session_id)
-  .maybeSingle();
+Corrigido - verificar sessoes que estejam `connected` OU que tenham `api_token` valido (indicando que foram configuradas e potencialmente conectadas):
+```
+.in("status", ["connected", "configured"])
+.not("api_token", "is", null)
 ```
 
-**Novo bloco apos o envio de email (apos linha 736):**
+Isso garante que:
+- Sessoes com status `connected` (apos o fix do webhook) sao consideradas conectadas
+- Sessoes `configured` que possuem `api_token` tambem sao consideradas (retrocompatibilidade com dados existentes)
+- Sessoes sem `api_token` (realmente nao configuradas) continuam recebendo lembretes
 
-Enviar mensagem WhatsApp usando a Evolution API:
+---
+
+## Secao Tecnica
+
+### Arquivo 1: `supabase/functions/whatsapp-webhook/index.ts`
+
+Adicionar ANTES da verificacao de webhook habilitado (antes da linha 76), apos encontrar a sessao:
 
 ```typescript
-// Enviar notificacao via WhatsApp
-const notificationPhone = (failedSessionData as any)?.notification_phone;
-if (notificationPhone) {
-  try {
-    const uplinkToken = Deno.env.get('UPLINK_WHATSAPP_TOKEN');
-    const evolutionApiUrl = Deno.env.get('EVOLUTION_API_URL') || 'https://api.uplinklite.com';
-    
-    const whatsappMessage = 
-      `⚠️ *Problema com seu Pagamento - Uplink Lite*\n\n` +
-      `Nao conseguimos processar o pagamento da sua assinatura.\n\n` +
-      `📋 *Detalhes:*\n` +
-      `• Sessao: ${failedSessionName}\n` +
-      `• Valor: R$ ${failedAmount.toFixed(2)}/mes\n` +
-      `• Motivo: ${failureReason}\n\n` +
-      `🔔 *O que fazer:*\n` +
-      `1. Acesse o painel em uplinklite.com\n` +
-      `2. Va em Assinaturas\n` +
-      `3. Clique em "Atualizar Pagamento"\n\n` +
-      `⏰ Regularize para evitar a desconexao da sua sessao.`;
-
-    await fetch(`${evolutionApiUrl}/message/sendText/Uplink`, {
-      method: 'POST',
-      headers: {
-        'apikey': uplinkToken!,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        number: notificationPhone,
-        text: whatsappMessage
-      })
-    });
-    
-    console.log('📱 WhatsApp de pagamento falho enviado para:', notificationPhone);
-  } catch (whatsappError) {
-    console.error('⚠️ Erro ao enviar WhatsApp de pagamento falho:', whatsappError);
+// Sync connection status to database on CONNECTION_UPDATE events
+if (eventType === 'CONNECTION_UPDATE' && payload.data) {
+  const connectionState = payload.data?.state || payload.data?.instance?.state;
+  
+  if (connectionState === 'open') {
+    await supabaseAdmin.from('sessions')
+      .update({ status: 'connected', updated_at: new Date().toISOString() })
+      .eq('id', session.id);
+    console.log('Session status updated to connected:', session.name);
+  } else if (connectionState === 'close') {
+    await supabaseAdmin.from('sessions')
+      .update({ status: 'disconnected', updated_at: new Date().toISOString() })
+      .eq('id', session.id);
+    console.log('Session status updated to disconnected:', session.name);
   }
 }
 ```
 
-## Secao Tecnica
+### Arquivo 2: `supabase/functions/send-onboarding-reminders/index.ts`
 
-### Fluxo Completo
+Alterar bloco de verificacao de sessao conectada (linhas 209-213):
 
-```text
-Stripe detecta pagamento falho
-        |
-        v
-invoice.payment_failed chega no webhook
-        |
-        +-> Atualiza status para "past_due"
-        |
-        +-> Busca session_id, payer_email, amount
-        |
-        +-> Busca name + notification_phone da sessao
-        |
-        +-> Envia EMAIL via Resend (ja existe)
-        |
-        +-> Envia WHATSAPP via Evolution API (NOVO)
-        |       |
-        |       +-> POST /message/sendText/Uplink
-        |       +-> Header: apikey = UPLINK_WHATSAPP_TOKEN
-        |       +-> Body: { number, text }
-        |
-        v
-    Cliente notificado por EMAIL + WHATSAPP
+De:
+```typescript
+const { data: connectedSessions } = await supabase
+  .from("sessions")
+  .select("id, status")
+  .eq("organization_id", user.organization_id)
+  .eq("status", "connected");
 ```
 
-### Condicoes de Envio
+Para:
+```typescript
+const { data: connectedSessions } = await supabase
+  .from("sessions")
+  .select("id, status, api_token")
+  .eq("organization_id", user.organization_id)
+  .not("api_token", "is", null);
+```
 
-| Condicao | Email | WhatsApp |
-|----------|-------|----------|
-| Tem payer_email | Envia | - |
-| Tem notification_phone | - | Envia |
-| Tem ambos | Envia | Envia |
-| Nao tem nenhum | Nao envia | Nao envia |
+A logica muda de "tem sessao com status connected?" para "tem sessao com api_token configurado?". Se o usuario tem uma sessao com token, ele ja completou o processo de configuracao e nao deve receber lembretes de conexao.
 
-### Seguranca
+### Fluxo Corrigido
 
-- Token armazenado como secret do Supabase (nunca exposto no codigo)
-- Mensagem enviada apenas para o `notification_phone` cadastrado pelo proprio cliente
-- Erro no WhatsApp nao bloqueia o fluxo (try/catch independente)
+```text
+WhatsApp escaneia QR Code
+        |
+        v
+Evolution API envia CONNECTION_UPDATE (state: open)
+        |
+        v
+whatsapp-webhook recebe o evento
+        |
+        +-> NOVO: Atualiza sessions.status para "connected"
+        |
+        +-> Encaminha para webhook do cliente (se configurado)
+        |
+        v
+send-onboarding-reminders roda (cron)
+        |
+        +-> Verifica sessions com api_token nao nulo
+        |
+        +-> hasConnectedSession = TRUE
+        |
+        +-> NAO envia email de "Conecte seu WhatsApp"
+```
 
 ### Arquivos Modificados
 
 | Arquivo | Mudanca |
 |---------|---------|
-| `supabase/functions/stripe-webhook/index.ts` | Adicionar envio de WhatsApp no `invoice.payment_failed` |
+| `supabase/functions/whatsapp-webhook/index.ts` | Sincronizar status de conexao no banco quando receber CONNECTION_UPDATE |
+| `supabase/functions/send-onboarding-reminders/index.ts` | Verificar api_token ao inves de status='connected' |
 
-### Mensagem WhatsApp (Preview)
+### Impacto nos Dados Existentes
 
-```text
-⚠️ *Problema com seu Pagamento - Uplink Lite*
-
-Nao conseguimos processar o pagamento da sua assinatura.
-
-📋 *Detalhes:*
-• Sessao: MinhaEmpresa
-• Valor: R$ 49.90/mes
-• Motivo: Cartao recusado ou saldo insuficiente
-
-🔔 *O que fazer:*
-1. Acesse o painel em uplinklite.com
-2. Va em Assinaturas
-3. Clique em "Atualizar Pagamento"
-
-⏰ Regularize para evitar a desconexao da sua sessao.
-```
-
+- Sessoes existentes com `api_token` preenchido deixarao de receber emails indevidos imediatamente
+- Proximos eventos `CONNECTION_UPDATE` atualizarao o campo `status` corretamente
+- Nenhuma migracao de dados necessaria - o fix no reminder function cobre os dados antigos
