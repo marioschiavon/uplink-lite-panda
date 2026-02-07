@@ -620,19 +620,25 @@ serve(async (req) => {
           .eq('stripe_subscription_id', invoice.subscription as string)
           .single();
 
+        // Buscar dados da sessão (usado tanto para email quanto WhatsApp)
+        let failedSessionData: any = null;
+        if (failedSubData && (failedSubData as any).session_id) {
+          const { data } = await supabaseAdmin
+            .from('sessions')
+            .select('name, notification_phone')
+            .eq('id', (failedSubData as any).session_id)
+            .maybeSingle();
+          failedSessionData = data;
+        }
+
+        const failedSessionName = failedSessionData?.name || 'Sua sessão';
+        const failedAmount = (failedSubData as any)?.amount || 0;
+        const failureReason = (invoice as any).last_finalization_error?.message || 
+                              'Cartão recusado ou saldo insuficiente';
+
+        // Enviar email de notificação
         if (failedSubData && (failedSubData as any).payer_email) {
           try {
-            const { data: failedSessionData } = await supabaseAdmin
-              .from('sessions')
-              .select('name')
-              .eq('id', (failedSubData as any).session_id)
-              .maybeSingle();
-
-            const failedSessionName = (failedSessionData as any)?.name || 'Sua sessão';
-            const failedAmount = (failedSubData as any).amount || 0;
-            const failureReason = (invoice as any).last_finalization_error?.message || 
-                                  'Cartão recusado ou saldo insuficiente';
-
             await resend.emails.send({
               from: 'Uplink Lite <assinaturas@uplinklite.com>',
               to: [(failedSubData as any).payer_email],
@@ -736,6 +742,44 @@ serve(async (req) => {
             console.log('📧 Email de pagamento falho enviado para:', (failedSubData as any).payer_email);
           } catch (emailError) {
             console.error('❌ Erro ao enviar email de pagamento falho:', emailError);
+          }
+        }
+
+        // Enviar notificação via WhatsApp
+        const notificationPhone = failedSessionData?.notification_phone;
+        if (notificationPhone) {
+          try {
+            const uplinkToken = Deno.env.get('UPLINK_WHATSAPP_TOKEN');
+            const evolutionApiUrl = Deno.env.get('EVOLUTION_API_URL') || 'https://api.uplinklite.com';
+
+            const whatsappMessage = 
+              `⚠️ *Problema com seu Pagamento - Uplink Lite*\n\n` +
+              `Não conseguimos processar o pagamento da sua assinatura.\n\n` +
+              `📋 *Detalhes:*\n` +
+              `• Sessão: ${failedSessionName}\n` +
+              `• Valor: R$ ${failedAmount.toFixed(2)}/mês\n` +
+              `• Motivo: ${failureReason}\n\n` +
+              `🔔 *O que fazer:*\n` +
+              `1. Acesse o painel em uplinklite.com\n` +
+              `2. Vá em Assinaturas\n` +
+              `3. Clique em "Atualizar Pagamento"\n\n` +
+              `⏰ Regularize para evitar a desconexão da sua sessão.`;
+
+            await fetch(`${evolutionApiUrl}/message/sendText/Uplink`, {
+              method: 'POST',
+              headers: {
+                'apikey': uplinkToken!,
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                number: notificationPhone,
+                text: whatsappMessage
+              })
+            });
+
+            console.log('📱 WhatsApp de pagamento falho enviado para:', notificationPhone);
+          } catch (whatsappError) {
+            console.error('⚠️ Erro ao enviar WhatsApp de pagamento falho:', whatsappError);
           }
         }
 
