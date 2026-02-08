@@ -39,7 +39,7 @@ serve(async (req) => {
     }
 
     // Validate events array if provided
-    const validEvents = ['MESSAGES_UPSERT', 'MESSAGES_UPDATE', 'CONNECTION_UPDATE', 'QRCODE_UPDATED'];
+    const validEvents = ['MESSAGES_UPSERT', 'MESSAGES_UPDATE', 'CONNECTION_UPDATE'];
     if (webhook_events) {
       for (const event of webhook_events) {
         if (!validEvents.includes(event)) {
@@ -131,7 +131,7 @@ serve(async (req) => {
           headers: {
             'apikey': session.api_token
           },
-          events: webhook_events || ['MESSAGES_UPSERT', 'MESSAGES_UPDATE', 'CONNECTION_UPDATE', 'QRCODE_UPDATED']
+          events: webhook_events || ['MESSAGES_UPSERT', 'MESSAGES_UPDATE', 'CONNECTION_UPDATE']
         };
 
         const evolutionResponse = await fetch(`${evolutionApiUrl}/webhook/set/${session.name}`, {

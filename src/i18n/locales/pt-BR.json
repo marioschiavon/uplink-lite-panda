@@ -322,8 +322,7 @@
     "eventTypes": {
       "MESSAGES_UPSERT": "Mensagens Recebidas",
       "MESSAGES_UPDATE": "Status de Entrega",
-      "CONNECTION_UPDATE": "Status da Conexão",
-      "QRCODE_UPDATED": "QR Code Atualizado"
+      "CONNECTION_UPDATE": "Status da Conexão"
     },
     "underConstruction": "Em Construção",
     "underConstructionDescription": "Estamos trabalhando para trazer webhooks personalizados para suas sessões. Em breve você poderá configurar endpoints para receber eventos em tempo real.",
@@ -338,8 +337,7 @@
     "eventDescriptions": {
       "MESSAGES_UPSERT": "Recebe todas as mensagens enviadas para o número conectado",
       "MESSAGES_UPDATE": "Notifica quando mensagens são lidas ou entregues",
-      "CONNECTION_UPDATE": "Avisa quando a sessão conecta ou desconecta",
-      "QRCODE_UPDATED": "Notifica quando um novo QR Code é gerado"
+      "CONNECTION_UPDATE": "Avisa quando a sessão conecta ou desconecta"
     },
     "webhookActive": "Recebendo Msgs",
     "webhookPending": "Configurar Webhook",

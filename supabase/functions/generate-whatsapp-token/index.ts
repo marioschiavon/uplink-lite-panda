@@ -258,8 +258,7 @@ serve(async (req) => {
         events: [
           'MESSAGES_UPSERT',
           'MESSAGES_UPDATE',
-          'CONNECTION_UPDATE',
-          'QRCODE_UPDATED'
+          'CONNECTION_UPDATE'
         ]
       };
 
@@ -279,7 +278,7 @@ serve(async (req) => {
         await supabaseAdmin
           .from('sessions')
           .update({
-            webhook_events: ['MESSAGES_UPSERT', 'MESSAGES_UPDATE', 'CONNECTION_UPDATE', 'QRCODE_UPDATED']
+            webhook_events: ['MESSAGES_UPSERT', 'MESSAGES_UPDATE', 'CONNECTION_UPDATE']
           })
           .eq('id', sessionData.id);
       } else {
