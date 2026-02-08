@@ -52,7 +52,6 @@ const WEBHOOK_EVENTS = [
   { id: 'MESSAGES_UPSERT', required: true },
   { id: 'MESSAGES_UPDATE', required: false },
   { id: 'CONNECTION_UPDATE', required: false },
-  { id: 'QRCODE_UPDATED', required: false },
 ] as const;
 
 const SessionDetailsModal = ({ session, open, onClose, onRefresh }: SessionDetailsModalProps) => {

@@ -26,6 +26,9 @@ interface SessionData {
   updated_at?: string;
   requires_subscription?: boolean;
   pairing_code?: string | null;
+  webhook_url?: string | null;
+  webhook_enabled?: boolean;
+  webhook_events?: string[];
 }
 
 interface SessionStatus {
@@ -124,7 +127,10 @@ const Sessions = () => {
           created_at: s.created_at,
           updated_at: s.updated_at,
           requires_subscription: s.requires_subscription,
-          pairing_code: s.pairing_code
+          pairing_code: s.pairing_code,
+          webhook_url: s.webhook_url,
+          webhook_enabled: s.webhook_enabled,
+          webhook_events: s.webhook_events
         }));
         
         setSessions(typedSessions);

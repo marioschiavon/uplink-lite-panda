@@ -23,7 +23,6 @@ const AVAILABLE_EVENTS = [
   { id: 'MESSAGES_UPSERT', labelKey: 'webhooks.eventTypes.MESSAGES_UPSERT' },
   { id: 'MESSAGES_UPDATE', labelKey: 'webhooks.eventTypes.MESSAGES_UPDATE' },
   { id: 'CONNECTION_UPDATE', labelKey: 'webhooks.eventTypes.CONNECTION_UPDATE' },
-  { id: 'QRCODE_UPDATED', labelKey: 'webhooks.eventTypes.QRCODE_UPDATED' },
 ];
 
 export function SessionWebhookConfig({

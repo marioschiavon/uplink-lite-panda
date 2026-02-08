@@ -3,10 +3,15 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { Copy, RefreshCw, XCircle, Trash2, Loader2, Server, Settings, ChevronDown, AlertTriangle, Link } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Copy, RefreshCw, XCircle, Trash2, Loader2, Server, Settings, ChevronDown, AlertTriangle, Link, Webhook, Check } from "lucide-react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
+import { supabase } from "@/integrations/supabase/client";
 
 interface SessionData {
   id: string;
@@ -18,6 +23,9 @@ interface SessionData {
   qr: string | null;
   organization_id: string;
   pairing_code?: string | null;
+  webhook_url?: string | null;
+  webhook_enabled?: boolean;
+  webhook_events?: string[];
 }
 
 interface SessionStatus {
@@ -25,6 +33,12 @@ interface SessionStatus {
   message?: string;
   qrCode?: string;
 }
+
+const WEBHOOK_EVENTS = [
+  { id: 'MESSAGES_UPSERT', required: true },
+  { id: 'MESSAGES_UPDATE', required: false },
+  { id: 'CONNECTION_UPDATE', required: false },
+] as const;
 
 interface SessionQrModalProps {
   session: SessionData | null;
@@ -55,8 +69,22 @@ const SessionQrModal = ({
   generatingQrCode = false,
   qrExpiresIn = null
 }: SessionQrModalProps) => {
+  const { t } = useTranslation();
   const [showAdvancedActions, setShowAdvancedActions] = useState(false);
   const [confirmAction, setConfirmAction] = useState<'close' | 'delete' | null>(null);
+  
+  // Webhook states
+  const [webhookUrl, setWebhookUrl] = useState('');
+  const [selectedEvents, setSelectedEvents] = useState<string[]>(['MESSAGES_UPSERT']);
+  const [isSavingWebhook, setIsSavingWebhook] = useState(false);
+
+  useEffect(() => {
+    if (session) {
+      const defaultUrl = `https://api.uplinklite.com/webhook/${session.name || ''}`;
+      setWebhookUrl(session.webhook_url || defaultUrl);
+      setSelectedEvents(session.webhook_events?.length ? session.webhook_events : ['MESSAGES_UPSERT']);
+    }
+  }, [session]);
 
   if (!session) return null;
 
@@ -71,6 +99,45 @@ const SessionQrModal = ({
     if (session.pairing_code) {
       navigator.clipboard.writeText(session.pairing_code);
       toast.success("Código de pareamento copiado!");
+    }
+  };
+
+  const toggleEvent = (eventId: string) => {
+    if (eventId === 'MESSAGES_UPSERT') return;
+    setSelectedEvents(prev => 
+      prev.includes(eventId) 
+        ? prev.filter(e => e !== eventId)
+        : [...prev, eventId]
+    );
+  };
+
+  const handleSaveWebhook = async () => {
+    if (!webhookUrl.startsWith('https://')) {
+      toast.error(t('webhooks.httpsRequired'));
+      return;
+    }
+
+    setIsSavingWebhook(true);
+    try {
+      const response = await supabase.functions.invoke('update-session-webhook', {
+        body: {
+          session_id: session.id,
+          webhook_url: webhookUrl,
+          webhook_enabled: true,
+          webhook_events: selectedEvents,
+        },
+      });
+
+      if (response.error) {
+        throw new Error(response.error.message);
+      }
+
+      toast.success(t('webhooks.saveSuccess'));
+    } catch (error: any) {
+      console.error('Error saving webhook:', error);
+      toast.error(t('webhooks.saveError'));
+    } finally {
+      setIsSavingWebhook(false);
     }
   };
 
@@ -186,7 +253,7 @@ const SessionQrModal = ({
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="space-y-4"
+              className="space-y-6"
             >
               <div className="text-center py-8">
                 <div className="w-16 h-16 mx-auto bg-gradient-to-br from-primary to-secondary rounded-full flex items-center justify-center mb-4">
@@ -218,6 +285,116 @@ const SessionQrModal = ({
                 <p className="text-xs text-muted-foreground">
                   Use esta chave no header: <code className="bg-muted px-1 py-0.5 rounded">apikey: {session.api_token}</code>
                 </p>
+              </div>
+
+              {/* Webhook Configuration */}
+              <div className="border-t pt-6 space-y-4">
+                <div className="flex items-center gap-2">
+                  <Webhook className="w-4 h-4 text-primary" />
+                  <h3 className="font-semibold">{t('webhooks.receiveMessages')}</h3>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  {t('webhooks.receiveMessagesDescription')}
+                </p>
+
+                {/* Webhook URL */}
+                <div className="space-y-2">
+                  <Label htmlFor="webhook-url-client">{t('webhooks.webhookUrl')}</Label>
+                  <Input
+                    id="webhook-url-client"
+                    value={webhookUrl}
+                    onChange={(e) => setWebhookUrl(e.target.value)}
+                    placeholder="https://api.uplinklite.com/webhook/..."
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    {t('webhooks.webhookUrlHint')}
+                  </p>
+                </div>
+
+                {/* Security Token */}
+                {session.api_token && (
+                  <div className="space-y-2">
+                    <Label>{t('webhooks.securityToken')}</Label>
+                    <div className="flex gap-2">
+                      <div className="flex-1 bg-muted/50 p-3 rounded-lg font-mono text-xs break-all">
+                        {session.api_token.substring(0, 20)}...
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          navigator.clipboard.writeText(session.api_token!);
+                          toast.success(t('webhooks.tokenCopied'));
+                        }}
+                      >
+                        <Copy className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      {t('webhooks.securityTokenHint')}
+                    </p>
+                  </div>
+                )}
+
+                {/* Events Selection */}
+                <div className="space-y-3">
+                  <Label>{t('webhooks.selectEvents')}</Label>
+                  <div className="space-y-3">
+                    {WEBHOOK_EVENTS.map((event) => (
+                      <div key={event.id} className="flex items-start gap-3 p-3 bg-muted/30 rounded-lg">
+                        <Checkbox
+                          id={`client-${event.id}`}
+                          checked={selectedEvents.includes(event.id)}
+                          onCheckedChange={() => toggleEvent(event.id)}
+                          disabled={event.required}
+                        />
+                        <div className="flex-1">
+                          <label
+                            htmlFor={`client-${event.id}`}
+                            className="text-sm font-medium cursor-pointer flex items-center gap-2"
+                          >
+                            {t(`webhooks.eventTypes.${event.id}`)}
+                            {event.required && (
+                              <Badge variant="secondary" className="text-xs">
+                                {t('webhooks.requiredEvent')}
+                              </Badge>
+                            )}
+                          </label>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {t(`webhooks.eventDescriptions.${event.id}`)}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Save Button */}
+                <Button
+                  onClick={handleSaveWebhook}
+                  disabled={isSavingWebhook || !webhookUrl}
+                  className="w-full"
+                >
+                  {isSavingWebhook ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      {t('common.saving', 'Salvando...')}
+                    </>
+                  ) : (
+                    <>
+                      <Check className="h-4 w-4 mr-2" />
+                      {t('webhooks.saveConfiguration')}
+                    </>
+                  )}
+                </Button>
+
+                {/* Status indicator */}
+                {session.webhook_enabled && session.webhook_url && (
+                  <div className="flex items-center gap-2 p-3 bg-primary/10 rounded-lg text-primary text-sm">
+                    <Webhook className="h-4 w-4" />
+                    {t('webhooks.webhookActiveMessage')}
+                  </div>
+                )}
               </div>
             </motion.div>
           )}
