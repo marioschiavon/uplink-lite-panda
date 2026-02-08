@@ -1,143 +1,105 @@
 
-# Corrigir Envio Incorreto de Emails de Lembrete
+# Plano: Webhook Acessivel ao Cliente + Remover QRCODE_UPDATED
 
-## Problema Encontrado
+## Problema
 
-O sistema continua enviando emails "Conecte seu WhatsApp" para clientes que ja tem sessao conectada. Isso acontece porque:
+1. **Webhook so acessivel no Monitoramento (admin-only):** A configuracao de webhook esta no `SessionDetailsModal`, que so e usado na pagina `/monitoring` (restrita a superadmin). O cliente, na pagina `/sessions`, usa o `SessionQrModal` que NAO tem aba de webhook.
 
-1. O campo `sessions.status` no banco de dados nunca e atualizado quando o WhatsApp realmente conecta
-2. Todas as sessoes ficam com status `configured` para sempre
-3. O script de lembretes verifica `sessions.status = 'connected'`, que nunca retorna resultados
-4. Resultado: clientes como `contato@gti.app.br` (assinatura ativa, sessao funcionando) recebem email a cada 2 dias pedindo para conectar
+2. **Evento QRCODE_UPDATED deve ser removido:** O evento de QR Code atualizado nao e relevante para o cliente final e deve ser retirado de todas as opcoes.
 
-Dados reais do banco confirmam o problema:
-- `bescz-app`: status=`configured`, assinatura=`active`, tem api_token -- recebe email indevidamente
-- `GroomerGenius`: status=`configured`, assinatura=`past_due`, tem api_token -- recebe email indevidamente
+## Solucao
 
-## Causa Raiz
+Adicionar uma aba/secao de webhook no modal que o cliente ja usa (`SessionQrModal`) quando a sessao esta conectada, e remover a opcao `QRCODE_UPDATED` de todos os arquivos.
 
-A funcao `whatsapp-webhook` recebe eventos `CONNECTION_UPDATE` da Evolution API quando o WhatsApp conecta/desconecta, mas **nao atualiza** o campo `sessions.status` no banco de dados. O status so e atualizado no Stripe webhook (apos pagamento) e no `generate-whatsapp-token` (criacao), mas nunca quando a conexao real do WhatsApp muda.
+## Mudancas Necessarias
 
-## Correcoes Necessarias
+### 1. Modificar `SessionQrModal.tsx` - Adicionar configuracao de Webhook
 
-### 1. Atualizar `whatsapp-webhook` para sincronizar status de conexao
+Quando a sessao esta **conectada**, alem de mostrar a API Key, adicionar uma secao de configuracao de webhook abaixo. Vou reutilizar a logica ja existente no `SessionDetailsModal` (webhook URL, eventos, botao salvar).
 
-**Arquivo:** `supabase/functions/whatsapp-webhook/index.ts`
+Mudancas:
+- Importar componentes necessarios (Input, Label, Checkbox, Badge, Webhook icon)
+- Adicionar estados para webhookUrl, selectedEvents, isSaving
+- Adicionar props para dados de webhook (`webhook_url`, `webhook_enabled`, `webhook_events`)
+- Na secao "Sessao Conectada", apos a API Key, adicionar bloco de configuracao de webhook
+- O webhook URL vem pre-preenchido com `https://api.uplinklite.com/webhook/{session_name}`
+- Eventos disponiveis: MESSAGES_UPSERT (obrigatorio), MESSAGES_UPDATE, CONNECTION_UPDATE (sem QRCODE_UPDATED)
 
-Adicionar logica ANTES do check de webhook habilitado (porque o webhook do cliente pode nao estar configurado, mas o status precisa ser atualizado):
+### 2. Atualizar `SessionData` interface em `Sessions.tsx`
 
-- Quando receber evento `CONNECTION_UPDATE`:
-  - Se `data.state === 'open'`: atualizar `sessions.status` para `connected`
-  - Se `data.state === 'close'`: atualizar `sessions.status` para `disconnected`
-- Essa logica roda independentemente do webhook do cliente estar configurado
+Adicionar campos de webhook na interface e na query de sessoes:
+- `webhook_url`
+- `webhook_enabled`
+- `webhook_events`
 
-### 2. Corrigir logica do `send-onboarding-reminders`
+Passar esses dados para o `SessionQrModal` via props.
 
-**Arquivo:** `supabase/functions/send-onboarding-reminders/index.ts`
-
-Melhorar a verificacao de sessao conectada (linhas 207-215):
-
-Atual (bugado):
-```
-.eq("status", "connected")
-```
-
-Corrigido - verificar sessoes que estejam `connected` OU que tenham `api_token` valido (indicando que foram configuradas e potencialmente conectadas):
-```
-.in("status", ["connected", "configured"])
-.not("api_token", "is", null)
-```
-
-Isso garante que:
-- Sessoes com status `connected` (apos o fix do webhook) sao consideradas conectadas
-- Sessoes `configured` que possuem `api_token` tambem sao consideradas (retrocompatibilidade com dados existentes)
-- Sessoes sem `api_token` (realmente nao configuradas) continuam recebendo lembretes
-
----
-
-## Secao Tecnica
-
-### Arquivo 1: `supabase/functions/whatsapp-webhook/index.ts`
-
-Adicionar ANTES da verificacao de webhook habilitado (antes da linha 76), apos encontrar a sessao:
-
-```typescript
-// Sync connection status to database on CONNECTION_UPDATE events
-if (eventType === 'CONNECTION_UPDATE' && payload.data) {
-  const connectionState = payload.data?.state || payload.data?.instance?.state;
-  
-  if (connectionState === 'open') {
-    await supabaseAdmin.from('sessions')
-      .update({ status: 'connected', updated_at: new Date().toISOString() })
-      .eq('id', session.id);
-    console.log('Session status updated to connected:', session.name);
-  } else if (connectionState === 'close') {
-    await supabaseAdmin.from('sessions')
-      .update({ status: 'disconnected', updated_at: new Date().toISOString() })
-      .eq('id', session.id);
-    console.log('Session status updated to disconnected:', session.name);
-  }
-}
-```
-
-### Arquivo 2: `supabase/functions/send-onboarding-reminders/index.ts`
-
-Alterar bloco de verificacao de sessao conectada (linhas 209-213):
-
-De:
-```typescript
-const { data: connectedSessions } = await supabase
-  .from("sessions")
-  .select("id, status")
-  .eq("organization_id", user.organization_id)
-  .eq("status", "connected");
-```
-
-Para:
-```typescript
-const { data: connectedSessions } = await supabase
-  .from("sessions")
-  .select("id, status, api_token")
-  .eq("organization_id", user.organization_id)
-  .not("api_token", "is", null);
-```
-
-A logica muda de "tem sessao com status connected?" para "tem sessao com api_token configurado?". Se o usuario tem uma sessao com token, ele ja completou o processo de configuracao e nao deve receber lembretes de conexao.
-
-### Fluxo Corrigido
-
-```text
-WhatsApp escaneia QR Code
-        |
-        v
-Evolution API envia CONNECTION_UPDATE (state: open)
-        |
-        v
-whatsapp-webhook recebe o evento
-        |
-        +-> NOVO: Atualiza sessions.status para "connected"
-        |
-        +-> Encaminha para webhook do cliente (se configurado)
-        |
-        v
-send-onboarding-reminders roda (cron)
-        |
-        +-> Verifica sessions com api_token nao nulo
-        |
-        +-> hasConnectedSession = TRUE
-        |
-        +-> NAO envia email de "Conecte seu WhatsApp"
-```
-
-### Arquivos Modificados
+### 3. Remover QRCODE_UPDATED de todos os arquivos
 
 | Arquivo | Mudanca |
 |---------|---------|
-| `supabase/functions/whatsapp-webhook/index.ts` | Sincronizar status de conexao no banco quando receber CONNECTION_UPDATE |
-| `supabase/functions/send-onboarding-reminders/index.ts` | Verificar api_token ao inves de status='connected' |
+| `src/components/SessionDetailsModal.tsx` | Remover do array `WEBHOOK_EVENTS` |
+| `src/components/SessionWebhookConfig.tsx` | Remover do array `AVAILABLE_EVENTS` |
+| `supabase/functions/update-session-webhook/index.ts` | Remover da lista `validEvents` e do fallback de events |
+| `supabase/functions/generate-whatsapp-token/index.ts` | Remover dos arrays de webhook_events padrao |
+| `src/i18n/locales/en.json` | Remover traducoes de QRCODE_UPDATED |
+| `src/i18n/locales/pt-BR.json` | Remover traducoes de QRCODE_UPDATED |
 
-### Impacto nos Dados Existentes
+### 4. Fluxo do Cliente
 
-- Sessoes existentes com `api_token` preenchido deixarao de receber emails indevidos imediatamente
-- Proximos eventos `CONNECTION_UPDATE` atualizarao o campo `status` corretamente
-- Nenhuma migracao de dados necessaria - o fix no reminder function cobre os dados antigos
+```text
+Cliente acessa /sessions
+       |
+       v
+Clica em "Ver Detalhes" (sessao conectada)
+       |
+       v
+SessionQrModal abre mostrando:
+  - Status: Conectado
+  - API Key (copiar)
+  - [NOVO] Secao "Webhook" com:
+    - URL pre-preenchida
+    - Eventos selecionaveis (sem QRCODE_UPDATED)
+    - Botao Salvar
+  - Acoes Avancadas (fechar/excluir)
+```
+
+## Secao Tecnica
+
+### SessionQrModal - Nova secao de Webhook
+
+A secao sera adicionada DENTRO do bloco `isConnected`, apos a API Key. Incluira:
+
+```typescript
+// Novos estados
+const [webhookUrl, setWebhookUrl] = useState('');
+const [selectedEvents, setSelectedEvents] = useState<string[]>(['MESSAGES_UPSERT']);
+const [isSavingWebhook, setIsSavingWebhook] = useState(false);
+
+// Eventos disponiveis (sem QRCODE_UPDATED)
+const WEBHOOK_EVENTS = [
+  { id: 'MESSAGES_UPSERT', required: true },
+  { id: 'MESSAGES_UPDATE', required: false },
+  { id: 'CONNECTION_UPDATE', required: false },
+];
+```
+
+A interface `SessionData` do `SessionQrModal` recebera os campos:
+- `webhook_url?: string | null`
+- `webhook_enabled?: boolean`
+- `webhook_events?: string[]`
+
+A funcao de salvar usara `supabase.functions.invoke('update-session-webhook')`, identica a logica ja existente no `SessionDetailsModal`.
+
+### Arquivos Modificados
+
+| Arquivo | Tipo de Mudanca |
+|---------|----------------|
+| `src/components/SessionQrModal.tsx` | Adicionar secao de webhook para sessao conectada |
+| `src/pages/Sessions.tsx` | Passar dados de webhook para o modal |
+| `src/components/SessionDetailsModal.tsx` | Remover QRCODE_UPDATED |
+| `src/components/SessionWebhookConfig.tsx` | Remover QRCODE_UPDATED |
+| `supabase/functions/update-session-webhook/index.ts` | Remover QRCODE_UPDATED |
+| `supabase/functions/generate-whatsapp-token/index.ts` | Remover QRCODE_UPDATED |
+| `src/i18n/locales/en.json` | Remover traducoes QRCODE_UPDATED |
+| `src/i18n/locales/pt-BR.json` | Remover traducoes QRCODE_UPDATED |
