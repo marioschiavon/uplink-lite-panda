@@ -205,12 +205,12 @@ serve(async (req: Request): Promise<Response> => {
         hasActiveSubscription = (activeSubscriptions?.length || 0) > 0;
 
         if (hasActiveSubscription) {
-          // Check for connected sessions
+          // Check for sessions with api_token (configured and potentially connected)
           const { data: connectedSessions } = await supabase
             .from("sessions")
-            .select("id, status")
+            .select("id, status, api_token")
             .eq("organization_id", user.organization_id)
-            .eq("status", "connected");
+            .not("api_token", "is", null);
 
           hasConnectedSession = (connectedSessions?.length || 0) > 0;
         }

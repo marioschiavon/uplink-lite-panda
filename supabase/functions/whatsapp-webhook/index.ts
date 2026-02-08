@@ -72,6 +72,23 @@ serve(async (req) => {
 
     console.log(`Session found: ${session.name} (${session.id})`);
 
+    // 4.5 Sync connection status to database on CONNECTION_UPDATE events
+    if (eventType === 'CONNECTION_UPDATE' && payload.data) {
+      const connectionState = payload.data?.state || payload.data?.instance?.state;
+      
+      if (connectionState === 'open') {
+        await supabaseAdmin.from('sessions')
+          .update({ status: 'connected', updated_at: new Date().toISOString() })
+          .eq('id', session.id);
+        console.log(`Session status updated to connected: ${session.name}`);
+      } else if (connectionState === 'close') {
+        await supabaseAdmin.from('sessions')
+          .update({ status: 'disconnected', updated_at: new Date().toISOString() })
+          .eq('id', session.id);
+        console.log(`Session status updated to disconnected: ${session.name}`);
+      }
+    }
+
     // 5. Check if webhook is enabled and event is subscribed
     if (!session.webhook_enabled || !session.webhook_url) {
       console.log('Webhook not enabled or URL not configured, skipping forward');
