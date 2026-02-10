@@ -1,105 +1,53 @@
 
-# Plano: Webhook Acessivel ao Cliente + Remover QRCODE_UPDATED
 
-## Problema
+# Ajustar tom das frases da Landing Page (estilo Z-API)
 
-1. **Webhook so acessivel no Monitoramento (admin-only):** A configuracao de webhook esta no `SessionDetailsModal`, que so e usado na pagina `/monitoring` (restrita a superadmin). O cliente, na pagina `/sessions`, usa o `SessionQrModal` que NAO tem aba de webhook.
+## O que muda
 
-2. **Evento QRCODE_UPDATED deve ser removido:** O evento de QR Code atualizado nao e relevante para o cliente final e deve ser retirado de todas as opcoes.
+Remover qualquer menção a "alternativa", "API oficial" ou comparações. Adotar um tom direto, confiante e focado nos benefícios do produto, similar ao estilo da Z-API que se posiciona como solução própria.
 
-## Solucao
+## Frases atualizadas
 
-Adicionar uma aba/secao de webhook no modal que o cliente ja usa (`SessionQrModal`) quando a sessao esta conectada, e remover a opcao `QRCODE_UPDATED` de todos os arquivos.
+### Hero description (pt-BR)
 
-## Mudancas Necessarias
+**Atual:**
+> "Configure sua API WhatsApp em 5 minutos sem burocracia. A alternativa mais simples e barata à API oficial. Suporte em português 24/7, pagamento em R$ e integração com n8n, Make e Zapier."
 
-### 1. Modificar `SessionQrModal.tsx` - Adicionar configuracao de Webhook
+**Novo:**
+> "Configure sua API WhatsApp em 5 minutos sem burocracia. Envie e receba mensagens de forma simples, estável e com o melhor custo-benefício. Suporte em português 24/7, pagamento em R$ e integração com n8n, Make e Zapier."
 
-Quando a sessao esta **conectada**, alem de mostrar a API Key, adicionar uma secao de configuracao de webhook abaixo. Vou reutilizar a logica ja existente no `SessionDetailsModal` (webhook URL, eventos, botao salvar).
+### Hero description (en)
 
-Mudancas:
-- Importar componentes necessarios (Input, Label, Checkbox, Badge, Webhook icon)
-- Adicionar estados para webhookUrl, selectedEvents, isSaving
-- Adicionar props para dados de webhook (`webhook_url`, `webhook_enabled`, `webhook_events`)
-- Na secao "Sessao Conectada", apos a API Key, adicionar bloco de configuracao de webhook
-- O webhook URL vem pre-preenchido com `https://api.uplinklite.com/webhook/{session_name}`
-- Eventos disponiveis: MESSAGES_UPSERT (obrigatorio), MESSAGES_UPDATE, CONNECTION_UPDATE (sem QRCODE_UPDATED)
+**Atual:**
+> "Set up your WhatsApp API in 5 minutes without bureaucracy. The simplest and most affordable alternative to the official API. 24/7 support, flexible payments, and integration with n8n, Make, and Zapier."
 
-### 2. Atualizar `SessionData` interface em `Sessions.tsx`
+**Novo:**
+> "Set up your WhatsApp API in 5 minutes without bureaucracy. Send and receive messages simply, reliably, and with the best cost-benefit. 24/7 support, flexible payments, and integration with n8n, Make, and Zapier."
 
-Adicionar campos de webhook na interface e na query de sessoes:
-- `webhook_url`
-- `webhook_enabled`
-- `webhook_events`
+### Footer description (pt-BR)
 
-Passar esses dados para o `SessionQrModal` via props.
+**Atual:**
+> "A melhor API WhatsApp do Brasil. Automatize a comunicação da sua empresa em minutos com a alternativa mais simples e barata do mercado."
 
-### 3. Remover QRCODE_UPDATED de todos os arquivos
+**Novo:**
+> "A melhor API WhatsApp do Brasil. Automatize a comunicação da sua empresa em minutos com uma API estável, acessível e fácil de integrar."
 
-| Arquivo | Mudanca |
-|---------|---------|
-| `src/components/SessionDetailsModal.tsx` | Remover do array `WEBHOOK_EVENTS` |
-| `src/components/SessionWebhookConfig.tsx` | Remover do array `AVAILABLE_EVENTS` |
-| `supabase/functions/update-session-webhook/index.ts` | Remover da lista `validEvents` e do fallback de events |
-| `supabase/functions/generate-whatsapp-token/index.ts` | Remover dos arrays de webhook_events padrao |
-| `src/i18n/locales/en.json` | Remover traducoes de QRCODE_UPDATED |
-| `src/i18n/locales/pt-BR.json` | Remover traducoes de QRCODE_UPDATED |
+### Footer description (en)
 
-### 4. Fluxo do Cliente
+**Atual:**
+> "The best WhatsApp API. Automate your business communication in minutes with the simplest and most affordable alternative on the market."
 
-```text
-Cliente acessa /sessions
-       |
-       v
-Clica em "Ver Detalhes" (sessao conectada)
-       |
-       v
-SessionQrModal abre mostrando:
-  - Status: Conectado
-  - API Key (copiar)
-  - [NOVO] Secao "Webhook" com:
-    - URL pre-preenchida
-    - Eventos selecionaveis (sem QRCODE_UPDATED)
-    - Botao Salvar
-  - Acoes Avancadas (fechar/excluir)
-```
+**Novo:**
+> "The best WhatsApp API. Automate your business communication in minutes with a stable, affordable, and easy-to-integrate API."
 
-## Secao Tecnica
+## Arquivos modificados
 
-### SessionQrModal - Nova secao de Webhook
+| Arquivo | Linhas |
+|---------|--------|
+| `src/i18n/locales/pt-BR.json` | Linha 15 (hero.description) e linha 202 (footer.description) |
+| `src/i18n/locales/en.json` | Linha 15 (hero.description) e linha 202 (footer.description) |
 
-A secao sera adicionada DENTRO do bloco `isConnected`, apos a API Key. Incluira:
+## Resultado
 
-```typescript
-// Novos estados
-const [webhookUrl, setWebhookUrl] = useState('');
-const [selectedEvents, setSelectedEvents] = useState<string[]>(['MESSAGES_UPSERT']);
-const [isSavingWebhook, setIsSavingWebhook] = useState(false);
+O tom passa a ser profissional e confiante, destacando qualidades próprias (estável, acessível, fácil de integrar) sem mencionar concorrentes ou se posicionar como "alternativa".
 
-// Eventos disponiveis (sem QRCODE_UPDATED)
-const WEBHOOK_EVENTS = [
-  { id: 'MESSAGES_UPSERT', required: true },
-  { id: 'MESSAGES_UPDATE', required: false },
-  { id: 'CONNECTION_UPDATE', required: false },
-];
-```
-
-A interface `SessionData` do `SessionQrModal` recebera os campos:
-- `webhook_url?: string | null`
-- `webhook_enabled?: boolean`
-- `webhook_events?: string[]`
-
-A funcao de salvar usara `supabase.functions.invoke('update-session-webhook')`, identica a logica ja existente no `SessionDetailsModal`.
-
-### Arquivos Modificados
-
-| Arquivo | Tipo de Mudanca |
-|---------|----------------|
-| `src/components/SessionQrModal.tsx` | Adicionar secao de webhook para sessao conectada |
-| `src/pages/Sessions.tsx` | Passar dados de webhook para o modal |
-| `src/components/SessionDetailsModal.tsx` | Remover QRCODE_UPDATED |
-| `src/components/SessionWebhookConfig.tsx` | Remover QRCODE_UPDATED |
-| `supabase/functions/update-session-webhook/index.ts` | Remover QRCODE_UPDATED |
-| `supabase/functions/generate-whatsapp-token/index.ts` | Remover QRCODE_UPDATED |
-| `src/i18n/locales/en.json` | Remover traducoes QRCODE_UPDATED |
-| `src/i18n/locales/pt-BR.json` | Remover traducoes QRCODE_UPDATED |
