@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, Link, useSearchParams } from "react-router-dom";
+import { useSuperAdmin } from "@/hooks/useSuperAdmin";
 import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -54,6 +55,7 @@ interface SessionStatus {
 }
 
 const Dashboard = () => {
+  const { isSuperAdmin, loading: superAdminLoading } = useSuperAdmin();
   const navigate = useNavigate();
   const { t, i18n } = useTranslation();
   const pricing = useRegionalPricing();
@@ -70,6 +72,13 @@ const Dashboard = () => {
   const [newSessionName, setNewSessionName] = useState<string | undefined>();
   
   const dateLocale = i18n.language.startsWith('pt') ? ptBR : enUS;
+
+  // Redirect superadmin to admin panel
+  useEffect(() => {
+    if (!superAdminLoading && isSuperAdmin) {
+      navigate("/admin", { replace: true });
+    }
+  }, [superAdminLoading, isSuperAdmin, navigate]);
 
   const fetchUserData = async () => {
     try {
