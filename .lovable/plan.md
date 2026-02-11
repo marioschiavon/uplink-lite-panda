@@ -1,53 +1,168 @@
 
+# Painel Admin Profissional para Superadmins
 
-# Ajustar tom das frases da Landing Page (estilo Z-API)
+## Problema Atual
 
-## O que muda
+O superadmin compartilha o mesmo layout e dashboard do cliente, com apenas 2 itens extras no menu lateral (Anuncios e Monitoramento). Nao existe uma visao administrativa real com metricas globais, gestao de usuarios/organizacoes e controle do sistema.
 
-Remover qualquer menção a "alternativa", "API oficial" ou comparações. Adotar um tom direto, confiante e focado nos benefícios do produto, similar ao estilo da Z-API que se posiciona como solução própria.
+## Solucao
 
-## Frases atualizadas
+Criar um painel admin dedicado com dashboard proprio, paginas de gestao e rotas separadas, mantendo o layout existente com sidebar mas com conteudo completamente diferente para superadmins.
 
-### Hero description (pt-BR)
+## Arquitetura
 
-**Atual:**
-> "Configure sua API WhatsApp em 5 minutos sem burocracia. A alternativa mais simples e barata à API oficial. Suporte em português 24/7, pagamento em R$ e integração com n8n, Make e Zapier."
+O superadmin continuara usando o mesmo `ProtectedLayout` com `AppSidebar`, mas:
+- O sidebar mostrara itens diferentes quando for superadmin
+- Novas paginas admin serao criadas em `/admin/*`
+- O dashboard do superadmin sera redirecionado para `/admin`
 
-**Novo:**
-> "Configure sua API WhatsApp em 5 minutos sem burocracia. Envie e receba mensagens de forma simples, estável e com o melhor custo-benefício. Suporte em português 24/7, pagamento em R$ e integração com n8n, Make e Zapier."
+## Novas Paginas
 
-### Hero description (en)
+### 1. Admin Dashboard (`/admin`) - Visao Geral do Sistema
 
-**Atual:**
-> "Set up your WhatsApp API in 5 minutes without bureaucracy. The simplest and most affordable alternative to the official API. 24/7 support, flexible payments, and integration with n8n, Make, and Zapier."
+Cards de metricas globais:
+- Total de organizacoes (3 atualmente)
+- Total de usuarios (3 atualmente)
+- Total de sessoes (3 atualmente)
+- Receita mensal (assinaturas ativas x valor)
+- Sessoes online vs offline (reutilizar logica do Monitoramento)
+- Assinaturas por status (active, past_due, pending, cancelled)
 
-**Novo:**
-> "Set up your WhatsApp API in 5 minutes without bureaucracy. Send and receive messages simply, reliably, and with the best cost-benefit. 24/7 support, flexible payments, and integration with n8n, Make, and Zapier."
+Secoes:
+- Grafico de crescimento (novos usuarios/sessoes por mes usando Recharts)
+- Ultimas atividades (ultimos usuarios criados, ultimas sessoes, ultimos pagamentos)
+- Alertas do sistema (sessoes offline, pagamentos falhos, assinaturas vencidas)
 
-### Footer description (pt-BR)
+### 2. Gestao de Organizacoes (`/admin/organizations`)
 
-**Atual:**
-> "A melhor API WhatsApp do Brasil. Automatize a comunicação da sua empresa em minutos com a alternativa mais simples e barata do mercado."
+Tabela com todas as organizacoes mostrando:
+- Nome
+- Plano (starter, pro, etc)
+- Numero de sessoes
+- Numero de usuarios
+- Status da assinatura
+- Data de criacao
+- Acoes: ver detalhes, editar plano, marcar como legacy
 
-**Novo:**
-> "A melhor API WhatsApp do Brasil. Automatize a comunicação da sua empresa em minutos com uma API estável, acessível e fácil de integrar."
+Modal de detalhes da organizacao com:
+- Informacoes completas
+- Lista de sessoes da org
+- Lista de usuarios da org
+- Historico de assinaturas
 
-### Footer description (en)
+### 3. Gestao de Usuarios (`/admin/users`)
 
-**Atual:**
-> "The best WhatsApp API. Automate your business communication in minutes with the simplest and most affordable alternative on the market."
+Tabela com todos os usuarios mostrando:
+- Nome/Email
+- Organizacao vinculada
+- Role (admin, agent, superadmin)
+- Data de criacao
+- Status (ativo/inativo baseado no ultimo acesso)
 
-**Novo:**
-> "The best WhatsApp API. Automate your business communication in minutes with a stable, affordable, and easy-to-integrate API."
+### 4. Gestao de Assinaturas (`/admin/subscriptions`)
 
-## Arquivos modificados
+Tabela global de todas as assinaturas:
+- Organizacao
+- Sessao vinculada
+- Status
+- Valor
+- Provedor (Stripe/MercadoPago)
+- Proxima cobranca
+- Acoes: ver no Stripe
 
-| Arquivo | Linhas |
-|---------|--------|
-| `src/i18n/locales/pt-BR.json` | Linha 15 (hero.description) e linha 202 (footer.description) |
-| `src/i18n/locales/en.json` | Linha 15 (hero.description) e linha 202 (footer.description) |
+### 5. Mover paginas existentes
 
-## Resultado
+- Monitoramento: mover de `/monitoring` para `/admin/monitoring`
+- Anuncios: mover de `/announcements` para `/admin/announcements`
 
-O tom passa a ser profissional e confiante, destacando qualidades próprias (estável, acessível, fácil de integrar) sem mencionar concorrentes ou se posicionar como "alternativa".
+## Mudancas no Sidebar
 
+Quando o usuario for superadmin, o sidebar mostrara:
+
+```text
+ADMIN
+  Dashboard Admin
+  Organizacoes
+  Usuarios
+  Assinaturas
+  Monitoramento
+  Anuncios
+
+FERRAMENTAS
+  Documentacao API
+
+CONTA
+  Sair
+```
+
+O superadmin NAO vera mais o dashboard do cliente. Ao acessar `/dashboard`, sera redirecionado para `/admin`.
+
+## Secao Tecnica
+
+### Arquivos a criar
+
+| Arquivo | Descricao |
+|---------|-----------|
+| `src/pages/admin/AdminDashboard.tsx` | Dashboard com metricas globais e graficos |
+| `src/pages/admin/AdminOrganizations.tsx` | Tabela de organizacoes + modal de detalhes |
+| `src/pages/admin/AdminUsers.tsx` | Tabela de usuarios |
+| `src/pages/admin/AdminSubscriptions.tsx` | Tabela global de assinaturas |
+
+### Arquivos a modificar
+
+| Arquivo | Mudanca |
+|---------|---------|
+| `src/components/layout/AppSidebar.tsx` | Menu condicional: items admin vs items cliente |
+| `src/App.tsx` | Adicionar rotas `/admin/*` dentro do ProtectedLayout |
+| `src/pages/Dashboard.tsx` | Redirecionar superadmin para `/admin` |
+
+### Rotas novas (dentro do ProtectedLayout)
+
+```typescript
+<Route path="/admin" element={<AdminDashboard />} />
+<Route path="/admin/organizations" element={<AdminOrganizations />} />
+<Route path="/admin/users" element={<AdminUsers />} />
+<Route path="/admin/subscriptions" element={<AdminSubscriptions />} />
+<Route path="/admin/monitoring" element={<SessionMonitoring />} />
+<Route path="/admin/announcements" element={<Announcements />} />
+```
+
+### Queries do Admin Dashboard
+
+O dashboard admin usara queries diretas ao Supabase (o superadmin ja tem acesso total via RLS):
+
+```typescript
+// Total orgs
+const { count } = await supabase.from('organizations').select('*', { count: 'exact', head: true });
+
+// Total users  
+const { count } = await supabase.from('users').select('*', { count: 'exact', head: true });
+
+// Total sessions
+const { count } = await supabase.from('sessions').select('*', { count: 'exact', head: true });
+
+// Subscriptions by status
+const { data } = await supabase.from('subscriptions').select('status, amount');
+
+// Recent users
+const { data } = await supabase.from('users').select('*').order('created_at', { ascending: false }).limit(5);
+```
+
+### Protecao das rotas admin
+
+Cada pagina admin verificara se o usuario e superadmin (mesma logica ja usada em `SessionMonitoring` e `Announcements`), redirecionando para `/dashboard` se nao for.
+
+### Nao requer migracoes
+
+Todas as tabelas e RLS policies necessarias ja existem. O superadmin ja tem acesso total via `is_superadmin()` e policies existentes.
+
+## Ordem de Implementacao
+
+1. Criar `AdminDashboard.tsx` com metricas globais e graficos
+2. Criar `AdminOrganizations.tsx` com tabela e modal de detalhes
+3. Criar `AdminUsers.tsx` com tabela de usuarios
+4. Criar `AdminSubscriptions.tsx` com tabela global
+5. Atualizar `AppSidebar.tsx` com menu condicional
+6. Atualizar `App.tsx` com novas rotas
+7. Atualizar `Dashboard.tsx` para redirecionar superadmin
+8. Mover rotas de `/monitoring` e `/announcements` para `/admin/*`
