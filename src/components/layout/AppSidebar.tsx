@@ -1,5 +1,5 @@
 import { useLocation, useNavigate } from "react-router-dom";
-import { LayoutDashboard, MessageSquare, CreditCard, BookOpen, Megaphone, Activity, Settings, LogOut } from "lucide-react";
+import { LayoutDashboard, MessageSquare, CreditCard, BookOpen, Megaphone, Activity, LogOut, Building2, Users } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -20,10 +20,9 @@ interface NavItem {
   title: string;
   url: string;
   icon: React.ElementType;
-  adminOnly?: boolean;
 }
 
-const mainItems: NavItem[] = [
+const clientItems: NavItem[] = [
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
   { title: "Sessões", url: "/sessions", icon: MessageSquare },
   { title: "Assinaturas", url: "/subscriptions", icon: CreditCard },
@@ -31,8 +30,16 @@ const mainItems: NavItem[] = [
 ];
 
 const adminItems: NavItem[] = [
-  { title: "Anúncios", url: "/announcements", icon: Megaphone, adminOnly: true },
-  { title: "Monitoramento", url: "/monitoring", icon: Activity, adminOnly: true },
+  { title: "Dashboard Admin", url: "/admin", icon: LayoutDashboard },
+  { title: "Organizações", url: "/admin/organizations", icon: Building2 },
+  { title: "Usuários", url: "/admin/users", icon: Users },
+  { title: "Assinaturas", url: "/admin/subscriptions", icon: CreditCard },
+  { title: "Monitoramento", url: "/admin/monitoring", icon: Activity },
+  { title: "Anúncios", url: "/admin/announcements", icon: Megaphone },
+];
+
+const adminToolItems: NavItem[] = [
+  { title: "Documentação API", url: "/api-docs", icon: BookOpen },
 ];
 
 export function AppSidebar() {
@@ -49,12 +56,12 @@ export function AppSidebar() {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         setUserEmail(user.email || "");
-        const { data: userData } = await supabase
-          .from("users")
-          .select("role")
-          .eq("id", user.id)
-          .single();
-        setIsSuperAdmin(userData?.role === "superadmin");
+        const { data } = await supabase
+          .from("superadmin_users" as any)
+          .select("user_id")
+          .eq("user_id", user.id)
+          .maybeSingle();
+        setIsSuperAdmin(!!data);
       }
     };
     checkAdmin();
@@ -67,60 +74,59 @@ export function AppSidebar() {
     navigate("/login");
   };
 
+  const renderMenuItems = (items: NavItem[]) => (
+    <SidebarMenu>
+      {items.map((item) => (
+        <SidebarMenuItem key={item.url}>
+          <SidebarMenuButton
+            asChild
+            isActive={isActive(item.url)}
+            tooltip={isCollapsed ? item.title : undefined}
+          >
+            <a href={item.url}>
+              <item.icon className="h-4 w-4" />
+              {!isCollapsed && <span>{item.title}</span>}
+            </a>
+          </SidebarMenuButton>
+        </SidebarMenuItem>
+      ))}
+    </SidebarMenu>
+  );
+
   return (
     <Sidebar collapsible="icon" className="border-r">
       <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupLabel className={isCollapsed ? "justify-center" : ""}>
-            {isCollapsed ? "📊" : "Menu Principal"}
-          </SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {mainItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton
-                    asChild
-                    isActive={isActive(item.url)}
-                    tooltip={isCollapsed ? item.title : undefined}
-                  >
-                    <a href={item.url}>
-                      <item.icon className="h-4 w-4" />
-                      {!isCollapsed && <span>{item.title}</span>}
-                    </a>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-
-        {isSuperAdmin && (
+        {isSuperAdmin ? (
           <>
-            <Separator />
             <SidebarGroup>
               <SidebarGroupLabel className={isCollapsed ? "justify-center" : ""}>
-                {isCollapsed ? "⚡" : "Administração"}
+                {isCollapsed ? "⚡" : "Admin"}
               </SidebarGroupLabel>
               <SidebarGroupContent>
-                <SidebarMenu>
-                  {adminItems.map((item) => (
-                    <SidebarMenuItem key={item.title}>
-                      <SidebarMenuButton
-                        asChild
-                        isActive={isActive(item.url)}
-                        tooltip={isCollapsed ? item.title : undefined}
-                      >
-                        <a href={item.url}>
-                          <item.icon className="h-4 w-4" />
-                          {!isCollapsed && <span>{item.title}</span>}
-                        </a>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  ))}
-                </SidebarMenu>
+                {renderMenuItems(adminItems)}
+              </SidebarGroupContent>
+            </SidebarGroup>
+
+            <Separator />
+
+            <SidebarGroup>
+              <SidebarGroupLabel className={isCollapsed ? "justify-center" : ""}>
+                {isCollapsed ? "🔧" : "Ferramentas"}
+              </SidebarGroupLabel>
+              <SidebarGroupContent>
+                {renderMenuItems(adminToolItems)}
               </SidebarGroupContent>
             </SidebarGroup>
           </>
+        ) : (
+          <SidebarGroup>
+            <SidebarGroupLabel className={isCollapsed ? "justify-center" : ""}>
+              {isCollapsed ? "📊" : "Menu Principal"}
+            </SidebarGroupLabel>
+            <SidebarGroupContent>
+              {renderMenuItems(clientItems)}
+            </SidebarGroupContent>
+          </SidebarGroup>
         )}
       </SidebarContent>
 
