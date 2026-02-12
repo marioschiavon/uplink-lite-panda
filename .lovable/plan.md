@@ -1,168 +1,84 @@
 
-# Painel Admin Profissional para Superadmins
+# Corrigir dados de assinatura no painel admin
 
-## Problema Atual
+## Problema
 
-O superadmin compartilha o mesmo layout e dashboard do cliente, com apenas 2 itens extras no menu lateral (Anuncios e Monitoramento). Nao existe uma visao administrativa real com metricas globais, gestao de usuarios/organizacoes e controle do sistema.
+O painel admin usa o campo legado `organizations.subscription_status` para exibir o status das organizacoes, mas esse campo nao e atualizado corretamente. A fonte da verdade e a tabela `subscriptions`.
 
-## Solucao
+Dados atuais:
+- **GTi Tecnologias**: `organizations.subscription_status = "inactive"` mas `subscriptions.status = "active"`
+- **Groomer Genius**: `organizations.subscription_status = "inactive"` mas `subscriptions.status = "active"`
 
-Criar um painel admin dedicado com dashboard proprio, paginas de gestao e rotas separadas, mantendo o layout existente com sidebar mas com conteudo completamente diferente para superadmins.
+## Mudancas
 
-## Arquitetura
+### 1. AdminOrganizations.tsx
 
-O superadmin continuara usando o mesmo `ProtectedLayout` com `AppSidebar`, mas:
-- O sidebar mostrara itens diferentes quando for superadmin
-- Novas paginas admin serao criadas em `/admin/*`
-- O dashboard do superadmin sera redirecionado para `/admin`
+**Problema**: Busca `subscription_status` da tabela `organizations` (legado).
 
-## Novas Paginas
+**Solucao**: Fazer JOIN com a tabela `subscriptions` para trazer o status real. Buscar as assinaturas da org e usar o status mais recente.
 
-### 1. Admin Dashboard (`/admin`) - Visao Geral do Sistema
+Mudanca na query:
+```typescript
+// Buscar orgs
+const { data: orgsData } = await supabase
+  .from("organizations")
+  .select("id, name, plan, is_legacy, created_at, session_limit")
+  .order("created_at", { ascending: false });
 
-Cards de metricas globais:
-- Total de organizacoes (3 atualmente)
-- Total de usuarios (3 atualmente)
-- Total de sessoes (3 atualmente)
-- Receita mensal (assinaturas ativas x valor)
-- Sessoes online vs offline (reutilizar logica do Monitoramento)
-- Assinaturas por status (active, past_due, pending, cancelled)
+// Buscar todas as assinaturas (mais recente por org)
+const { data: subsData } = await supabase
+  .from("subscriptions")
+  .select("organization_id, status, amount, plan_name")
+  .order("created_at", { ascending: false });
 
-Secoes:
-- Grafico de crescimento (novos usuarios/sessoes por mes usando Recharts)
-- Ultimas atividades (ultimos usuarios criados, ultimas sessoes, ultimos pagamentos)
-- Alertas do sistema (sessoes offline, pagamentos falhos, assinaturas vencidas)
-
-### 2. Gestao de Organizacoes (`/admin/organizations`)
-
-Tabela com todas as organizacoes mostrando:
-- Nome
-- Plano (starter, pro, etc)
-- Numero de sessoes
-- Numero de usuarios
-- Status da assinatura
-- Data de criacao
-- Acoes: ver detalhes, editar plano, marcar como legacy
-
-Modal de detalhes da organizacao com:
-- Informacoes completas
-- Lista de sessoes da org
-- Lista de usuarios da org
-- Historico de assinaturas
-
-### 3. Gestao de Usuarios (`/admin/users`)
-
-Tabela com todos os usuarios mostrando:
-- Nome/Email
-- Organizacao vinculada
-- Role (admin, agent, superadmin)
-- Data de criacao
-- Status (ativo/inativo baseado no ultimo acesso)
-
-### 4. Gestao de Assinaturas (`/admin/subscriptions`)
-
-Tabela global de todas as assinaturas:
-- Organizacao
-- Sessao vinculada
-- Status
-- Valor
-- Provedor (Stripe/MercadoPago)
-- Proxima cobranca
-- Acoes: ver no Stripe
-
-### 5. Mover paginas existentes
-
-- Monitoramento: mover de `/monitoring` para `/admin/monitoring`
-- Anuncios: mover de `/announcements` para `/admin/announcements`
-
-## Mudancas no Sidebar
-
-Quando o usuario for superadmin, o sidebar mostrara:
-
-```text
-ADMIN
-  Dashboard Admin
-  Organizacoes
-  Usuarios
-  Assinaturas
-  Monitoramento
-  Anuncios
-
-FERRAMENTAS
-  Documentacao API
-
-CONTA
-  Sair
+// Mapear: para cada org, pegar o status da assinatura mais recente
 ```
 
-O superadmin NAO vera mais o dashboard do cliente. Ao acessar `/dashboard`, sera redirecionado para `/admin`.
+Mudanca na interface `OrgRow`: remover `subscription_status` e adicionar `real_subscription_status` derivado de `subscriptions`.
 
-## Secao Tecnica
+Mudanca na tabela: a coluna "Status" mostra o status real da assinatura mais recente, ou "Sem assinatura" se nao houver.
 
-### Arquivos a criar
+Mudanca no modal de detalhes: remover referencia a `subscription_status` da org e mostrar o status derivado.
 
-| Arquivo | Descricao |
-|---------|-----------|
-| `src/pages/admin/AdminDashboard.tsx` | Dashboard com metricas globais e graficos |
-| `src/pages/admin/AdminOrganizations.tsx` | Tabela de organizacoes + modal de detalhes |
-| `src/pages/admin/AdminUsers.tsx` | Tabela de usuarios |
-| `src/pages/admin/AdminSubscriptions.tsx` | Tabela global de assinaturas |
+### 2. AdminDashboard.tsx
 
-### Arquivos a modificar
+**Problema**: As metricas de receita e assinaturas ja estao corretas (buscam de `subscriptions`). Porem, nos cards de "Ultimas Assinaturas" nao mostra o nome da organizacao.
+
+**Solucao**: Incluir o nome da organizacao no select das assinaturas recentes via JOIN:
+```typescript
+supabase.from("subscriptions")
+  .select("id, status, amount, payment_provider, created_at, plan_name, organizations(name)")
+```
+
+E exibir o nome da org junto ao plano.
+
+### 3. AdminSubscriptions.tsx
+
+Ja esta correto - busca dados diretamente de `subscriptions` com JOIN para `organizations(name)` e `sessions(name)`.
+
+## Arquivos modificados
 
 | Arquivo | Mudanca |
 |---------|---------|
-| `src/components/layout/AppSidebar.tsx` | Menu condicional: items admin vs items cliente |
-| `src/App.tsx` | Adicionar rotas `/admin/*` dentro do ProtectedLayout |
-| `src/pages/Dashboard.tsx` | Redirecionar superadmin para `/admin` |
+| `src/pages/admin/AdminOrganizations.tsx` | Buscar status real de `subscriptions` em vez de `organizations.subscription_status` |
+| `src/pages/admin/AdminDashboard.tsx` | Incluir nome da org nas assinaturas recentes |
 
-### Rotas novas (dentro do ProtectedLayout)
+## Secao tecnica
 
-```typescript
-<Route path="/admin" element={<AdminDashboard />} />
-<Route path="/admin/organizations" element={<AdminOrganizations />} />
-<Route path="/admin/users" element={<AdminUsers />} />
-<Route path="/admin/subscriptions" element={<AdminSubscriptions />} />
-<Route path="/admin/monitoring" element={<SessionMonitoring />} />
-<Route path="/admin/announcements" element={<Announcements />} />
-```
+### AdminOrganizations.tsx - Abordagem
 
-### Queries do Admin Dashboard
+1. Remover `subscription_status` do select de organizations
+2. Buscar todas as subscriptions em paralelo: `supabase.from("subscriptions").select("organization_id, status")`
+3. Criar um Map de `org_id -> status da assinatura mais recente`
+4. Mapear cada org com seu status real
+5. Atualizar a interface `OrgRow` para usar `realSubStatus` em vez de `subscription_status`
+6. Atualizar o modal de detalhes para remover referencia ao campo legado
 
-O dashboard admin usara queries diretas ao Supabase (o superadmin ja tem acesso total via RLS):
+### AdminDashboard.tsx - Abordagem
 
-```typescript
-// Total orgs
-const { count } = await supabase.from('organizations').select('*', { count: 'exact', head: true });
+1. No select de `recentSubs`, adicionar `organizations(name)` ao JOIN
+2. Exibir `s.organizations?.name` no card de ultimas assinaturas
 
-// Total users  
-const { count } = await supabase.from('users').select('*', { count: 'exact', head: true });
+## Resultado
 
-// Total sessions
-const { count } = await supabase.from('sessions').select('*', { count: 'exact', head: true });
-
-// Subscriptions by status
-const { data } = await supabase.from('subscriptions').select('status, amount');
-
-// Recent users
-const { data } = await supabase.from('users').select('*').order('created_at', { ascending: false }).limit(5);
-```
-
-### Protecao das rotas admin
-
-Cada pagina admin verificara se o usuario e superadmin (mesma logica ja usada em `SessionMonitoring` e `Announcements`), redirecionando para `/dashboard` se nao for.
-
-### Nao requer migracoes
-
-Todas as tabelas e RLS policies necessarias ja existem. O superadmin ja tem acesso total via `is_superadmin()` e policies existentes.
-
-## Ordem de Implementacao
-
-1. Criar `AdminDashboard.tsx` com metricas globais e graficos
-2. Criar `AdminOrganizations.tsx` com tabela e modal de detalhes
-3. Criar `AdminUsers.tsx` com tabela de usuarios
-4. Criar `AdminSubscriptions.tsx` com tabela global
-5. Atualizar `AppSidebar.tsx` com menu condicional
-6. Atualizar `App.tsx` com novas rotas
-7. Atualizar `Dashboard.tsx` para redirecionar superadmin
-8. Mover rotas de `/monitoring` e `/announcements` para `/admin/*`
+Todos os paineis admin mostrarao o status real das assinaturas (da tabela `subscriptions`), nao mais o campo legado da tabela `organizations`.
