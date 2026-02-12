@@ -49,7 +49,7 @@ const AdminDashboard = () => {
         supabase.from("sessions").select("*", { count: "exact", head: true }),
         supabase.from("subscriptions").select("status, amount"),
         supabase.from("users").select("id, email, name, role, created_at, organization_id").order("created_at", { ascending: false }).limit(5),
-        supabase.from("subscriptions").select("id, status, amount, payment_provider, created_at, organization_id, plan_name").order("created_at", { ascending: false }).limit(5),
+        supabase.from("subscriptions").select("id, status, amount, payment_provider, created_at, organization_id, plan_name, organizations(name)").order("created_at", { ascending: false }).limit(5),
       ]);
 
       // Metrics
@@ -238,7 +238,7 @@ const AdminDashboard = () => {
             {recentSubs.map((s) => (
               <div key={s.id} className="flex items-center justify-between text-sm">
                 <div>
-                  <p className="font-medium">{s.plan_name}</p>
+                  <p className="font-medium">{(s as any).organizations?.name || "—"} · {s.plan_name}</p>
                   <p className="text-muted-foreground text-xs">R$ {Number(s.amount).toFixed(2)} · {s.payment_provider}</p>
                 </div>
                 <Badge variant={s.status === "active" ? "default" : "secondary"}>{s.status}</Badge>

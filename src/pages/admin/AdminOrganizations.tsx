@@ -17,7 +17,7 @@ interface OrgRow {
   name: string;
   plan: string | null;
   is_legacy: boolean | null;
-  subscription_status: string | null;
+  realSubStatus: string | null;
   created_at: string | null;
   session_limit: number | null;
 }
@@ -43,11 +43,31 @@ const AdminOrganizations = () => {
   }, [isSuperAdmin]);
 
   const fetchOrgs = async () => {
-    const { data } = await supabase
-      .from("organizations")
-      .select("id, name, plan, is_legacy, subscription_status, created_at, session_limit")
-      .order("created_at", { ascending: false });
-    setOrgs(data || []);
+    const [orgsRes, subsRes] = await Promise.all([
+      supabase
+        .from("organizations")
+        .select("id, name, plan, is_legacy, created_at, session_limit")
+        .order("created_at", { ascending: false }),
+      supabase
+        .from("subscriptions")
+        .select("organization_id, status")
+        .order("created_at", { ascending: false }),
+    ]);
+
+    // Map: org_id -> most recent subscription status
+    const subStatusMap = new Map<string, string>();
+    (subsRes.data || []).forEach((s) => {
+      if (!subStatusMap.has(s.organization_id)) {
+        subStatusMap.set(s.organization_id, s.status);
+      }
+    });
+
+    const mapped: OrgRow[] = (orgsRes.data || []).map((org) => ({
+      ...org,
+      realSubStatus: subStatusMap.get(org.id) || null,
+    }));
+
+    setOrgs(mapped);
     setLoading(false);
   };
 
@@ -102,8 +122,8 @@ const AdminOrganizations = () => {
                   <TableCell className="font-medium">{org.name}</TableCell>
                   <TableCell><Badge variant="outline">{org.plan || "starter"}</Badge></TableCell>
                   <TableCell>
-                    <Badge variant={org.subscription_status === "active" ? "default" : "secondary"}>
-                      {org.subscription_status || "inactive"}
+                    <Badge variant={org.realSubStatus === "active" ? "default" : "secondary"}>
+                      {org.realSubStatus || "Sem assinatura"}
                     </Badge>
                   </TableCell>
                   <TableCell>{org.is_legacy ? <Badge variant="secondary">Legacy</Badge> : "—"}</TableCell>
@@ -133,7 +153,7 @@ const AdminOrganizations = () => {
               <div><span className="text-muted-foreground">Plano:</span> {selectedOrg?.plan || "starter"}</div>
               <div><span className="text-muted-foreground">Legacy:</span> {selectedOrg?.is_legacy ? "Sim" : "Não"}</div>
               <div><span className="text-muted-foreground">Limite sessões:</span> {selectedOrg?.session_limit || 1}</div>
-              <div><span className="text-muted-foreground">Status:</span> {selectedOrg?.subscription_status || "inactive"}</div>
+              <div><span className="text-muted-foreground">Status:</span> {selectedOrg?.realSubStatus || "Sem assinatura"}</div>
             </div>
 
             <div>
