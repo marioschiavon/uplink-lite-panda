@@ -1,48 +1,104 @@
 
 
-# Corrigir acesso do superadmin a tabela subscriptions
+# Criar pagina FAQ dedicada e melhorar fluxo de primeiro contato
 
-## Problema
+## Problema atual
 
-Todas as queries de subscriptions retornam arrays vazios (`[]`) no painel admin. A tabela `subscriptions` nao possui policy de SELECT para superadmins.
+1. **Botao "Comecar agora"** redireciona para `/checkout`, que exige login. Se o usuario nao esta logado, recebe um toast de erro e e jogado para `/login` -- experiencia fria e confusa para um novo visitante.
 
-Policies atuais da tabela `subscriptions`:
-- **SELECT**: apenas `organization_id = get_user_organization(auth.uid())` (filtra pela org do usuario)
-- **INSERT**: `true` (service role)
-- **UPDATE**: `true` (service role)
-- Nenhuma policy para superadmin
+2. **Nao existe pagina FAQ dedicada**. O FAQ atual e apenas uma secao dentro da landing page (`Index.tsx`), sem rota propria.
 
-O superadmin (contato@upevolution.com.br) pertence a uma organizacao diferente das que possuem assinaturas, entao a policy de SELECT nao retorna nada.
+## Mudancas propostas
 
-## Solucao
+### 1. Pagina FAQ dedicada (`/faq`)
 
-Criar uma RLS policy que permita ao superadmin fazer SELECT em todas as subscriptions:
+Criar `src/pages/FAQ.tsx` com:
+- Header com logo e navegacao (voltar para home)
+- Todas as perguntas ja existentes no i18n (`faq.questions`)
+- Accordion estilizado (mesmo componente ja usado na landing)
+- Link para contato/suporte no final
+- SEO otimizado com schema FAQPage
+- Link no footer da landing page apontando para `/faq`
 
-```sql
-CREATE POLICY "Superadmins can view all subscriptions"
-  ON public.subscriptions
-  FOR SELECT
-  USING (is_superadmin());
+### 2. Redirecionar "Comecar agora" para `/signup`
+
+Atualmente todos os botoes CTA da landing (`nav.startNow`, `hero.cta`, `cta.button`, `pricing.cta`) navegam para `/checkout`.
+
+Mudanca: redirecionar para `/signup` em vez de `/checkout`. O fluxo correto sera:
+
+```text
+Landing "Comecar agora" → /signup (criar conta) → /welcome (onboarding wizard) → /checkout (pagamento)
 ```
 
-## Resultado esperado
+### 3. Melhorar a pagina de Signup para ser mais acolhedora
 
-Apos a migracao:
-- **Card Receita Mensal**: mostrara R$ 124.80 (54.90 + 69.90)
-- **Grafico Assinaturas por Status**: mostrara 2 assinaturas "active"
-- **Ultimas Assinaturas**: mostrara as 2 assinaturas com nome da org e valor
+A pagina atual (`Signup.tsx`) e um formulario simples com logo + campos. Para um primeiro contato, ela precisa transmitir mais valor.
+
+Melhorias:
+- Layout em duas colunas (desktop): lado esquerdo com beneficios/valor, lado direito com formulario
+- Lado esquerdo mostra: titulo acolhedor, 3-4 beneficios com icones (configuracao em 5 min, mensagens ilimitadas, suporte 24/7, cancele quando quiser)
+- Mobile: beneficios aparecem acima do formulario de forma compacta
+- Botao "Voltar" para a landing page
+- Manter o link "Ja tem conta? Entrar" existente
 
 ## Secao tecnica
 
-### Arquivo modificado
+### Arquivos a criar
 
-Nenhum arquivo de codigo precisa ser alterado. Apenas uma migracao SQL e necessaria.
+| Arquivo | Descricao |
+|---------|-----------|
+| `src/pages/FAQ.tsx` | Pagina dedicada de FAQ com accordion e SEO |
 
-### Migracao
+### Arquivos a modificar
 
-Uma unica policy RLS na tabela `subscriptions` usando a funcao `is_superadmin()` que ja existe no banco.
+| Arquivo | Mudanca |
+|---------|---------|
+| `src/pages/Signup.tsx` | Layout duas colunas com beneficios + formulario, botao voltar |
+| `src/pages/Index.tsx` | Trocar `navigate("/checkout")` por `navigate("/signup")` nos 4 CTAs principais. Adicionar link FAQ no footer |
+| `src/App.tsx` | Adicionar rota `/faq` |
+| `src/i18n/locales/pt-BR.json` | Adicionar textos da pagina FAQ e beneficios do signup |
+| `src/i18n/locales/en.json` | Adicionar textos da pagina FAQ e beneficios do signup em ingles |
 
-### Por que nao precisa alterar codigo
+### Detalhes da pagina FAQ
 
-O codigo do `AdminDashboard.tsx` ja esta correto — as queries estao buscando os dados certos. O problema e exclusivamente de permissao no banco de dados.
+- Reutilizar `Accordion`, `AccordionItem`, `AccordionTrigger`, `AccordionContent` ja existentes
+- Reutilizar as perguntas de `faq.questions` do i18n (8 perguntas ja cadastradas)
+- Adicionar secao de contato no final: "Ainda tem duvidas? Entre em contato com nosso suporte"
+- Schema.org FAQPage para SEO
+
+### Detalhes do Signup melhorado
+
+```text
++------------------------------------------+
+|  [Voltar]                                |
+|                                          |
+|  +----------------+  +----------------+ |
+|  | LADO ESQUERDO  |  | LADO DIREITO   | |
+|  |                |  |                | |
+|  | Logo Uplink    |  | [Formulario]   | |
+|  | "Comece a      |  | Nome           | |
+|  |  automatizar"  |  | Email          | |
+|  |                |  | Senha          | |
+|  | * Config 5min  |  |                | |
+|  | * Ilimitado    |  | [Criar Conta]  | |
+|  | * Suporte 24/7 |  |                | |
+|  | * Sem multa    |  | Ja tem conta?  | |
+|  +----------------+  +----------------+ |
++------------------------------------------+
+```
+
+### Mudancas nos CTAs da Index.tsx
+
+Linhas a alterar (todas as ocorrencias de `navigate("/checkout")`):
+- Linha 291: botao header "Comecar Agora" → `navigate("/signup")`
+- Linha 334: botao hero CTA → `navigate("/signup")`
+- Linha 837: botao CTA final → `navigate("/signup")`
+- Secao de precos (buscar a linha exata): botao "Contratar Agora" → `navigate("/signup")`
+
+### Ordem de implementacao
+
+1. Criar `FAQ.tsx` e registrar rota em `App.tsx`
+2. Atualizar `Index.tsx`: CTAs para `/signup` + link FAQ no footer
+3. Atualizar `Signup.tsx` com layout acolhedor
+4. Atualizar arquivos i18n com novos textos
 
