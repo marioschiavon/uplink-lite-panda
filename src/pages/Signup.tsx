@@ -4,15 +4,16 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "sonner";
-import { Loader2, Mail, Lock, User } from "lucide-react";
+import { Loader2, Mail, Lock, User, ArrowLeft, Clock, MessageSquare, Headphones, XCircle, CheckCircle2 } from "lucide-react";
 import { SEO } from "@/components/SEO";
 import { useTranslation } from "react-i18next";
 
 const Signup = () => {
   const navigate = useNavigate();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const isPortuguese = i18n.language.startsWith('pt');
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -59,6 +60,29 @@ const Signup = () => {
     }
   };
 
+  const benefits = [
+    {
+      icon: Clock,
+      title: isPortuguese ? "Configuração em 5 minutos" : "Setup in 5 minutes",
+      description: isPortuguese ? "Crie sua conta e comece a enviar mensagens rapidamente" : "Create your account and start sending messages quickly",
+    },
+    {
+      icon: MessageSquare,
+      title: isPortuguese ? "Mensagens ilimitadas" : "Unlimited messages",
+      description: isPortuguese ? "Sem cobrança por mensagem, envie quantas precisar" : "No per-message charges, send as many as you need",
+    },
+    {
+      icon: Headphones,
+      title: isPortuguese ? "Suporte 24/7" : "24/7 Support",
+      description: isPortuguese ? "Equipe dedicada pronta para ajudar a qualquer momento" : "Dedicated team ready to help at any time",
+    },
+    {
+      icon: XCircle,
+      title: isPortuguese ? "Cancele quando quiser" : "Cancel anytime",
+      description: isPortuguese ? "Sem multas, sem fidelidade, sem burocracia" : "No penalties, no commitment, no paperwork",
+    },
+  ];
+
   return (
     <>
       <SEO 
@@ -66,102 +90,155 @@ const Signup = () => {
         description="Create your free Uplink account and start using the WhatsApp API in minutes."
         canonical="https://uplinklite.com/signup"
       />
-      <div className="min-h-screen flex items-center justify-center bg-background p-4">
+      <div className="min-h-screen flex bg-background">
         <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-background to-primary/10 pointer-events-none" />
-        
-        <Card className="w-full max-w-md relative bg-card border-border shadow-xl animate-fade-in">
-          <CardHeader className="space-y-3 text-center">
-            <div className="mx-auto w-20 h-20 flex items-center justify-center">
-              <img 
-                src="/logo-uplink.png" 
-                alt="Uplink - WhatsApp API"
-                loading="lazy"
-                width="80"
-                height="80"
-                className="w-full h-full object-contain drop-shadow-2xl animate-scale-in rounded-full"
-              />
-            </div>
-            <CardTitle className="text-3xl font-bold">
-              Uplink
-            </CardTitle>
-            <CardDescription className="text-muted-foreground">
-              {t('auth.signupTitle')}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSignup} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="name">{t('auth.name')}</Label>
-                <div className="relative">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    id="name"
-                    type="text"
-                    placeholder={t('auth.namePlaceholder')}
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    required
-                    className="bg-muted/50 border-border/50 pl-10"
-                  />
-                </div>
+
+        {/* Back button */}
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => navigate("/")}
+          className="absolute top-4 left-4 z-10 gap-2"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          {t('common.back')}
+        </Button>
+
+        <div className="relative flex flex-col lg:flex-row w-full max-w-6xl mx-auto items-center justify-center px-4 py-16 gap-12 lg:gap-20">
+          {/* Left side - Benefits */}
+          <div className="flex-1 max-w-md space-y-8 text-center lg:text-left">
+            <div className="space-y-4">
+              <div className="flex items-center gap-3 justify-center lg:justify-start">
+                <img 
+                  src="/logo-uplink.png" 
+                  alt="Uplink - WhatsApp API"
+                  loading="lazy"
+                  width="48"
+                  height="48"
+                  className="w-12 h-12 object-contain drop-shadow-2xl rounded-full"
+                />
+                <span className="text-2xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+                  Uplink
+                </span>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="email">{t('auth.email')}</Label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder={t('auth.emailPlaceholder')}
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                    className="bg-muted/50 border-border/50 pl-10"
-                  />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="password">{t('auth.password')}</Label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    id="password"
-                    type="password"
-                    placeholder={t('auth.passwordPlaceholder')}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    minLength={6}
-                    className="bg-muted/50 border-border/50 pl-10"
-                  />
-                </div>
-              </div>
-              <Button 
-                type="submit" 
-                className="w-full bg-gradient-to-r from-secondary to-primary hover:opacity-90 transition-opacity" 
-                disabled={loading}
-              >
-                {loading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    {t('auth.creatingAccount')}
-                  </>
-                ) : (
-                  t('auth.signupButton')
-                )}
-              </Button>
-            </form>
-            <div className="mt-6 text-center text-sm text-muted-foreground">
-              {t('auth.hasAccount')}{" "}
-              <Link to="/login" className="text-primary hover:text-primary/80 font-medium transition-colors">
-                {t('auth.loginLink')}
-              </Link>
+              <h1 className="text-3xl md:text-4xl font-bold leading-tight">
+                {isPortuguese ? "Comece a automatizar seu" : "Start automating your"}
+                <br />
+                <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+                  WhatsApp
+                </span>
+              </h1>
+              <p className="text-muted-foreground text-lg">
+                {isPortuguese
+                  ? "Crie sua conta gratuita e descubra como é fácil integrar o WhatsApp ao seu negócio."
+                  : "Create your free account and discover how easy it is to integrate WhatsApp into your business."}
+              </p>
             </div>
-            <div className="mt-4 text-center text-xs text-muted-foreground/60">
-              {t('common.poweredBy')} <span className="font-medium">S7</span>
+
+            <div className="space-y-4">
+              {benefits.map((benefit, index) => (
+                <div key={index} className="flex items-start gap-3 text-left">
+                  <div className="mt-0.5 flex-shrink-0 w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center">
+                    <benefit.icon className="h-4 w-4 text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-sm">{benefit.title}</h3>
+                    <p className="text-muted-foreground text-xs">{benefit.description}</p>
+                  </div>
+                </div>
+              ))}
             </div>
-          </CardContent>
-        </Card>
+
+            <div className="hidden lg:flex items-center gap-2 text-sm text-muted-foreground">
+              <CheckCircle2 className="h-4 w-4 text-primary" />
+              <span>{isPortuguese ? "Mais de 10.000 mensagens enviadas" : "Over 10,000 messages sent"}</span>
+            </div>
+          </div>
+
+          {/* Right side - Form */}
+          <Card className="w-full max-w-md relative bg-card border-border shadow-xl animate-fade-in">
+            <CardContent className="pt-8 pb-6 px-6 md:px-8">
+              <div className="text-center mb-6">
+                <h2 className="text-2xl font-bold">{isPortuguese ? "Criar conta" : "Create account"}</h2>
+                <p className="text-muted-foreground text-sm mt-1">
+                  {t('auth.signupTitle')}
+                </p>
+              </div>
+
+              <form onSubmit={handleSignup} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="name">{t('auth.name')}</Label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="name"
+                      type="text"
+                      placeholder={t('auth.namePlaceholder')}
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      required
+                      className="bg-muted/50 border-border/50 pl-10"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="email">{t('auth.email')}</Label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="email"
+                      type="email"
+                      placeholder={t('auth.emailPlaceholder')}
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                      className="bg-muted/50 border-border/50 pl-10"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="password">{t('auth.password')}</Label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="password"
+                      type="password"
+                      placeholder={t('auth.passwordPlaceholder')}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                      minLength={6}
+                      className="bg-muted/50 border-border/50 pl-10"
+                    />
+                  </div>
+                </div>
+                <Button 
+                  type="submit" 
+                  className="w-full bg-gradient-to-r from-secondary to-primary hover:opacity-90 transition-opacity" 
+                  disabled={loading}
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      {t('auth.creatingAccount')}
+                    </>
+                  ) : (
+                    t('auth.signupButton')
+                  )}
+                </Button>
+              </form>
+              <div className="mt-6 text-center text-sm text-muted-foreground">
+                {t('auth.hasAccount')}{" "}
+                <Link to="/login" className="text-primary hover:text-primary/80 font-medium transition-colors">
+                  {t('auth.loginLink')}
+                </Link>
+              </div>
+              <div className="mt-4 text-center text-xs text-muted-foreground/60">
+                {t('common.poweredBy')} <span className="font-medium">S7</span>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </>
   );
