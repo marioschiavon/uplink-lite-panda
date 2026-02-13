@@ -288,7 +288,7 @@ const Index = () => {
             <Button onClick={() => navigate("/login")} variant="ghost" size="sm" className="font-semibold hidden sm:inline-flex">
               {t('nav.login')}
             </Button>
-            <Button onClick={() => navigate("/checkout")} size="sm" className="font-semibold shadow-lg hover:shadow-xl transition-all animate-pulse-glow text-xs sm:text-sm">
+            <Button onClick={() => navigate("/signup")} size="sm" className="font-semibold shadow-lg hover:shadow-xl transition-all animate-pulse-glow text-xs sm:text-sm">
               <span className="hidden xs:inline">{t('nav.startNow')}</span>
               <span className="xs:hidden">{isPortuguese ? 'Começar' : 'Start'}</span>
               <ChevronRight className="h-4 w-4 ml-1" />
@@ -331,7 +331,7 @@ const Index = () => {
 
               <div className="flex flex-wrap items-center gap-4 pt-4">
                 <Button 
-                  onClick={() => navigate("/checkout")} 
+                  onClick={() => navigate("/signup")} 
                   size="lg" 
                   className="text-lg h-14 px-10 shadow-elegant hover:shadow-glow transition-all group"
                 >
@@ -660,7 +660,7 @@ const Index = () => {
                 </div>
 
                 <Button 
-                  onClick={() => navigate("/checkout")} 
+                  onClick={() => navigate("/signup")} 
                   className="w-full h-14 text-lg mt-6 shadow-elegant hover:shadow-glow transition-all group"
                   size="lg"
                 >
@@ -834,7 +834,7 @@ const Index = () => {
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center pt-6">
               <Button 
-                onClick={() => navigate("/checkout")}
+                onClick={() => navigate("/signup")}
                 size="lg"
                 variant="secondary"
                 className="text-lg h-16 px-12 shadow-2xl hover:scale-105 transition-all"
@@ -902,6 +902,9 @@ const Index = () => {
                 </button>
                 <button onClick={() => navigate("/privacy")} className="block text-muted-foreground hover:text-primary transition-colors">
                   {t('footer.privacy')}
+                </button>
+                <button onClick={() => navigate("/faq")} className="block text-muted-foreground hover:text-primary transition-colors">
+                  FAQ
                 </button>
               </div>
             </div>
