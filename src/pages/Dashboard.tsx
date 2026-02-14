@@ -267,6 +267,11 @@ const Dashboard = () => {
     const sessionName = searchParams.get('session');
     
     if (paymentSuccess) {
+      // Disparar evento de conversão Google Analytics
+      if (typeof window.gtag === 'function') {
+        window.gtag('event', 'conversion_event_purchase', {});
+      }
+
       const helpDismissed = localStorage.getItem('connectionHelpDismissed');
       if (!helpDismissed) {
         setShowConnectionHelp(true);
