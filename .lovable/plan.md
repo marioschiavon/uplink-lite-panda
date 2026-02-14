@@ -1,104 +1,43 @@
 
+# Adicionar evento de conversao Google Analytics no momento da compra
 
-# Criar pagina FAQ dedicada e melhorar fluxo de primeiro contato
+## Onde colocar
 
-## Problema atual
+O melhor local e no `src/pages/Dashboard.tsx`, dentro do `useEffect` que ja detecta `payment=success` (linha 265-280). Esse e o ponto exato onde sabemos que o cliente completou o pagamento com sucesso no Stripe e foi redirecionado de volta.
 
-1. **Botao "Comecar agora"** redireciona para `/checkout`, que exige login. Se o usuario nao esta logado, recebe um toast de erro e e jogado para `/login` -- experiencia fria e confusa para um novo visitante.
+Nao faz sentido colocar na pagina de Checkout porque la o pagamento ainda nao foi concluido -- o usuario esta sendo redirecionado para o Stripe. O evento de conversao so deve disparar apos o pagamento confirmado.
 
-2. **Nao existe pagina FAQ dedicada**. O FAQ atual e apenas uma secao dentro da landing page (`Index.tsx`), sem rota propria.
+## Mudanca
 
-## Mudancas propostas
+### `src/pages/Dashboard.tsx`
 
-### 1. Pagina FAQ dedicada (`/faq`)
+Dentro do bloco `if (paymentSuccess)` (linha 269), adicionar a chamada ao `gtag` antes de limpar os parametros da URL:
 
-Criar `src/pages/FAQ.tsx` com:
-- Header com logo e navegacao (voltar para home)
-- Todas as perguntas ja existentes no i18n (`faq.questions`)
-- Accordion estilizado (mesmo componente ja usado na landing)
-- Link para contato/suporte no final
-- SEO otimizado com schema FAQPage
-- Link no footer da landing page apontando para `/faq`
+```typescript
+if (paymentSuccess) {
+  // Disparar evento de conversao Google Analytics
+  if (typeof window.gtag === 'function') {
+    window.gtag('event', 'conversion_event_purchase', {});
+  }
 
-### 2. Redirecionar "Comecar agora" para `/signup`
-
-Atualmente todos os botoes CTA da landing (`nav.startNow`, `hero.cta`, `cta.button`, `pricing.cta`) navegam para `/checkout`.
-
-Mudanca: redirecionar para `/signup` em vez de `/checkout`. O fluxo correto sera:
-
-```text
-Landing "Comecar agora" → /signup (criar conta) → /welcome (onboarding wizard) → /checkout (pagamento)
+  const helpDismissed = localStorage.getItem('connectionHelpDismissed');
+  // ... resto do codigo existente
+}
 ```
 
-### 3. Melhorar a pagina de Signup para ser mais acolhedora
+### `src/vite-env.d.ts`
 
-A pagina atual (`Signup.tsx`) e um formulario simples com logo + campos. Para um primeiro contato, ela precisa transmitir mais valor.
+Adicionar tipagem do `gtag` no `Window` para evitar erro de TypeScript:
 
-Melhorias:
-- Layout em duas colunas (desktop): lado esquerdo com beneficios/valor, lado direito com formulario
-- Lado esquerdo mostra: titulo acolhedor, 3-4 beneficios com icones (configuracao em 5 min, mensagens ilimitadas, suporte 24/7, cancele quando quiser)
-- Mobile: beneficios aparecem acima do formulario de forma compacta
-- Botao "Voltar" para a landing page
-- Manter o link "Ja tem conta? Entrar" existente
+```typescript
+interface Window {
+  gtag: (...args: any[]) => void;
+}
+```
 
 ## Secao tecnica
 
-### Arquivos a criar
-
-| Arquivo | Descricao |
-|---------|-----------|
-| `src/pages/FAQ.tsx` | Pagina dedicada de FAQ com accordion e SEO |
-
-### Arquivos a modificar
-
-| Arquivo | Mudanca |
-|---------|---------|
-| `src/pages/Signup.tsx` | Layout duas colunas com beneficios + formulario, botao voltar |
-| `src/pages/Index.tsx` | Trocar `navigate("/checkout")` por `navigate("/signup")` nos 4 CTAs principais. Adicionar link FAQ no footer |
-| `src/App.tsx` | Adicionar rota `/faq` |
-| `src/i18n/locales/pt-BR.json` | Adicionar textos da pagina FAQ e beneficios do signup |
-| `src/i18n/locales/en.json` | Adicionar textos da pagina FAQ e beneficios do signup em ingles |
-
-### Detalhes da pagina FAQ
-
-- Reutilizar `Accordion`, `AccordionItem`, `AccordionTrigger`, `AccordionContent` ja existentes
-- Reutilizar as perguntas de `faq.questions` do i18n (8 perguntas ja cadastradas)
-- Adicionar secao de contato no final: "Ainda tem duvidas? Entre em contato com nosso suporte"
-- Schema.org FAQPage para SEO
-
-### Detalhes do Signup melhorado
-
-```text
-+------------------------------------------+
-|  [Voltar]                                |
-|                                          |
-|  +----------------+  +----------------+ |
-|  | LADO ESQUERDO  |  | LADO DIREITO   | |
-|  |                |  |                | |
-|  | Logo Uplink    |  | [Formulario]   | |
-|  | "Comece a      |  | Nome           | |
-|  |  automatizar"  |  | Email          | |
-|  |                |  | Senha          | |
-|  | * Config 5min  |  |                | |
-|  | * Ilimitado    |  | [Criar Conta]  | |
-|  | * Suporte 24/7 |  |                | |
-|  | * Sem multa    |  | Ja tem conta?  | |
-|  +----------------+  +----------------+ |
-+------------------------------------------+
-```
-
-### Mudancas nos CTAs da Index.tsx
-
-Linhas a alterar (todas as ocorrencias de `navigate("/checkout")`):
-- Linha 291: botao header "Comecar Agora" → `navigate("/signup")`
-- Linha 334: botao hero CTA → `navigate("/signup")`
-- Linha 837: botao CTA final → `navigate("/signup")`
-- Secao de precos (buscar a linha exata): botao "Contratar Agora" → `navigate("/signup")`
-
-### Ordem de implementacao
-
-1. Criar `FAQ.tsx` e registrar rota em `App.tsx`
-2. Atualizar `Index.tsx`: CTAs para `/signup` + link FAQ no footer
-3. Atualizar `Signup.tsx` com layout acolhedor
-4. Atualizar arquivos i18n com novos textos
-
+- O `gtag` ja esta carregado globalmente no `index.html` (Google tag G-EYWXEF6V50)
+- A verificacao `typeof window.gtag === 'function'` previne erros caso o script do Google nao carregue (ex: bloqueador de ads)
+- O evento dispara uma unica vez por compra, pois logo em seguida os parametros da URL sao limpos com `window.history.replaceState`
+- Apenas 2 arquivos serao modificados: `Dashboard.tsx` e `vite-env.d.ts`
