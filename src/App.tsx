@@ -26,6 +26,7 @@ import AdminOrganizations from "./pages/admin/AdminOrganizations";
 import AdminUsers from "./pages/admin/AdminUsers";
 import AdminSubscriptions from "./pages/admin/AdminSubscriptions";
 import FAQ from "./pages/FAQ";
+import GetStarted from "./pages/GetStarted";
 
 const queryClient = new QueryClient();
 
@@ -39,6 +40,7 @@ const App = () => (
           {/* Public Routes */}
           <Route path="/" element={<Index />} />
           <Route path="/faq" element={<FAQ />} />
+          <Route path="/get-started" element={<GetStarted />} />
           <Route path="/api-docs" element={<ApiDocs />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
