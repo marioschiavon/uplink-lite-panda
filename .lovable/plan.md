@@ -1,43 +1,84 @@
 
-# Adicionar evento de conversao Google Analytics no momento da compra
 
-## Onde colocar
+# Criar pagina de onboarding pre-cadastro para converter visitantes
 
-O melhor local e no `src/pages/Dashboard.tsx`, dentro do `useEffect` que ja detecta `payment=success` (linha 265-280). Esse e o ponto exato onde sabemos que o cliente completou o pagamento com sucesso no Stripe e foi redirecionado de volta.
+## Problema
 
-Nao faz sentido colocar na pagina de Checkout porque la o pagamento ainda nao foi concluido -- o usuario esta sendo redirecionado para o Stripe. O evento de conversao so deve disparar apos o pagamento confirmado.
+Quando o visitante clica em "Comecar agora" ou "Contratar agora", ele vai direto para a pagina de cadastro (formulario com nome/email/senha). Nao ha nenhuma explicacao do processo, do que vai acontecer apos criar a conta, ou como o produto funciona na pratica. Isso causa perda de interesse e abandono.
 
-## Mudanca
+## Solucao
 
-### `src/pages/Dashboard.tsx`
+Criar uma pagina intermediaria `/get-started` que funciona como um **onboarding pre-cadastro** -- uma experiencia guiada que mostra ao visitante exatamente como o produto funciona antes de pedir que crie a conta.
 
-Dentro do bloco `if (paymentSuccess)` (linha 269), adicionar a chamada ao `gtag` antes de limpar os parametros da URL:
+### Estrutura da pagina `/get-started`
 
-```typescript
-if (paymentSuccess) {
-  // Disparar evento de conversao Google Analytics
-  if (typeof window.gtag === 'function') {
-    window.gtag('event', 'conversion_event_purchase', {});
-  }
+A pagina tera um layout de scroll vertical com secoes visuais e um CTA fixo no final:
 
-  const helpDismissed = localStorage.getItem('connectionHelpDismissed');
-  // ... resto do codigo existente
-}
-```
+**Secao 1 - Hero acolhedor**
+- Titulo: "Veja como e facil comecar"
+- Subtitulo: "Em apenas 3 passos voce tera sua API WhatsApp funcionando"
 
-### `src/vite-env.d.ts`
+**Secao 2 - Como funciona (3 passos visuais)**
+- Passo 1: "Crie sua conta" -- icone de usuario, descricao curta ("Cadastro rapido, sem cartao de credito inicial")
+- Passo 2: "Configure sua sessao" -- icone de WhatsApp, descricao ("Conecte seu numero escaneando um QR Code")
+- Passo 3: "Comece a enviar" -- icone de mensagem, descricao ("Use nossa API REST para integrar com qualquer sistema")
 
-Adicionar tipagem do `gtag` no `Window` para evitar erro de TypeScript:
+Cada passo tera uma animacao suave de entrada conforme o usuario rola a pagina.
 
-```typescript
-interface Window {
-  gtag: (...args: any[]) => void;
-}
-```
+**Secao 3 - O que esta incluso**
+- Cards com os principais beneficios: mensagens ilimitadas, API REST completa, webhooks em tempo real, suporte dedicado
+- Preco com destaque visual
+
+**Secao 4 - Prova social / Confianca**
+- Numero de mensagens enviadas pela plataforma
+- "Sem fidelidade, cancele quando quiser"
+- "Seus dados estao seguros"
+
+**Secao 5 - CTA final**
+- Botao grande "Criar minha conta gratis" que leva para `/signup`
+- Texto: "Leva menos de 2 minutos"
+
+### Mudanca nos CTAs
+
+Todos os botoes "Comecar agora" e "Contratar agora" da landing page serao redirecionados de `/signup` para `/get-started`:
+- Header: "Comecar Agora"
+- Hero: CTA principal
+- Secao de precos: "Contratar Agora"
+- CTA final: botao de acao
+
+O botao de "Login" continua indo para `/login` normalmente.
 
 ## Secao tecnica
 
-- O `gtag` ja esta carregado globalmente no `index.html` (Google tag G-EYWXEF6V50)
-- A verificacao `typeof window.gtag === 'function'` previne erros caso o script do Google nao carregue (ex: bloqueador de ads)
-- O evento dispara uma unica vez por compra, pois logo em seguida os parametros da URL sao limpos com `window.history.replaceState`
-- Apenas 2 arquivos serao modificados: `Dashboard.tsx` e `vite-env.d.ts`
+### Arquivo a criar
+
+| Arquivo | Descricao |
+|---------|-----------|
+| `src/pages/GetStarted.tsx` | Pagina de onboarding pre-cadastro com secoes animadas |
+
+### Arquivos a modificar
+
+| Arquivo | Mudanca |
+|---------|---------|
+| `src/App.tsx` | Adicionar rota `/get-started` |
+| `src/pages/Index.tsx` | Trocar `navigate("/signup")` por `navigate("/get-started")` nos 4 CTAs (linhas 291, 334, 663, 837) |
+| `src/i18n/locales/pt-BR.json` | Adicionar textos da pagina get-started |
+| `src/i18n/locales/en.json` | Adicionar textos em ingles |
+
+### Detalhes tecnicos
+
+- Usar `framer-motion` para animacoes de entrada das secoes (whileInView)
+- Reutilizar componentes `Button`, `Card` ja existentes
+- Usar icones do `lucide-react` (UserPlus, QrCode, Send, Zap, Shield, MessageSquare)
+- Header simples com logo + botao "Voltar" para home
+- Responsivo: layout adaptado para mobile com secoes empilhadas
+- SEO com componente `SEO` ja existente
+- Usar `useRegionalPricing` para exibir o preco correto na pagina
+- O botao final "Criar minha conta" navega para `/signup`
+
+### Fluxo completo apos a mudanca
+
+```text
+Landing "Comecar agora" → /get-started (explica como funciona) → /signup (cria conta) → /welcome (wizard) → Stripe (pagamento) → /dashboard
+```
+
