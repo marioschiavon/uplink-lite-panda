@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ProtectedLayout } from "./components/layout/ProtectedLayout";
+import { RouteChangeTracker } from "./components/RouteChangeTracker";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
@@ -36,6 +37,7 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
+        <RouteChangeTracker />
         <Routes>
           {/* Public Routes */}
           <Route path="/" element={<Index />} />

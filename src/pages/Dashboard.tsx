@@ -267,10 +267,24 @@ const Dashboard = () => {
     const sessionName = searchParams.get('session');
     
     if (paymentSuccess) {
-      // Disparar evento de conversão Google Analytics
-      if (typeof window.gtag === 'function') {
-        window.gtag('event', 'conversion_event_purchase', {});
-      }
+      // Disparar evento purchase padrão GA4 via GTM dataLayer
+      const sessionName = searchParams.get('session');
+      window.dataLayer?.push({ ecommerce: null }); // Clear previous ecommerce data
+      window.dataLayer?.push({
+        event: 'purchase',
+        ecommerce: {
+          transaction_id: sessionName || `purchase_${Date.now()}`,
+          value: parseFloat(pricing.amount.replace(',', '.')),
+          currency: pricing.currency,
+          items: [{
+            item_id: 'whatsapp_session',
+            item_name: `Sessão WhatsApp - ${sessionName || 'unknown'}`,
+            item_category: 'subscription',
+            price: parseFloat(pricing.amount.replace(',', '.')),
+            quantity: 1
+          }]
+        }
+      });
 
       const helpDismissed = localStorage.getItem('connectionHelpDismissed');
       if (!helpDismissed) {
