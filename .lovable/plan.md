@@ -1,84 +1,96 @@
 
 
-# Criar pagina de onboarding pre-cadastro para converter visitantes
+# Tracking SPA e evento purchase padrao GA4 via GTM
 
-## Problema
+## 1. Page views em SPA
 
-Quando o visitante clica em "Comecar agora" ou "Contratar agora", ele vai direto para a pagina de cadastro (formulario com nome/email/senha). Nao ha nenhuma explicacao do processo, do que vai acontecer apos criar a conta, ou como o produto funciona na pratica. Isso causa perda de interesse e abandono.
+Em uma SPA com React Router, o GTM nao detecta trocas de pagina automaticamente porque nao ha reload do HTML. A solucao e:
 
-## Solucao
+**No codigo**: Criar um componente que escuta mudancas de rota via `useLocation()` e faz `dataLayer.push` com um evento customizado a cada navegacao.
 
-Criar uma pagina intermediaria `/get-started` que funciona como um **onboarding pre-cadastro** -- uma experiencia guiada que mostra ao visitante exatamente como o produto funciona antes de pedir que crie a conta.
+**No GTM**: Criar um trigger do tipo **Custom Event** com o nome do evento (ex: `virtualPageview`) e associar a uma tag do GA4 do tipo **GA4 Event** com nome `page_view`.
 
-### Estrutura da pagina `/get-started`
+### Componente `RouteChangeTracker`
 
-A pagina tera um layout de scroll vertical com secoes visuais e um CTA fixo no final:
+Sera criado em `src/components/RouteChangeTracker.tsx` e adicionado dentro do `<BrowserRouter>` no `App.tsx`. Ele faz:
 
-**Secao 1 - Hero acolhedor**
-- Titulo: "Veja como e facil comecar"
-- Subtitulo: "Em apenas 3 passos voce tera sua API WhatsApp funcionando"
+```typescript
+useEffect(() => {
+  window.dataLayer?.push({
+    event: 'virtualPageview',
+    page_path: location.pathname + location.search,
+    page_title: document.title
+  });
+}, [location]);
+```
 
-**Secao 2 - Como funciona (3 passos visuais)**
-- Passo 1: "Crie sua conta" -- icone de usuario, descricao curta ("Cadastro rapido, sem cartao de credito inicial")
-- Passo 2: "Configure sua sessao" -- icone de WhatsApp, descricao ("Conecte seu numero escaneando um QR Code")
-- Passo 3: "Comece a enviar" -- icone de mensagem, descricao ("Use nossa API REST para integrar com qualquer sistema")
+### Configuracao no GTM (manual, fora do codigo)
 
-Cada passo tera uma animacao suave de entrada conforme o usuario rola a pagina.
+1. **Variavel**: Criar variavel Data Layer chamada `page_path`
+2. **Trigger**: Custom Event com nome `virtualPageview`
+3. **Tag**: GA4 Event > nome `page_view`, parametro `page_location` = `{{page_path}}`
 
-**Secao 3 - O que esta incluso**
-- Cards com os principais beneficios: mensagens ilimitadas, API REST completa, webhooks em tempo real, suporte dedicado
-- Preco com destaque visual
+---
 
-**Secao 4 - Prova social / Confianca**
-- Numero de mensagens enviadas pela plataforma
-- "Sem fidelidade, cancele quando quiser"
-- "Seus dados estao seguros"
+## 2. Evento purchase padrao GA4
 
-**Secao 5 - CTA final**
-- Botao grande "Criar minha conta gratis" que leva para `/signup`
-- Texto: "Leva menos de 2 minutos"
+O GA4 tem um formato padrao de e-commerce para o evento `purchase`. O dataLayer push deve incluir informacoes do produto/transacao.
 
-### Mudanca nos CTAs
+### Dados disponiveis no momento da compra
 
-Todos os botoes "Comecar agora" e "Contratar agora" da landing page serao redirecionados de `/signup` para `/get-started`:
-- Header: "Comecar Agora"
-- Hero: CTA principal
-- Secao de precos: "Contratar Agora"
-- CTA final: botao de acao
+No `Dashboard.tsx`, quando `payment=success`, temos acesso a:
+- `searchParams.get('session')` -- nome da sessao comprada
+- Preco via `useRegionalPricing()`
 
-O botao de "Login" continua indo para `/login` normalmente.
+### Formato do dataLayer push (padrao GA4 e-commerce)
 
-## Secao tecnica
+```typescript
+window.dataLayer?.push({
+  event: 'purchase',
+  ecommerce: {
+    transaction_id: sessionName || 'unknown',
+    value: parseFloat(pricing.amount.replace(',', '.')),
+    currency: pricing.currency,
+    items: [{
+      item_id: 'whatsapp_session',
+      item_name: `Sessao WhatsApp - ${sessionName}`,
+      item_category: 'subscription',
+      price: parseFloat(pricing.amount.replace(',', '.')),
+      quantity: 1
+    }]
+  }
+});
+```
 
-### Arquivo a criar
+### Configuracao no GTM (manual, fora do codigo)
+
+1. **Trigger**: Custom Event com nome `purchase`
+2. **Tag**: GA4 Event > nome `purchase`, habilitar "Use Data Layer" para e-commerce
+
+---
+
+## Mudancas no codigo
+
+### Arquivos a criar
 
 | Arquivo | Descricao |
 |---------|-----------|
-| `src/pages/GetStarted.tsx` | Pagina de onboarding pre-cadastro com secoes animadas |
+| `src/components/RouteChangeTracker.tsx` | Componente que dispara `virtualPageview` a cada troca de rota |
 
 ### Arquivos a modificar
 
 | Arquivo | Mudanca |
 |---------|---------|
-| `src/App.tsx` | Adicionar rota `/get-started` |
-| `src/pages/Index.tsx` | Trocar `navigate("/signup")` por `navigate("/get-started")` nos 4 CTAs (linhas 291, 334, 663, 837) |
-| `src/i18n/locales/pt-BR.json` | Adicionar textos da pagina get-started |
-| `src/i18n/locales/en.json` | Adicionar textos em ingles |
+| `index.html` | Substituir gtag.js pelo GTM (head + noscript no body) |
+| `src/App.tsx` | Adicionar `<RouteChangeTracker />` dentro do `<BrowserRouter>` |
+| `src/pages/Dashboard.tsx` | Trocar `window.gtag()` por `dataLayer.push` com formato e-commerce GA4 padrao, incluindo `ecommerce.items` |
+| `src/vite-env.d.ts` | Atualizar tipagem Window: remover `gtag`, adicionar `dataLayer` |
 
-### Detalhes tecnicos
+### Ordem de implementacao
 
-- Usar `framer-motion` para animacoes de entrada das secoes (whileInView)
-- Reutilizar componentes `Button`, `Card` ja existentes
-- Usar icones do `lucide-react` (UserPlus, QrCode, Send, Zap, Shield, MessageSquare)
-- Header simples com logo + botao "Voltar" para home
-- Responsivo: layout adaptado para mobile com secoes empilhadas
-- SEO com componente `SEO` ja existente
-- Usar `useRegionalPricing` para exibir o preco correto na pagina
-- O botao final "Criar minha conta" navega para `/signup`
-
-### Fluxo completo apos a mudanca
-
-```text
-Landing "Comecar agora" → /get-started (explica como funciona) → /signup (cria conta) → /welcome (wizard) → Stripe (pagamento) → /dashboard
-```
+1. Atualizar `index.html` (GTM head + noscript body)
+2. Atualizar `vite-env.d.ts` (tipagem dataLayer)
+3. Criar `RouteChangeTracker.tsx`
+4. Atualizar `App.tsx` (adicionar tracker)
+5. Atualizar `Dashboard.tsx` (purchase e-commerce padrao)
 
