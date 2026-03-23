@@ -712,6 +712,7 @@ export type Database = {
           id: string
           name: string | null
           organization_id: string | null
+          phone: string | null
           role: Database["public"]["Enums"]["user_role"] | null
           unsubscribed_from_reminders: boolean | null
           updated_at: string | null
@@ -724,6 +725,7 @@ export type Database = {
           id: string
           name?: string | null
           organization_id?: string | null
+          phone?: string | null
           role?: Database["public"]["Enums"]["user_role"] | null
           unsubscribed_from_reminders?: boolean | null
           updated_at?: string | null
@@ -736,6 +738,7 @@ export type Database = {
           id?: string
           name?: string | null
           organization_id?: string | null
+          phone?: string | null
           role?: Database["public"]["Enums"]["user_role"] | null
           unsubscribed_from_reminders?: boolean | null
           updated_at?: string | null

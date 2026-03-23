@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "sonner";
-import { Loader2, Mail, Lock, User, ArrowLeft, Clock, MessageSquare, Headphones, XCircle, CheckCircle2 } from "lucide-react";
+import { Loader2, Mail, Lock, User, Phone, ArrowLeft, Clock, MessageSquare, Headphones, XCircle, CheckCircle2 } from "lucide-react";
 import { SEO } from "@/components/SEO";
 import { useTranslation } from "react-i18next";
 
@@ -16,8 +16,16 @@ const Signup = () => {
   const isPortuguese = i18n.language.startsWith('pt');
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+
+  const formatPhone = (value: string) => {
+    // Remove tudo que não for dígito
+    const digits = value.replace(/\D/g, "");
+    // Limita a 13 dígitos (DDI 55 + DDD + número)
+    return digits.slice(0, 13);
+  };
 
   useEffect(() => {
     const checkUser = async () => {
@@ -50,6 +58,13 @@ const Signup = () => {
       if (error) throw error;
 
       if (data.user) {
+        // Salvar telefone no perfil do usuário (se informado)
+        if (phone && data.user.id) {
+          await supabase
+            .from("users")
+            .update({ phone: phone })
+            .eq("id", data.user.id);
+        }
         toast.success(t('auth.signupSuccess'));
         navigate("/welcome");
       }
@@ -195,6 +210,27 @@ const Signup = () => {
                       className="bg-muted/50 border-border/50 pl-10"
                     />
                   </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="phone">
+                    {isPortuguese ? "WhatsApp (opcional)" : "WhatsApp (optional)"}
+                  </Label>
+                  <div className="relative">
+                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="phone"
+                      type="tel"
+                      placeholder={isPortuguese ? "5511999999999" : "5511999999999"}
+                      value={phone}
+                      onChange={(e) => setPhone(formatPhone(e.target.value))}
+                      className="bg-muted/50 border-border/50 pl-10"
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {isPortuguese
+                      ? "Formato: 55 + DDD + número (ex: 5511999999999)"
+                      : "Format: country code + area code + number (e.g. 5511999999999)"}
+                  </p>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="password">{t('auth.password')}</Label>
