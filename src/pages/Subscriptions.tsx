@@ -32,10 +32,8 @@ interface SessionWithSubscription {
     status: string;
     amount: number;
     next_payment_date: string | null;
-    preapproval_id: string;
     created_at: string;
     stripe_customer_id?: string;
-    payment_provider?: string;
     cancel_at_period_end?: boolean;
     current_period_end?: string;
   };
@@ -114,10 +112,8 @@ const Subscriptions = () => {
               status: (subData as any).status,
               amount: (subData as any).amount,
               next_payment_date: (subData as any).next_payment_date,
-              preapproval_id: (subData as any).preapproval_id,
               created_at: (subData as any).created_at,
               stripe_customer_id: (subData as any).stripe_customer_id,
-              payment_provider: (subData as any).payment_provider,
               cancel_at_period_end: (subData as any).cancel_at_period_end,
               current_period_end: (subData as any).current_period_end,
             } : undefined,
@@ -202,26 +198,19 @@ const Subscriptions = () => {
     }
   };
 
-  const handleManageSubscription = async (customerId?: string, provider?: string) => {
+  const handleManageSubscription = async (customerId?: string) => {
     if (!customerId) {
       toast.error('ID do cliente não encontrado');
       return;
     }
 
-    // Se for Mercado Pago, manter comportamento antigo
-    if (provider === 'mercadopago') {
-      window.open('https://www.mercadopago.com.br/subscriptions', '_blank');
-      return;
-    }
-
-    // Stripe - usar Customer Portal
     try {
       const { data, error } = await supabase.functions.invoke('create-stripe-portal', {
         body: { customer_id: customerId }
       });
 
       if (error) throw error;
-      
+
       if (data.url) {
         window.open(data.url, '_blank');
       }
@@ -412,8 +401,7 @@ const Subscriptions = () => {
                             size="sm"
                             variant="outline"
                             onClick={() => handleManageSubscription(
-                              session.subscription?.stripe_customer_id,
-                              session.subscription?.payment_provider
+                              session.subscription?.stripe_customer_id
                             )}
                             className="border-orange-300"
                           >
@@ -465,8 +453,7 @@ const Subscriptions = () => {
                                   <Button
                                     size="sm"
                                     onClick={() => handleManageSubscription(
-                                      session.subscription?.stripe_customer_id,
-                                      session.subscription?.payment_provider
+                                      session.subscription?.stripe_customer_id
                                     )}
                                     disabled={!session.subscription?.stripe_customer_id}
                                     className="bg-red-600 hover:bg-red-700"
@@ -474,13 +461,12 @@ const Subscriptions = () => {
                                     <CreditCard className="h-4 w-4 mr-2" />
                                     Atualizar Pagamento
                                   </Button>
-                                  {(session.subscription?.stripe_customer_id || session.subscription?.payment_provider === 'mercadopago') && (
+                                  {session.subscription?.stripe_customer_id && (
                                     <Button
                                       size="sm"
                                       variant="outline"
                                       onClick={() => handleManageSubscription(
-                                        session.subscription?.stripe_customer_id,
-                                        session.subscription?.payment_provider
+                                        session.subscription?.stripe_customer_id
                                       )}
                                       className="border-red-300"
                                     >
@@ -500,11 +486,9 @@ const Subscriptions = () => {
                           <Button
                             variant="outline"
                             onClick={() => handleManageSubscription(
-                              session.subscription?.stripe_customer_id,
-                              session.subscription?.payment_provider
+                              session.subscription?.stripe_customer_id
                             )}
-                            disabled={!session.subscription?.stripe_customer_id && 
-                                     session.subscription?.payment_provider !== 'mercadopago'}
+                            disabled={!session.subscription?.stripe_customer_id}
                             className="w-full"
                           >
                             <ExternalLink className="h-4 w-4 mr-2" />
@@ -524,12 +508,11 @@ const Subscriptions = () => {
                               Aguardando confirmação de pagamento. Isso pode levar alguns minutos.
                             </AlertDescription>
                           </Alert>
-                          {(session.subscription?.stripe_customer_id || session.subscription?.payment_provider === 'mercadopago') && (
+                          {session.subscription?.stripe_customer_id && (
                             <Button
                               variant="outline"
                               onClick={() => handleManageSubscription(
-                                session.subscription?.stripe_customer_id,
-                                session.subscription?.payment_provider
+                                session.subscription?.stripe_customer_id
                               )}
                               className="w-full"
                             >
@@ -555,13 +538,12 @@ const Subscriptions = () => {
                                   <CheckCircle2 className="h-4 w-4 mr-2" />
                                   Reativar Assinatura
                                 </Button>
-                                {(session.subscription?.stripe_customer_id || session.subscription?.payment_provider === 'mercadopago') && (
+                                {session.subscription?.stripe_customer_id && (
                                   <Button
                                     size="sm"
                                     variant="outline"
                                     onClick={() => handleManageSubscription(
-                                      session.subscription?.stripe_customer_id,
-                                      session.subscription?.payment_provider
+                                      session.subscription?.stripe_customer_id
                                     )}
                                   >
                                     <ExternalLink className="h-4 w-4 mr-2" />
